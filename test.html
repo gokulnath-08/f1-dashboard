@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1 25 - Advanced TC Coach & Steering Visuals</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .header-controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        select {
+            background: #333; color: #00aaff; border: 2px solid #00aaff;
+            padding: 10px; font-size: 16px; border-radius: 6px; outline: none; cursor: pointer; font-weight: bold;
+        }
+
+        .dashboard-layout {
+            display: flex; gap: 40px; align-items: center; background: #1a1a1a;
+            padding: 30px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+        }
+
+        /* --- CAR VISUALS & MOVING TRACK --- */
+        .track-window {
+            width: 250px;
+            height: 350px;
+            background-color: #333;
+            background-image: 
+                linear-gradient(90deg, #ff0000 0%, #ffffff 5%, transparent 5%, transparent 95%, #ffffff 95%, #ff0000 100%),
+                linear-gradient(180deg, #222 25%, #2a2a2a 25%, #2a2a2a 50%, #222 50%, #222 75%, #2a2a2a 75%, #2a2a2a 100%);
+            background-size: 20px 100px, 100% 40px;
+            border-radius: 12px;
+            border: 2px solid #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+        }
+
+        /* RACE START LIGHTS */
+        .start-lights-container {
+            position: absolute;
+            top: 20px;
+            display: none; 
+            gap: 8px;
+            z-index: 20;
+            background: #111;
+            padding: 8px;
+            border-radius: 10px;
+            border: 2px solid #444;
+        }
+        .start-light {
+            width: 20px;
+            height: 20px;
+            background: #333;
+            border-radius: 50%;
+            border: 1px solid #000;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+        }
+        .start-light.red {
+            background: #ff0000;
+            box-shadow: 0 0 15px #ff0000, inset 0 0 5px #fff;
+        }
+
+        .car-chassis {
+            width: 60px;
+            height: 140px;
+            background: linear-gradient(180deg, #111 0%, #002244 20%, #004488 100%);
+            border-radius: 20px 20px 10px 10px;
+            position: absolute;
+            bottom: 30px;
+            left: 95px; 
+            transition: transform 0.1s ease-out; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 10px 20px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .wing-front { position: absolute; top: -15px; left: -15px; width: 90px; height: 15px; background: #111; border-radius: 5px; border-bottom: 2px solid #00aaff; }
+        .wing-rear { position: absolute; bottom: -10px; left: -10px; width: 80px; height: 20px; background: #111; border-radius: 3px; border-top: 2px solid #00aaff; }
+        .wheel { width: 16px; height: 35px; background: #050505; position: absolute; border-radius: 4px; }
+        .wheel-fl { top: 10px; left: -20px; transform-origin: center; } .wheel-fr { top: 10px; right: -20px; transform-origin: center; }
+        .wheel-rl { bottom: 15px; left: -20px; } .wheel-rr { bottom: 15px; right: -20px; }
+        .brake-light { width: 15px; height: 5px; background: #ff0000; position: absolute; bottom: 0; opacity: 0; box-shadow: 0 5px 15px #ff0000; }
+        .bl-left { left: 5px; } .bl-right { right: 5px; }
+        .exhaust { width: 8px; height: 20px; background: #ffaa00; position: absolute; bottom: -25px; left: 26px; border-radius: 0 0 10px 10px; opacity: 0; box-shadow: 0 10px 20px #ffaa00; filter: blur(2px); }
+        .smoke { position: absolute; width: 40px; height: 40px; background: rgba(255,255,255,0.4); border-radius: 50%; bottom: 100px; opacity: 0; filter: blur(5px); z-index: 5; }
+        .smoke-l { left: -30px; } .smoke-r { right: -30px; }
+
+        /* --- COACH & METERS --- */
+        .coach-panel { width: 280px; text-align: center; }
+        .instruction-box { background: #111; padding: 15px; border-radius: 8px; border: 2px solid #555; margin-bottom: 20px; height: 110px; display: flex; flex-direction: column; justify-content: center; }
+        #coach-title { font-size: 14px; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+        #coach-action { font-size: 24px; font-weight: bold; color: #fff; }
+        #reaction-display { font-size: 16px; font-weight: bold; color: #00ffaa; margin-top: 8px; min-height: 24px; }
+
+        /* TC Grip Meter */
+        .grip-container { width: 100%; height: 25px; background: #333; border-radius: 12px; position: relative; overflow: hidden; border: 2px solid #444; margin-bottom: 5px; }
+        .grip-bar { width: 0%; height: 100%; background: #00ff00; transition: background 0.2s; }
+        .grip-label { font-size: 12px; color: #aaa; text-transform: uppercase; font-weight: bold;}
+
+        /* Telemetry Pedals */
+        .pedal-group { display: flex; align-items: center; gap: 20px; }
+        .bar-wrap { width: 40px; height: 200px; background: #333; border-radius: 6px; position: relative; display: flex; align-items: flex-end; border: 1px solid #444; }
+        .pedal-bar { width: 100%; height: 0%; transition: height 0.05s; }
+        #brake-bar { background: #ff0000; } #throttle-bar { background: #00ff00; }
+        .target-zone { position: absolute; width: 100%; background: rgba(255,255,255,0.2); border-top: 2px dashed #fff; border-bottom: 2px dashed #fff; display: none; z-index: 10; }
+
+        /* Steering Meter & Clutch */
+        .steering-panel { display: flex; flex-direction: column; align-items: center; width: 140px; }
+        .steering-meter { width: 100%; height: 25px; background: #222; border: 1px solid #444; border-radius: 12px; position: relative; overflow: hidden; margin-bottom: 10px; }
+        .steering-dot { width: 14px; height: 25px; background: #00aaff; position: absolute; left: 50%; transform: translateX(-50%); border-radius: 7px; z-index: 5; }
+        .steering-target { position: absolute; width: 20%; height: 100%; background: rgba(0,255,0,0.3); left: 40%; display: none; z-index: 1; }
+        .clutch-indicator { padding: 4px 10px; background: #333; border-radius: 4px; font-size: 12px; font-weight: bold; color: #555; border: 1px solid #555; transition: 0.2s; }
+        .clutch-active { background: #00aaff; color: #fff; border-color: #00aaff; box-shadow: 0 0 10px #00aaff; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="header-controls">
+        <div id="status" style="color: #ffaa00; margin-bottom: 10px; font-weight: bold;">Press Any Button on Controller to Connect...</div>
+        <select id="corner-selector">
+            <option value="start">Race Start (Lights Out Drill)</option>
+            <option value="hairpin">Tight Hairpin (High TC Spin Risk)</option>
+            <option value="sweeper">Fast Sweeper (Low TC Spin Risk)</option>
+        </select>
+    </div>
+
+    <div class="dashboard-layout">
+        
+        <!-- TELEMETRY BARS -->
+        <div class="pedal-group">
+            <div>
+                <div class="bar-wrap">
+                    <div id="brake-target" class="target-zone"></div>
+                    <div id="brake-bar" class="pedal-bar"></div>
+                </div>
+                <div style="text-align: center; margin-top: 5px; color:#888;">BRK</div>
+            </div>
+
+            <!-- THE STEERING DASHBOARD -->
+            <div class="steering-panel">
+                <div style="text-align: center; margin-bottom: 5px; color:#888; font-weight: bold;">STEERING</div>
+                <div class="steering-meter">
+                    <div id="steering-target" class="steering-target"></div>
+                    <div id="steering-dot" class="steering-dot"></div>
+                </div>
+                <div class="clutch-indicator" id="clutch-ui">CLUTCH (A)</div>
+            </div>
+
+            <div>
+                <div class="bar-wrap">
+                    <div id="throttle-target" class="target-zone"></div>
+                    <div id="throttle-bar" class="pedal-bar"></div>
+                </div>
+                <div style="text-align: center; margin-top: 5px; color:#888;">THR</div>
+            </div>
+        </div>
+
+        <!-- COACHING PANEL -->
+        <div class="coach-panel">
+            <div class="instruction-box" id="instruction-box">
+                <div id="coach-title">Standby</div>
+                <div id="coach-action">PRESS BUTTON</div>
+                <div id="reaction-display"></div>
+            </div>
+
+            <div class="grip-label">Traction Control (Spin Risk)</div>
+            <div class="grip-container">
+                <div id="grip-bar" class="grip-bar"></div>
+            </div>
+            <div style="font-size: 11px; color:#666; margin-top: 5px;">If bar fills red, you spun out.</div>
+        </div>
+
+        <!-- THE EXACT HTML SNIPPET PROVIDED + START LIGHTS -->
+        <div class="track-window" id="track-window">
+            
+            <div id="start-lights-container" class="start-lights-container">
+                <div class="start-light" id="light-1"></div>
+                <div class="start-light" id="light-2"></div>
+                <div class="start-light" id="light-3"></div>
+                <div class="start-light" id="light-4"></div>
+                <div class="start-light" id="light-5"></div>
+            </div>
+
+            <div class="car-chassis" id="car">
+                <div class="wing-front"></div>
+                <div class="wheel wheel-fl" id="wheel-fl"></div>
+                <div class="wheel wheel-fr" id="wheel-fr"></div>
+                <div class="smoke smoke-l" id="smoke-l"></div>
+                <div class="smoke smoke-r" id="smoke-r"></div>
+                <div class="wheel wheel-rl"></div>
+                <div class="wheel wheel-rr"></div>
+                <div class="brake-light bl-left" id="bl-left"></div>
+                <div class="brake-light bl-right" id="bl-right"></div>
+                <div class="wing-rear"></div>
+                <div class="exhaust" id="exhaust"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // DOM Elements
+        const trackWindow = document.getElementById('track-window');
+        const car = document.getElementById('car');
+        const wheelFL = document.getElementById('wheel-fl');
+        const wheelFR = document.getElementById('wheel-fr');
+        const blLeft = document.getElementById('bl-left');
+        const blRight = document.getElementById('bl-right');
+        const exhaust = document.getElementById('exhaust');
+        const smokeL = document.getElementById('smoke-l');
+        const smokeR = document.getElementById('smoke-r');
+        const gripBar = document.getElementById('grip-bar');
+        const clutchUI = document.getElementById('clutch-ui');
+        
+        const coachTitle = document.getElementById('coach-title');
+        const coachAction = document.getElementById('coach-action');
+        const instructionBox = document.getElementById('instruction-box');
+        const reactionDisplay = document.getElementById('reaction-display');
+        
+        const bTarget = document.getElementById('brake-target');
+        const tTarget = document.getElementById('throttle-target');
+        const sTarget = document.getElementById('steering-target');
+        const steeringDot = document.getElementById('steering-dot');
+        const cornerSelector = document.getElementById('corner-selector');
+
+        const lightsContainer = document.getElementById('start-lights-container');
+        const startLights = [
+            document.getElementById('light-1'),
+            document.getElementById('light-2'),
+            document.getElementById('light-3'),
+            document.getElementById('light-4'),
+            document.getElementById('light-5')
+        ];
+
+        let currentPhase = 0;
+        let timer = 0;
+        let isSpun = false;
+
+        // Start Drill specific variables
+        let lightTimer = 0;
+        let lightsLit = 0;
+        let reactionStartTime = 0;
+        let reactionTimeMeasured = false;
+
+        // Physics State Variables
+        let speed = 0;
+        const maxSpeed = 340;
+        let carPosX = 95; 
+        let trackPosY = 0;
+
+        // Reset phases when switching modes
+        cornerSelector.addEventListener('change', () => {
+            currentPhase = 0;
+            timer = 0;
+            speed = 0;
+            isSpun = false;
+            reactionDisplay.innerText = "";
+            reactionTimeMeasured = false;
+            smokeL.style.opacity = 0; 
+            smokeR.style.opacity = 0;
+            startLights.forEach(l => l.classList.remove('red'));
+        });
+
+        function setCoach(title, action, color, btBottom, btHeight, ttBottom, ttHeight, showSteer) {
+            coachTitle.innerText = title;
+            coachAction.innerText = action;
+            instructionBox.style.borderColor = color;
+            coachAction.style.color = color;
+
+            if(btHeight) { bTarget.style.display = 'block'; bTarget.style.bottom = btBottom; bTarget.style.height = btHeight; } 
+            else { bTarget.style.display = 'none'; }
+
+            if(ttHeight) { tTarget.style.display = 'block'; tTarget.style.bottom = ttBottom; tTarget.style.height = ttHeight; } 
+            else { tTarget.style.display = 'none'; }
+
+            if(showSteer) sTarget.style.display = 'block';
+            else sTarget.style.display = 'none';
+        }
+
+        function triggerSpin(message = "SPUN OUT!") {
+            if(isSpun) return;
+            isSpun = true;
+            setCoach("FAILED", message, "#ff0000", null, null, null, null, false);
+            smokeL.style.opacity = 1; smokeR.style.opacity = 1;
+            car.style.transform = "rotate(180deg)";
+            setTimeout(() => {
+                car.style.transform = "rotate(0deg)";
+                currentPhase = 0;
+                isSpun = false;
+                speed = 0;
+                reactionDisplay.innerText = "";
+            }, 2500);
+        }
+
+        function updateTelemetry() {
+            const gamepads = navigator.getGamepads();
+            const gp = gamepads[0];
+
+            if (gp && !isSpun) {
+                document.getElementById('status').innerText = `Live: ${gp.id}`;
+                document.getElementById('status').style.color = '#00ffaa';
+
+                // Hardware Inputs 
+                let rawSteer = gp.axes[0];
+                if (Math.abs(rawSteer) < 0.05) rawSteer = 0; // Deadzone
+                let brake = Math.max(0, gp.buttons[6].value);
+                let throttle = Math.max(0, gp.buttons[7].value);
+                let clutch = gp.buttons[0].pressed; // A Button for Clutch
+                let absSteer = Math.abs(rawSteer);
+                let anyButtonPressed = gp.buttons.some(b => b.pressed);
+
+                // Update UI Bars
+                document.getElementById('brake-bar').style.height = `${brake * 100}%`;
+                document.getElementById('throttle-bar').style.height = `${throttle * 100}%`;
+                steeringDot.style.left = `${((rawSteer + 1) / 2) * 100}%`;
+
+                // Update Clutch Indicator
+                if (clutch) clutchUI.classList.add('clutch-active');
+                else clutchUI.classList.remove('clutch-active');
+
+                // Calculate Speed & Track Scroll
+                // ENGINE REVS BUT CAR DOESN'T MOVE IF CLUTCH IS HELD
+                if (throttle > 0 && !clutch) speed += throttle * 1.8;
+                if (brake > 0) speed -= brake * 5.0;
+                speed -= 0.3 + (speed * 0.002); // Drag
+                if (speed < 0) speed = 0;
+                if (speed > maxSpeed) speed = maxSpeed;
+
+                trackPosY += speed * 0.1;
+                trackWindow.style.backgroundPositionY = `${trackPosY}px, ${trackPosY}px`;
+
+                // Calculate Lateral Steering Movement
+                let turnEffectiveness = speed > 50 ? (1 - (speed / 600)) : (speed / 50);
+                carPosX += rawSteer * turnEffectiveness * 6;
+                
+                // Track boundaries
+                if (carPosX < 10) carPosX = 10;
+                if (carPosX > 180) carPosX = 180;
+
+                // Update Car Visuals
+                let steerAngle = rawSteer * 35;
+                wheelFL.style.transform = `rotate(${steerAngle}deg)`;
+                wheelFR.style.transform = `rotate(${steerAngle}deg)`;
+                car.style.left = `${carPosX}px`;
+                car.style.transform = `rotate(${rawSteer * 10}deg)`;
+                
+                blLeft.style.opacity = brake > 0.1 ? brake : 0;
+                blRight.style.opacity = brake > 0.1 ? brake : 0;
+                exhaust.style.opacity = throttle > 0.5 ? throttle : 0;
+                exhaust.style.height = `${throttle * 30}px`;
+
+                smokeL.style.opacity = 0; smokeR.style.opacity = 0;
+
+                // --- TC / GRIP CALCULATION ---
+                let spinRisk = (throttle * 1.5) * (absSteer * 1.5);
+                
+                // Spin risk from dumping the clutch too aggressively at low speed
+                if (speed < 120 && throttle > 0.75 && !clutch) {
+                    spinRisk += (throttle - 0.7) * 3; 
+                }
+
+                let gripPercentage = Math.min(spinRisk * 100, 100);
+                gripBar.style.width = `${gripPercentage}%`;
+
+                if (gripPercentage < 50) gripBar.style.background = "#00ff00";
+                else if (gripPercentage < 85) gripBar.style.background = "#ffaa00";
+                else gripBar.style.background = "#ff0000";
+
+                if (gripPercentage >= 100 && throttle > 0.1) {
+                    triggerSpin(speed < 120 ? "WHEELSPIN (TOO MUCH THROTTLE)" : "SPUN OUT!");
+                }
+
+                // --- TRACK LOGIC (STATE MACHINE) ---
+                const mode = cornerSelector.value;
+
+                if (mode === 'start') {
+                    lightsContainer.style.display = 'flex';
+                } else {
+                    lightsContainer.style.display = 'none';
+                }
+
+                switch(currentPhase) {
+                    case 0: // Phase 0: Press to Start / Initial Setup
+                        if (mode === 'start') {
+                            setCoach("Pre-Grid", "PRESS ANY BUTTON TO READY", "#00aaff", null, null, null, null, false);
+                            startLights.forEach(l => l.classList.remove('red'));
+                            reactionDisplay.innerText = "";
+                            reactionTimeMeasured = false;
+                            if (anyButtonPressed || throttle > 0 || brake > 0) {
+                                currentPhase = 1; 
+                                timer = 0;
+                            }
+                        } else {
+                            setCoach("Setup", "RELEASE ALL", "#888", null, null, null, null, false);
+                            if(brake === 0 && throttle === 0 && absSteer === 0) currentPhase = 1;
+                        }
+                        break;
+                    
+                    case 1: // Phase 1: Hold RPM (Start) or Straight (Corner)
+                        if (mode === 'start') {
+                            setCoach("Grid Setup", "HOLD CLUTCH (A) & RPM (40-60%)", "#ffaa00", null, null, "40%", "20%", false);
+                            // MUST hold Clutch AND Throttle to start lights
+                            if (clutch && throttle >= 0.4 && throttle <= 0.6 && brake === 0 && speed < 5) {
+                                timer++;
+                                if (timer > 50) { 
+                                    currentPhase = 2; timer = 0; lightsLit = 0; lightTimer = 0; 
+                                }
+                            } else {
+                                timer = 0;
+                            }
+                        } else {
+                            setCoach("Phase 1", "FULL THROTTLE", "#00ff00", null, null, "90%", "10%", false);
+                            if(throttle > 0.9) {
+                                timer++;
+                                if(timer > 40) { currentPhase = 2; timer = 0; }
+                            } else { timer = 0; }
+                        }
+                        break;
+
+                    case 2: // Phase 2: Lights Sequence (Start) or Braking (Corner)
+                        if (mode === 'start') {
+                            setCoach("Lights Sequence", "HOLD STEADY...", "#ff0000", null, null, "40%", "20%", false);
+                            
+                            // Jump Start Penalty - Dropping clutch early or messing up RPM
+                            if(!clutch || throttle < 0.3 || throttle > 0.7) {
+                                setCoach("FAILED", !clutch ? "JUMP START (DROPPED CLUTCH)" : "BAD RPM", "#ff0000", null, null, null, null, false);
+                                setTimeout(() => { currentPhase = 0; speed = 0; }, 2000);
+                                break;
+                            }
+
+                            lightTimer++;
+                            if(lightTimer > 40) { // ~600ms per light
+                                if(lightsLit < 5) {
+                                    startLights[lightsLit].classList.add('red');
+                                    lightsLit++;
+                                    lightTimer = 0;
+                                } else {
+                                    // Random delay before lights out (0.5s to 2.0s)
+                                    if(lightTimer > 40 + Math.random() * 80) {
+                                        startLights.forEach(l => l.classList.remove('red'));
+                                        reactionStartTime = performance.now(); // START REACTION CLOCK
+                                        currentPhase = 3;
+                                        timer = 0;
+                                    }
+                                }
+                            }
+                        } else {
+                            setCoach("Phase 2", "HARD BRAKE", "#ff0000", "90%", "10%", null, null, false);
+                            if(brake > 0.9 && absSteer < 0.1) {
+                                timer++;
+                                if(timer > 30) { currentPhase = 3; timer = 0; }
+                            }
+                            if(brake > 0.5 && absSteer > 0.3) {
+                                setCoach("FAILED", "LOCKED UP!", "#ffaa00", null,null,null,null, false);
+                                smokeL.style.opacity = 1; smokeR.style.opacity = 1;
+                                setTimeout(() => currentPhase = 0, 1500);
+                            }
+                        }
+                        break;
+
+                    case 3: // Phase 3: Launch (Start) or Trail/Turn (Corner)
+                        if (mode === 'start') {
+                            setCoach("LIGHTS OUT", "DROP CLUTCH & GO!", "#00ff00", null, null, "60%", "15%", false);
+                            
+                            // Measure Reaction Time on Clutch Drop
+                            if (!clutch && !reactionTimeMeasured) {
+                                let reactTimeMs = (performance.now() - reactionStartTime).toFixed(0);
+                                reactionTimeMeasured = true;
+                                reactionDisplay.innerText = `Reaction: ${reactTimeMs} ms`;
+                                
+                                if (reactTimeMs < 150) reactionDisplay.style.color = "#00ffaa"; // Amazing
+                                else if (reactTimeMs < 300) reactionDisplay.style.color = "#ffaa00"; // Average
+                                else reactionDisplay.style.color = "#ff0000"; // Slow
+                            }
+
+                            if (!clutch && throttle > 0.6 && speed > 150 && reactionTimeMeasured) {
+                                timer++;
+                                if (timer > 20) {
+                                    setCoach("SUCCESS", "PERFECT LAUNCH!", "#fff", null, null, null, null, false);
+                                    setTimeout(() => { currentPhase = 0; speed = 0; }, 3000);
+                                }
+                            }
+                        } else if(mode === 'hairpin') {
+                            sTarget.style.left = "10%"; sTarget.style.width = "20%";
+                            setCoach("Phase 3 (Hairpin)", "TINY TRAIL & TURN", "#00aaff", "5%", "10%", null, null, true);
+                            if(brake > 0 && brake < 0.15 && rawSteer < -0.6) {
+                                timer++;
+                                if(timer > 40) { currentPhase = 4; timer = 0; }
+                            }
+                        } else if (mode === 'sweeper') {
+                            sTarget.style.left = "20%"; sTarget.style.width = "20%";
+                            setCoach("Phase 3 (Sweeper)", "TRAIL & TURN", "#00aaff", "15%", "15%", null, null, true);
+                            if(brake > 0.15 && brake < 0.30 && rawSteer > -0.6 && rawSteer < -0.2) {
+                                timer++;
+                                if(timer > 40) { currentPhase = 4; timer = 0; }
+                            }
+                        }
+                        break;
+
+                    case 4: // Phase 4: TC Exit (Corner Modes Only)
+                        if(mode === 'hairpin') {
+                            setCoach("Phase 4 (Hairpin Exit)", "GENTLE THROTTLE", "#00ffaa", null, null, "10%", "20%", false);
+                            if(throttle > 0.1 && throttle < 0.3 && absSteer < 0.5) {
+                                timer++;
+                                if(timer > 40) { 
+                                    setCoach("SUCCESS", "PERFECT HAIRPIN", "#fff", null,null,null,null, false);
+                                    setTimeout(() => currentPhase = 0, 1500);
+                                }
+                            }
+                        } else if (mode === 'sweeper') {
+                            setCoach("Phase 4 (Sweeper Exit)", "POWER OUT", "#00ffaa", null, null, "50%", "30%", false);
+                            if(throttle > 0.5 && throttle < 0.8 && absSteer < 0.4) {
+                                timer++;
+                                if(timer > 40) { 
+                                    setCoach("SUCCESS", "PERFECT SWEEP", "#fff", null,null,null,null, false);
+                                    setTimeout(() => currentPhase = 0, 1500);
+                                }
+                            }
+                        }
+                        break;
+                }
+            } else if (isSpun) {
+                speed = Math.max(0, speed - 5);
+                trackPosY += speed * 0.1;
+                trackWindow.style.backgroundPositionY = `${trackPosY}px, ${trackPosY}px`;
+            }
+
+            if (!isSpun) requestAnimationFrame(updateTelemetry);
+            else setTimeout(() => requestAnimationFrame(updateTelemetry), 50);
+        }
+
+        // Initialize listener
+        window.addEventListener("gamepadconnected", () => {
+            document.getElementById('status').innerText = "Controller Connected! Press button to start.";
+            updateTelemetry();
+        });
+    </script>
+</body>
+</html>

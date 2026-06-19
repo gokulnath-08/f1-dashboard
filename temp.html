@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        /* Chrome, Safari, Edge, Opera */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Firefox */
+        input[type=number] {
+            -moz-appearance: textfield;
+            width: 90px;
+            height: 28px;
+            font-size: 16px;
+            padding: 0;
+            padding-left: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <label for="age">Enter Age:</label>
+    <input type="number" id="age" name="age" min="1" max="120" placeholder="No arrows">
+</body>
+
+</html>

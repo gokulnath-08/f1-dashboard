@@ -1,0 +1,3402 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FIA F1 Official Telemetry Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            /* ── 2026 Linear/Bento UI Dark Mode Palette ── */
+            --f1-dark: #000000;
+            --f1-dark-alt: #0a0a0a;
+            --f1-panel: #111111;
+            --f1-panel-solid: #111111;
+            --f1-border: #222222;
+            --f1-border-strong: #333333;
+
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --text-dim: #52525b;
+
+            /* Telemetry Colors (Restored for High Contrast) */
+            --f1-red: #ef4444;
+            --f1-red-glow: rgba(239, 68, 68, 0.2);
+            --fia-green: #22c55e;
+            --fia-green-glow: rgba(34, 197, 94, 0.3);
+            --fia-purple: #c084fc;
+            --fia-purple-glow: rgba(192, 132, 252, 0.3);
+            --fia-yellow: #eab308;
+            --fia-yellow-glow: rgba(234, 179, 8, 0.3);
+            --fia-blue: #3b82f6;
+
+            /* Bento Grid Variables */
+            --bento-radius: 16px;
+            --bento-gap: 12px;
+            --card-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        body {
+            margin: 0;
+            padding: 12px;
+            background-color: var(--f1-dark);
+            color: var(--text-main);
+            font-family:
+                "Titillium Web",
+                -apple-system,
+                sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: var(--bento-gap);
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ══════════ BENTO HEADER ROW ══════════ */
+        .header-bar {
+            flex: 0 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: var(--bento-gap);
+            animation: fadeInUp 0.3s ease both;
+            border: none;
+            background: transparent;
+            padding: 0;
+        }
+
+        .header-item {
+            background: var(--f1-panel);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--bento-radius);
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+            transition: border-color 0.2s;
+        }
+
+        .header-item:hover {
+            border-color: var(--f1-border-strong);
+        }
+
+        /* ══════════ PILL NAVIGATION ══════════ */
+        .nav-bar {
+            flex: 0 0 auto;
+            display: flex;
+            gap: 6px;
+            padding: 6px;
+            background: var(--f1-panel);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--bento-radius);
+            width: fit-content;
+            overflow-x: auto;
+            animation: fadeInUp 0.3s 0.05s ease both;
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        .nav-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-family: "Titillium Web", sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-btn:hover {
+            color: var(--text-main);
+            background: var(--f1-dark-alt);
+        }
+
+        .nav-btn.active {
+            background: var(--f1-border-strong);
+            color: var(--text-main);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        /* ══════════ MAIN CONTENT & LAYOUTS ══════════ */
+        #main-content {
+            flex: 1 1 auto;
+            min-height: 0;
+            position: relative;
+        }
+
+        .tab-content {
+            display: none;
+            height: 100%;
+            width: 100%;
+            gap: var(--bento-gap);
+        }
+
+        #tab-radar.active {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            animation: fadeInUp 0.3s 0.1s ease both;
+        }
+
+        #tab-telemetry.active,
+        #tab-engineering.active {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            animation: fadeInUp 0.3s 0.1s ease both;
+        }
+
+        #tab-tyres.active,
+        #tab-leaderboard.active,
+        #tab-history.active {
+            display: flex;
+            flex-direction: column;
+            animation: fadeInUp 0.3s 0.1s ease both;
+        }
+
+        /* ══════════ PANELS ══════════ */
+        .panel {
+            background: var(--f1-panel);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--bento-radius);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow-y: auto;
+        }
+
+        .panel-header {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--f1-border);
+        }
+
+        /* ══════════ NESTED BENTO CARDS (DATA ROWS) ══════════ */
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--f1-dark-alt);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--card-radius);
+            padding: 10px 14px;
+            margin-bottom: 6px;
+            transition: border-color 0.2s;
+        }
+
+        .data-row:hover {
+            border-color: var(--f1-border-strong);
+        }
+
+        .label {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* ══════════ RESTORED TELEMETRY COLORS & FONTS ══════════ */
+        .val {
+            font-family: "Roboto Mono", monospace;
+            font-size: 1.1rem;
+            color: var(--text-main);
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .val.highlight {
+            font-weight: 700;
+        }
+
+        .val.purple {
+            color: var(--fia-purple) !important;
+            text-shadow: 0 0 12px var(--fia-purple-glow);
+        }
+
+        .val.green {
+            color: var(--fia-green) !important;
+            text-shadow: 0 0 12px var(--fia-green-glow);
+        }
+
+        .val.yellow {
+            color: var(--fia-yellow) !important;
+            text-shadow: 0 0 12px var(--fia-yellow-glow);
+        }
+
+        .val-large {
+            font-size: 1.3rem;
+        }
+
+        .val-xlarge {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .val-giant {
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+
+        /* ══════════ FLAGS & ALERTS ══════════ */
+        .flag-box {
+            text-align: center;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: var(--card-radius);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        /* ══════════ PROGRESS BARS ══════════ */
+        .bar-bg {
+            background: var(--f1-dark);
+            height: 6px;
+            border-radius: 3px;
+            margin: 6px 0 14px 0;
+            border: 1px solid var(--f1-border);
+            overflow: hidden;
+        }
+
+        .fill-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.1s linear;
+        }
+
+        .sparkline {
+            width: 100%;
+            height: 90px;
+            background: var(--f1-dark-alt);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--card-radius);
+            margin-top: 12px;
+        }
+
+        /* ══════════ SECTORS ══════════ */
+        .sector-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .sector-card {
+            background: var(--f1-dark-alt);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--card-radius);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s;
+        }
+
+        .sector-card.live {
+            border-color: var(--fia-yellow);
+            background: rgba(234, 179, 8, 0.08);
+        }
+
+        .sector-card.complete {
+            border-color: var(--fia-green);
+            background: rgba(34, 197, 94, 0.08);
+        }
+
+        .sector-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .sector-chip {
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--f1-border-strong);
+            color: var(--text-muted);
+            font-family: "Roboto Mono", monospace;
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+
+        .sector-card.live .sector-chip {
+            background: var(--fia-yellow);
+            color: #000;
+        }
+
+        .sector-card.complete .sector-chip {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--fia-green);
+        }
+
+        .sector-delta {
+            display: flex;
+            justify-content: space-between;
+            font-family: "Roboto Mono", monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ══════════ CAR TYRE ALIGNMENT ══════════ */
+        .car-tyre-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: var(--bento-gap);
+            flex-grow: 1;
+            min-height: 0;
+            align-items: center;
+        }
+
+        .tyre-pos-fl {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .tyre-pos-fr {
+            grid-column: 3;
+            grid-row: 1;
+        }
+
+        .tyre-pos-rl {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .tyre-pos-rr {
+            grid-column: 3;
+            grid-row: 2;
+        }
+
+        .car-visual-center {
+            grid-column: 2;
+            grid-row: 1 / 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tyre-box {
+            background: var(--f1-dark-alt);
+            padding: 16px;
+            border-radius: var(--card-radius);
+            border: 1px solid var(--f1-border);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: border-color 0.2s;
+        }
+
+        .tyre-box:hover {
+            border-color: var(--text-dim);
+        }
+
+        .tyre-box .label {
+            margin-bottom: 6px;
+            border-bottom: none;
+        }
+
+        .tyre-wear-bar-container {
+            width: 100%;
+            height: 4px;
+            background: var(--f1-dark);
+            border-radius: 2px;
+            margin: 8px 0;
+        }
+
+        .tyre-wear-bar {
+            height: 100%;
+            border-radius: 2px;
+            transition:
+                width 0.3s ease,
+                background-color 0.3s ease;
+        }
+
+        /* ══════════ TRACK MAP ══════════ */
+        .map-wrapper {
+            flex-grow: 1;
+            position: relative;
+            background: var(--f1-dark-alt);
+            border-radius: calc(var(--bento-radius) - 2px);
+            border: 1px solid var(--f1-border);
+            overflow: hidden;
+        }
+
+        #track-map-container,
+        .map-label-layer {
+            position: absolute;
+            inset: 0;
+        }
+
+        .map-label-layer {
+            pointer-events: none;
+            z-index: 8;
+        }
+
+        .driver-callout {
+            position: absolute;
+            padding: 4px 8px;
+            border: 1px solid currentColor;
+            border-radius: 6px;
+            background: rgba(14, 14, 17, 0.9);
+            color: #fff;
+            font-family: "Roboto Mono", monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            transform: translate(-50%, calc(-100% - 12px));
+        }
+
+        .track-popup {
+            position: absolute;
+            padding: 14px;
+            border: 1px solid var(--f1-border-strong);
+            border-left: 4px solid currentColor;
+            border-radius: var(--card-radius);
+            background: rgba(14, 14, 17, 0.95);
+            color: #fff;
+            transform: translate(14px, -50%);
+            z-index: 12;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .map-zoom-controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 14;
+        }
+
+        .map-zoom-controls button {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: 1px solid var(--f1-border);
+            background: var(--f1-panel);
+            color: var(--text-main);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .map-zoom-controls button:hover {
+            background: var(--f1-border-strong);
+        }
+
+        .map-overlay {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: var(--f1-panel);
+            padding: 6px 12px;
+            border: 1px solid var(--f1-border);
+            border-radius: 8px;
+            font-family: "Roboto Mono", monospace;
+            font-size: 0.75rem;
+            z-index: 10;
+        }
+
+        /* ══════════ LEADERBOARD ALIGNMENT ══════════ */
+        .lb-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 12px 8px 12px;
+            color: var(--text-dim);
+            font-weight: 700;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        .lb-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--f1-dark-alt);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--card-radius);
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            gap: 8px;
+            transition: border-color 0.2s;
+        }
+
+        .lb-row:hover {
+            border-color: var(--f1-border-strong);
+        }
+
+        .col-pos {
+            width: 30px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .col-driver {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .team-stripe {
+            width: 4px;
+            height: 16px;
+            border-radius: 2px;
+        }
+
+        .driver-name-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .col-best {
+            width: 90px;
+            text-align: right;
+            font-size: 0.95rem;
+        }
+
+        .col-gap {
+            width: 65px;
+            text-align: right;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .col-laps {
+            width: 45px;
+            text-align: right;
+            font-size: 0.95rem;
+            color: var(--text-dim);
+        }
+
+        .col-stat {
+            width: 65px;
+            text-align: right;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .col-tyre {
+            width: 50px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .col-int {
+            width: 75px;
+            text-align: right;
+            font-size: 0.95rem;
+        }
+
+        /* ══════════ HISTORY TABLE ALIGNMENT ══════════ */
+        .history-table {
+            border-collapse: collapse;
+            width: max-content;
+            font-family: "Roboto Mono", monospace;
+            font-size: 0.85rem;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 8px 14px;
+            border: 1px solid var(--f1-border);
+            text-align: center;
+            white-space: nowrap;
+            background: var(--f1-dark-alt);
+        }
+
+        .history-table th {
+            background: var(--f1-dark);
+            color: var(--text-muted);
+            font-family: "Titillium Web", sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sticky-pos {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            width: 40px;
+        }
+
+        .sticky-name {
+            position: sticky;
+            left: 40px;
+            z-index: 2;
+            text-align: left !important;
+            border-right: 2px solid var(--f1-border-strong);
+        }
+
+        .history-table th.sticky-pos,
+        .history-table th.sticky-name {
+            background: var(--f1-dark) !important;
+            z-index: 3;
+        }
+
+        /* Restored History Colors */
+        .time-pb {
+            color: var(--fia-green) !important;
+            font-weight: 700;
+            text-shadow: 0 0 8px var(--fia-green-glow);
+        }
+
+        .time-sb {
+            color: var(--fia-purple) !important;
+            font-weight: 700;
+            text-shadow: 0 0 8px var(--fia-purple-glow);
+        }
+
+        .time-yellow {
+            color: var(--fia-yellow) !important;
+            font-weight: 700;
+        }
+
+        .time-invalid {
+            color: var(--f1-red) !important;
+            text-decoration: line-through;
+        }
+
+        /* ══════════ SCROLLBARS & INPUTS ══════════ */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--f1-border-strong);
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-dim);
+        }
+
+        select,
+        input[type="number"] {
+            background: var(--f1-dark) !important;
+            border: 1px solid var(--f1-border) !important;
+            color: var(--text-main) !important;
+            border-radius: 6px !important;
+            padding: 4px 8px !important;
+            font-family: "Roboto Mono", monospace;
+        }
+
+        /* ══════════ RESPONSIVE ══════════ */
+        @media (max-width: 992px) {
+            #tab-radar.active {
+                grid-template-columns: 1fr;
+            }
+
+            .car-tyre-layout {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .car-visual-center {
+                grid-column: 1 / 3;
+                grid-row: 2;
+                min-height: 280px;
+            }
+
+            .tyre-pos-rl {
+                grid-column: 1;
+                grid-row: 3;
+            }
+
+            .tyre-pos-rr {
+                grid-column: 2;
+                grid-row: 3;
+            }
+
+            .map-wrapper {
+                min-height: 350px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 6px;
+                gap: 6px;
+                overflow-y: auto;
+                height: auto;
+            }
+
+            .header-bar {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+
+            .nav-bar {
+                width: 100%;
+                border-radius: var(--card-radius);
+            }
+
+            #tab-telemetry.active,
+            #tab-engineering.active {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                padding: 12px;
+                border-radius: 12px;
+            }
+
+            .val-xlarge {
+                font-size: 1.25rem;
+            }
+
+            .val-giant {
+                font-size: 1.5rem;
+            }
+
+            .col-laps,
+            .col-stat {
+                display: none;
+            }
+
+            #main-content {
+                overflow: visible;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header-bar">
+        <div class="header-item">
+            <div class="label">TRACK</div>
+            <div class="val highlight val-large" id="track-name">LOADING...</div>
+        </div>
+        <div class="header-item">
+            <div class="label">SESSION</div>
+            <div class="val highlight val-large" id="session-type">--</div>
+        </div>
+        <div class="header-item">
+            <div class="label">WEATHER</div>
+            <div class="val highlight" id="weather">--</div>
+        </div>
+        <div class="header-item">
+            <div class="label">TRACK TEMP</div>
+            <div class="val" id="track-temp">-- °C</div>
+        </div>
+        <div class="header-item">
+            <div class="label">LAP</div>
+            <div class="val">
+                <span id="lap-num">0</span> / <span id="laps-total">0</span>
+                <span style="font-size: 0.85rem; color: var(--text-muted)">(<span id="laps-left"
+                        style="color: var(--text-main); font-weight: bold">0</span>
+                    Laps Left)</span>
+            </div>
+        </div>
+        <div class="header-item">
+            <div class="label">POSITION</div>
+            <div class="val highlight val-xlarge">P<span id="pos">--</span></div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <button class="nav-btn active" onclick="switchTab('tab-radar', this)">
+            Timing & Radar
+        </button>
+        <button class="nav-btn" onclick="switchTab('tab-telemetry', this)">
+            Telemetry
+        </button>
+        <button class="nav-btn" onclick="switchTab('tab-tyres', this)">
+            Tyre Data
+        </button>
+        <button class="nav-btn" onclick="switchTab('tab-engineering', this)">
+            Engineering
+        </button>
+        <button class="nav-btn" onclick="switchTab('tab-leaderboard', this)">
+            Classification
+        </button>
+        <button class="nav-btn" onclick="switchTab('tab-history', this)">
+            Lap Analysis
+        </button>
+    </div>
+
+    <div id="main-content">
+        <div id="tab-radar" class="tab-content active">
+            <div class="panel" style="gap: 12px">
+                <div style="display: flex; flex-direction: column">
+                    <div class="panel-header">Race Control</div>
+                    <div class="flag-box" id="fia-flag" style="background-color: var(--fia-green); color: #000">
+                        GREEN FLAG
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Safety Car</span>
+                        <span class="val" id="sc-status">Clear</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Pit Status</span>
+                        <span class="val" id="pit-status" style="color: var(--fia-yellow)">ON TRACK</span>
+                    </div>
+
+                    <div class="data-row" style="margin-top: 5px">
+                        <span class="label">Track Length</span>
+                        <span class="val" id="track-length" style="font-size: 1.05rem">-- km</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Race Distance</span>
+                        <span class="val" id="race-dist" style="font-size: 1.05rem">-- km</span>
+                    </div>
+                </div>
+
+                <div style="
+              display: flex;
+              flex-direction: column;
+              border-top: 1px solid var(--f1-border);
+              padding-top: 12px;
+            ">
+                    <div class="panel-header">Lap Timing</div>
+
+                    <div class="data-row" style="margin-top: 5px">
+                        <span class="label">Current</span>
+                        <div style="text-align: right">
+                            <span class="val highlight val-large" id="lap-current">--:--.---</span>
+                            <div id="delta-live" style="
+                    font-size: 0.9rem;
+                    font-family: &quot;Roboto Mono&quot;, monospace;
+                    font-weight: bold;
+                    margin-top: -2px;
+                  ">
+                                --
+                            </div>
+                            <div id="delta-reference" style="
+                    font-size: 0.7rem;
+                    color: var(--text-muted);
+                    font-family: &quot;Roboto Mono&quot;, monospace;
+                    margin-top: -2px;
+                  ">
+                                Fastest ref: --:--.---
+                            </div>
+                        </div>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Last Lap</span>
+                        <div style="text-align: right">
+                            <span class="val" id="lap-last">--:--.---</span>
+                        </div>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Personal Best</span>
+                        <div style="text-align: right">
+                            <span class="val green" id="lap-best">--:--.---</span>
+                        </div>
+                    </div>
+                    <div class="panel-header" style="margin-top: 8px">Sectors</div>
+                    <div class="sector-grid">
+                        <div class="sector-card" id="sector-row-s1">
+                            <div class="sector-card-head">
+                                <span class="label">S1</span>
+                                <span class="sector-chip" id="lap-s1-state">WAIT</span>
+                            </div>
+                            <span class="val" id="lap-s1">--.---</span>
+                            <div class="sector-delta">
+                                <span>Prev</span><span id="lap-s1-prev">--</span>
+                            </div>
+                            <div class="sector-delta">
+                                <span>Best</span><span id="lap-s1-best">--</span>
+                            </div>
+                        </div>
+                        <div class="sector-card" id="sector-row-s2">
+                            <div class="sector-card-head">
+                                <span class="label">S2</span>
+                                <span class="sector-chip" id="lap-s2-state">WAIT</span>
+                            </div>
+                            <span class="val" id="lap-s2">--.---</span>
+                            <div class="sector-delta">
+                                <span>Prev</span><span id="lap-s2-prev">--</span>
+                            </div>
+                            <div class="sector-delta">
+                                <span>Best</span><span id="lap-s2-best">--</span>
+                            </div>
+                        </div>
+                        <div class="sector-card" id="sector-row-s3">
+                            <div class="sector-card-head">
+                                <span class="label">S3</span>
+                                <span class="sector-chip" id="lap-s3-state">WAIT</span>
+                            </div>
+                            <span class="val" id="lap-s3">--.---</span>
+                            <div class="sector-delta">
+                                <span>Prev</span><span id="lap-s3-prev">--</span>
+                            </div>
+                            <div class="sector-delta">
+                                <span>Best</span><span id="lap-s3-best">--</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="data-row" style="margin-top: 8px">
+                        <span class="label" style="color: var(--fia-purple)">Track Record
+                            <span id="record-driver" style="font-size: 0.75rem; color: var(--text-muted)"></span></span>
+                        <div style="text-align: right">
+                            <span class="val" id="lap-record" style="
+                    color: var(--fia-purple);
+                    text-shadow: 0 0 10px var(--fia-purple-glow);
+                  ">--:--.---</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="
+              display: flex;
+              flex-direction: column;
+              border-top: 1px solid var(--f1-border);
+              padding-top: 12px;
+            ">
+                    <div class="panel-header">Strategy & Race Control</div>
+                    <div class="data-row">
+                        <span class="label">Gap Ahead</span>
+                        <span class="val" id="gap-front" style="color: var(--fia-green)">+0.000s</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Compound</span>
+                        <span class="val" id="tyre-compound">Unknown</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Stint Age</span>
+                        <span class="val" id="tyre-age">0 Laps</span>
+                    </div>
+                    <div class="data-row" id="sc-delta-row" style="display: none">
+                        <span class="label">SC Delta</span>
+                        <span class="val" id="sc-delta" style="color: var(--fia-yellow)">0.000s</span>
+                    </div>
+                    <div class="flag-box" id="strategy-box" style="
+                background-color: var(--f1-dark);
+                border: 1px solid var(--text-muted);
+                color: var(--text-main);
+                font-size: 1.1rem;
+                margin-top: 8px;
+                margin-bottom: 0;
+              ">
+                        CALCULATING...
+                    </div>
+                </div>
+
+                <div style="
+              display: flex;
+              flex-direction: column;
+              border-top: 1px solid var(--f1-border);
+              padding-top: 12px;
+              margin-top: 12px;
+            ">
+                    <div class="panel-header">Driver Offenses</div>
+                    <div class="data-row">
+                        <span class="label">Time Penalties</span>
+                        <span class="val" id="penalties">0s</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Warnings</span>
+                        <span class="val" id="warnings">0</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Unserved DT</span>
+                        <span class="val" id="unserved-dt">0</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Unserved SG</span>
+                        <span class="val" id="unserved-sg">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="padding: 0">
+                <div class="panel-header" style="
+              margin: 15px 15px 0 15px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            ">
+                    <div style="display: flex; align-items: center; gap: 10px">
+                        <span>Track Position</span>
+                        <select id="track-selector" style="
+                  display: none;
+                  background: var(--f1-dark);
+                  color: #fff;
+                  border: 1px solid var(--f1-border);
+                  border-radius: 4px;
+                  padding: 2px 6px;
+                  font-family: &quot;Roboto Mono&quot;, monospace;
+                  font-size: 0.8rem;
+                  cursor: pointer;
+                " onchange="loadOfflineTrack(this.value)">
+                            <option value="">Load Track...</option>
+                        </select>
+                    </div>
+                    <button onclick="promptAddSector()" style="
+                background: var(--fia-purple);
+                border: none;
+                color: #fff;
+                width: 24px;
+                height: 24px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: bold;
+                font-family: &quot;Roboto Mono&quot;, monospace;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                line-height: 1;
+              " title="Add Custom Sector by Time">
+                        +
+                    </button>
+                </div>
+                <div class="map-wrapper">
+                    <div id="track-map-container"></div>
+                    <div id="map-label-layer" class="map-label-layer"></div>
+                    <div class="map-zoom-controls">
+                        <button type="button" id="map-zoom-in" aria-label="Zoom in">
+                            +
+                        </button>
+                        <button type="button" id="map-zoom-out" aria-label="Zoom out">
+                            -
+                        </button>
+                    </div>
+                    <div class="map-overlay">
+                        <span style="color: var(--text-muted)">Uplink: </span><span id="ws-status"
+                            style="color: var(--fia-yellow)">CONNECTING</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-telemetry" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">Powertrain</div>
+                <div class="data-row">
+                    <span class="label">Speed</span>
+                    <span class="val val-giant" id="speed">0</span><span class="label">km/h</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Gear</span>
+                    <span class="val val-giant" id="gear" style="color: var(--f1-red)">N</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">RPM</span> <span class="val" id="rpm">0</span>
+                </div>
+
+                <div class="label" style="margin-top: 20px">
+                    Throttle
+                    <span id="thr-val" style="float: right; color: var(--text-main)">0%</span>
+                </div>
+                <div class="bar-bg">
+                    <div class="fill-bar" id="throttle" style="background: var(--fia-green)"></div>
+                </div>
+
+                <div class="label" style="margin-top: 6px">
+                    Brake
+                    <span id="brk-val" style="float: right; color: var(--text-main)">0%</span>
+                </div>
+                <div class="bar-bg">
+                    <div class="fill-bar" id="brake" style="background: var(--f1-red)"></div>
+                </div>
+
+                <div class="label" style="margin-top: 6px">
+                    Clutch
+                    <span id="clu-val" style="float: right; color: var(--text-main)">0%</span>
+                </div>
+                <div class="bar-bg">
+                    <div class="fill-bar" id="clutch" style="background: var(--fia-yellow)"></div>
+                </div>
+
+                <div class="data-row" style="margin-top: 15px">
+                    <span class="label">Steering Angle</span>
+                    <span class="val" id="steer">0.00</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">DRS</span>
+                    <span class="val" id="drs">CLOSED</span>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">Chassis Dynamics</div>
+                <div class="data-row">
+                    <span class="label">Lat | Long | Vert G</span>
+                    <span class="val"><span id="g-lat">0.00</span> | <span id="g-long">0.00</span> |
+                        <span id="g-vert">0.00</span></span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Total G Load</span>
+                    <span class="val highlight" id="g-total">0.00 G</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Max G Load</span>
+                    <span class="val highlight" id="g-max" style="color: var(--fia-yellow)">0.00 G</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Driver Feel</span>
+                    <span class="val" id="g-feel" style="color: var(--text-muted)">STABLE</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Pitch | Roll</span>
+                    <span class="val"><span id="pitch">0.00</span> | <span id="roll">0.00</span></span>
+                </div>
+
+                <canvas class="sparkline" id="g-graph"></canvas>
+
+                <div style="display: flex; gap: 20px; margin-top: 20px">
+                    <div style="flex: 1">
+                        <div class="label">Susp FL</div>
+                        <div class="bar-bg">
+                            <div class="fill-bar" id="susp-fl" style="background: var(--fia-blue)"></div>
+                        </div>
+                        <div class="label" style="margin-top: 10px">Susp RL</div>
+                        <div class="bar-bg">
+                            <div class="fill-bar" id="susp-rl" style="background: var(--fia-blue)"></div>
+                        </div>
+                    </div>
+                    <div style="flex: 1">
+                        <div class="label">Susp FR</div>
+                        <div class="bar-bg">
+                            <div class="fill-bar" id="susp-fr" style="background: var(--fia-blue)"></div>
+                        </div>
+                        <div class="label" style="margin-top: 10px">Susp RR</div>
+                        <div class="bar-bg">
+                            <div class="fill-bar" id="susp-rr" style="background: var(--fia-blue)"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-tyres" class="tab-content">
+            <div class="panel" style="flex-grow: 1; overflow: hidden">
+                <div class="panel-header">Tyre Carcass &amp; Brake Thermals</div>
+                <div class="car-tyre-layout">
+                    <!-- Front Left Data -->
+                    <div class="tyre-box tyre-pos-fl">
+                        <div class="label">FRONT LEFT</div>
+                        <div class="val highlight val-large">
+                            <span id="temp-surf-fl">0</span>°C /
+                            <span id="temp-in-fl">0</span>°C
+                        </div>
+                        <div class="tyre-wear-bar-container">
+                            <div class="tyre-wear-bar" id="wear-bar-fl"></div>
+                        </div>
+                        <div class="val tyre-wear-val" id="wear-text-fl">0% Wear</div>
+                        <div class="val"><span id="press-fl">0.0</span> psi</div>
+                        <div class="val" style="color: var(--fia-blue); margin-top: 4px">
+                            Brk: <span id="brake-temp-fl">0</span>°C
+                        </div>
+                    </div>
+
+                    <!-- Front Right Data -->
+                    <div class="tyre-box tyre-pos-fr">
+                        <div class="label">FRONT RIGHT</div>
+                        <div class="val highlight val-large">
+                            <span id="temp-surf-fr">0</span>°C /
+                            <span id="temp-in-fr">0</span>°C
+                        </div>
+                        <div class="tyre-wear-bar-container">
+                            <div class="tyre-wear-bar" id="wear-bar-fr"></div>
+                        </div>
+                        <div class="val tyre-wear-val" id="wear-text-fr">0% Wear</div>
+                        <div class="val"><span id="press-fr">0.0</span> psi</div>
+                        <div class="val" style="color: var(--fia-blue); margin-top: 4px">
+                            Brk: <span id="brake-temp-fr">0</span>°C
+                        </div>
+                    </div>
+
+                    <!-- Center Car SVG Visual -->
+                    <div class="car-visual-center">
+                        <svg id="car-tyre-svg" viewBox="0 0 300 520" xmlns="http://www.w3.org/2000/svg"
+                            style="width: 100%; height: 100%; max-height: 100%">
+                            <defs>
+                                <filter id="tyre-glow">
+                                    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                                    <feMerge>
+                                        <feMergeNode in="blur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                                <linearGradient id="carBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color: rgba(255, 255, 255, 0.08)" />
+                                    <stop offset="100%" style="stop-color: rgba(255, 255, 255, 0.02)" />
+                                </linearGradient>
+                            </defs>
+
+                            <!-- Car Body - Top Down F1 Silhouette -->
+                            <g id="car-body" opacity="0.7">
+                                <!-- Main body -->
+                                <path
+                                    d="M150,30 L170,50 L178,80 L185,120 L188,160 L190,200 L188,280 L192,320 L195,380 L190,430 L180,460 L170,480 L150,490 L130,480 L120,460 L110,430 L105,380 L108,320 L112,280 L110,200 L112,160 L115,120 L122,80 L130,50 Z"
+                                    fill="url(#carBodyGrad)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+
+                                <!-- Front wing -->
+                                <path d="M105,55 L195,55 L200,65 L195,75 L105,75 L100,65 Z"
+                                    fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+
+                                <!-- Rear wing -->
+                                <path d="M100,460 L200,460 L205,470 L200,480 L100,480 L95,470 Z"
+                                    fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+
+                                <!-- Cockpit / Halo -->
+                                <ellipse cx="150" cy="195" rx="22" ry="40" fill="rgba(0,0,0,0.5)"
+                                    stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                                <path d="M140,165 L160,165 L158,195 L150,210 L142,195 Z" fill="rgba(255,255,255,0.04)"
+                                    stroke="rgba(255,255,255,0.08)" stroke-width="0.8" />
+
+                                <!-- Sidepods -->
+                                <path d="M112,180 L100,200 L98,280 L110,300 L112,280 Z" fill="rgba(255,255,255,0.03)"
+                                    stroke="rgba(255,255,255,0.08)" stroke-width="0.8" />
+                                <path d="M188,180 L200,200 L202,280 L190,300 L188,280 Z" fill="rgba(255,255,255,0.03)"
+                                    stroke="rgba(255,255,255,0.08)" stroke-width="0.8" />
+
+                                <!-- Center line -->
+                                <line x1="150" y1="60" x2="150" y2="480" stroke="rgba(255,255,255,0.06)"
+                                    stroke-width="0.5" stroke-dasharray="4,6" />
+                            </g>
+
+                            <!-- Tyres - Rounded rectangles positioned at each corner -->
+                            <!-- Front Left Tyre -->
+                            <g id="tyre-visual-fl" filter="url(#tyre-glow)">
+                                <rect x="50" y="60" width="48" height="80" rx="12" ry="12" id="tyre-rect-fl"
+                                    fill="#00e461" opacity="0.85" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+                                <text x="74" y="96" text-anchor="middle" fill="white"
+                                    font-family="Roboto Mono, monospace" font-size="15" font-weight="700"
+                                    opacity="0.95">
+                                    <tspan id="tyre-pct-fl">0%</tspan>
+                                </text>
+                                <text x="74" y="114" text-anchor="middle" fill="rgba(255,255,255,0.6)"
+                                    font-family="Roboto Mono, monospace" font-size="9" font-weight="600">
+                                    WEAR
+                                </text>
+                            </g>
+
+                            <!-- Front Right Tyre -->
+                            <g id="tyre-visual-fr" filter="url(#tyre-glow)">
+                                <rect x="202" y="60" width="48" height="80" rx="12" ry="12" id="tyre-rect-fr"
+                                    fill="#00e461" opacity="0.85" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+                                <text x="226" y="96" text-anchor="middle" fill="white"
+                                    font-family="Roboto Mono, monospace" font-size="15" font-weight="700"
+                                    opacity="0.95">
+                                    <tspan id="tyre-pct-fr">0%</tspan>
+                                </text>
+                                <text x="226" y="114" text-anchor="middle" fill="rgba(255,255,255,0.6)"
+                                    font-family="Roboto Mono, monospace" font-size="9" font-weight="600">
+                                    WEAR
+                                </text>
+                            </g>
+
+                            <!-- Rear Left Tyre -->
+                            <g id="tyre-visual-rl" filter="url(#tyre-glow)">
+                                <rect x="45" y="390" width="52" height="86" rx="12" ry="12" id="tyre-rect-rl"
+                                    fill="#00e461" opacity="0.85" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+                                <text x="71" y="428" text-anchor="middle" fill="white"
+                                    font-family="Roboto Mono, monospace" font-size="16" font-weight="700"
+                                    opacity="0.95">
+                                    <tspan id="tyre-pct-rl">0%</tspan>
+                                </text>
+                                <text x="71" y="448" text-anchor="middle" fill="rgba(255,255,255,0.6)"
+                                    font-family="Roboto Mono, monospace" font-size="9" font-weight="600">
+                                    WEAR
+                                </text>
+                            </g>
+
+                            <!-- Rear Right Tyre -->
+                            <g id="tyre-visual-rr" filter="url(#tyre-glow)">
+                                <rect x="203" y="390" width="52" height="86" rx="12" ry="12" id="tyre-rect-rr"
+                                    fill="#00e461" opacity="0.85" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+                                <text x="229" y="428" text-anchor="middle" fill="white"
+                                    font-family="Roboto Mono, monospace" font-size="16" font-weight="700"
+                                    opacity="0.95">
+                                    <tspan id="tyre-pct-rr">0%</tspan>
+                                </text>
+                                <text x="229" y="448" text-anchor="middle" fill="rgba(255,255,255,0.6)"
+                                    font-family="Roboto Mono, monospace" font-size="9" font-weight="600">
+                                    WEAR
+                                </text>
+                            </g>
+
+                            <!-- Axle lines connecting tyres to body -->
+                            <line x1="93" y1="100" x2="115" y2="100" stroke="rgba(255,255,255,0.1)"
+                                stroke-width="1.5" />
+                            <line x1="207" y1="100" x2="185" y2="100" stroke="rgba(255,255,255,0.1)"
+                                stroke-width="1.5" />
+                            <line x1="92" y1="434" x2="110" y2="434" stroke="rgba(255,255,255,0.1)"
+                                stroke-width="1.5" />
+                            <line x1="208" y1="434" x2="190" y2="434" stroke="rgba(255,255,255,0.1)"
+                                stroke-width="1.5" />
+
+                            <!-- Compound label -->
+                            <text x="150" y="310" text-anchor="middle" fill="rgba(255,255,255,0.5)"
+                                font-family="Titillium Web, sans-serif" font-size="10" font-weight="700"
+                                letter-spacing="2" id="car-compound-label">
+                                COMPOUND
+                            </text>
+                            <text x="150" y="330" text-anchor="middle" fill="var(--text-main)"
+                                font-family="Roboto Mono, monospace" font-size="14" font-weight="700"
+                                id="car-compound-value">
+                                --
+                            </text>
+                        </svg>
+                    </div>
+
+                    <!-- Rear Left Data -->
+                    <div class="tyre-box tyre-pos-rl">
+                        <div class="label">REAR LEFT</div>
+                        <div class="val highlight val-large">
+                            <span id="temp-surf-rl">0</span>°C /
+                            <span id="temp-in-rl">0</span>°C
+                        </div>
+                        <div class="tyre-wear-bar-container">
+                            <div class="tyre-wear-bar" id="wear-bar-rl"></div>
+                        </div>
+                        <div class="val tyre-wear-val" id="wear-text-rl">0% Wear</div>
+                        <div class="val"><span id="press-rl">0.0</span> psi</div>
+                        <div class="val" style="color: var(--fia-blue); margin-top: 4px">
+                            Brk: <span id="brake-temp-rl">0</span>°C
+                        </div>
+                    </div>
+
+                    <!-- Rear Right Data -->
+                    <div class="tyre-box tyre-pos-rr">
+                        <div class="label">REAR RIGHT</div>
+                        <div class="val highlight val-large">
+                            <span id="temp-surf-rr">0</span>°C /
+                            <span id="temp-in-rr">0</span>°C
+                        </div>
+                        <div class="tyre-wear-bar-container">
+                            <div class="tyre-wear-bar" id="wear-bar-rr"></div>
+                        </div>
+                        <div class="val tyre-wear-val" id="wear-text-rr">0% Wear</div>
+                        <div class="val"><span id="press-rr">0.0</span> psi</div>
+                        <div class="val" style="color: var(--fia-blue); margin-top: 4px">
+                            Brk: <span id="brake-temp-rr">0</span>°C
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: ICE + Compound + Stint -->
+                <div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap">
+                    <div class="data-row" style="flex: 1; min-width: 140px">
+                        <span class="label">ICE Temp</span>
+                        <span class="val" id="engine-temp">0 °C</span>
+                    </div>
+                    <div class="data-row" style="flex: 1; min-width: 140px">
+                        <span class="label">Compound</span>
+                        <span class="val" id="tyre-compound-display">--</span>
+                    </div>
+                    <div class="data-row" style="flex: 1; min-width: 140px">
+                        <span class="label">Stint Age</span>
+                        <span class="val" id="tyre-age-display">0 Laps</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-engineering" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">ERS & Fuel</div>
+                <div class="data-row">
+                    <span class="label">Deploy Mode</span>
+                    <span class="val highlight val-xlarge" id="ers-mode">0</span>
+                </div>
+                <div class="label" style="margin-top: 15px">
+                    ERS Battery
+                    <span id="ers-val" style="float: right; color: var(--text-main)">0%</span>
+                </div>
+                <div class="bar-bg" style="height: 16px">
+                    <div class="fill-bar" id="ers-battery" style="background: var(--fia-yellow)"></div>
+                </div>
+
+                <div class="data-row" style="margin-top: 25px">
+                    <span class="label">Fuel Mass</span>
+                    <span class="val val-xlarge" id="fuel">0.00 kg</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Pit Limit</span>
+                    <span class="val"><span id="pit-limit" style="color: var(--fia-yellow)">80</span>
+                        km/h</span>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">Aero & Setup</div>
+                <div class="data-row">
+                    <span class="label">Front Wing</span>
+                    <span class="val" id="wing-f">0</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Rear Wing</span>
+                    <span class="val" id="wing-r">0</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Brake Bias</span>
+                    <span class="val" id="bbias">50%</span>
+                </div>
+
+                <div class="panel-header" style="margin-top: 15px">Differential</div>
+                <div class="data-row">
+                    <span class="label">On-Throttle</span>
+                    <span class="val" id="diff-on">50%</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Off-Throttle</span>
+                    <span class="val" id="diff-off">50%</span>
+                </div>
+
+                <div class="panel-header" style="margin-top: 15px">Geometry</div>
+                <div class="data-row">
+                    <span class="label">Camber (F/R)</span>
+                    <span class="val"><span id="camber-f">0.00</span> |
+                        <span id="camber-r">0.00</span></span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Toe (F/R)</span>
+                    <span class="val"><span id="toe-f">0.00</span> | <span id="toe-r">0.00</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-leaderboard" class="tab-content">
+            <div class="panel" style="flex-grow: 1">
+                <div class="panel-header">Live Classification</div>
+                <div id="leaderboard-headers" class="lb-header"></div>
+                <div id="leaderboard-container" style="
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
+              overflow-y: auto;
+              padding-right: 5px;
+              flex-grow: 1;
+            ">
+                    <div style="
+                text-align: center;
+                color: var(--text-muted);
+                padding: 20px;
+              ">
+                        Waiting for timing data...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-history" class="tab-content">
+            <div class="panel" style="flex-grow: 1; padding: 0">
+                <div class="panel-header" style="margin: 15px 15px 0 15px">
+                    Session History
+                </div>
+                <div style="
+              overflow-x: auto;
+              overflow-y: auto;
+              padding: 0 15px 15px 15px;
+              flex-grow: 1;
+              margin-top: 5px;
+            ">
+                    <table class="history-table" id="history-table">
+                        <thead id="history-head"></thead>
+                        <tbody id="history-body">
+                            <tr>
+                                <td colspan="2" style="color: var(--text-muted)">
+                                    Waiting for session history...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabId, btnElement) {
+            document
+                .querySelectorAll(".tab-content")
+                .forEach((tab) => tab.classList.remove("active"));
+            document
+                .querySelectorAll(".nav-btn")
+                .forEach((btn) => btn.classList.remove("active"));
+            document.getElementById(tabId).classList.add("active");
+            btnElement.classList.add("active");
+            if (tabId === "tab-radar")
+                setTimeout(() => {
+                    resizeThreeJS();
+                    updateMapOverlays();
+                }, 10);
+        }
+
+        const mapContainer = document.getElementById("track-map-container");
+        const mapWrapper = mapContainer.closest(".map-wrapper");
+        const mapLabelLayer = document.getElementById("map-label-layer");
+        const mapZoomIn = document.getElementById("map-zoom-in");
+        const mapZoomOut = document.getElementById("map-zoom-out");
+        const scene = new THREE.Scene();
+        let aspect = mapContainer.clientWidth / mapContainer.clientHeight || 1;
+        let trackViewSize = 1200;
+        let trackBaseViewSize = 1200;
+        let trackZoom = 1;
+        const trackViewCenter = new THREE.Vector3(0, 0, 0);
+        const camera = new THREE.OrthographicCamera(
+            -trackViewSize * aspect,
+            trackViewSize * aspect,
+            trackViewSize,
+            -trackViewSize,
+            1,
+            2000,
+        );
+        camera.position.set(0, 500, 0);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: true,
+        });
+        renderer.setSize(
+            mapContainer.clientWidth || 400,
+            mapContainer.clientHeight || 400,
+        );
+        mapContainer.appendChild(renderer.domElement);
+
+        const gridHelper = new THREE.GridHelper(20000, 400, 0x0e0e18, 0x0e0e18);
+        scene.add(gridHelper);
+
+        const trackMaterial = new THREE.LineBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.35,
+        });
+        const trackGeometry = new THREE.BufferGeometry();
+        const trackLine = new THREE.Line(trackGeometry, trackMaterial);
+        trackLine.renderOrder = 0;
+        trackLine.frustumCulled = false;
+        scene.add(trackLine);
+
+        const gGraph = document.getElementById("g-graph");
+        const gGraphCtx = gGraph.getContext("2d");
+        const gHistory = [];
+        let maxGSeen = 0;
+        let lastCurrentMsForG = -1;
+        const MAX_REASONABLE_SENSOR_G = 8;
+
+        const carMeshes = [];
+        const carScreenData = [];
+        let latestMapData = null;
+        let selectedCarIndex = null;
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        const mapPointers = new Map();
+        let isMapPanning = false;
+        let lastPanPoint = null;
+        let lastPinchDistance = 0;
+        let suppressNextMapClick = false;
+        const carGeometry = new THREE.CircleGeometry(16, 32);
+        for (let i = 0; i < 24; i++) {
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const mesh = new THREE.Mesh(carGeometry, mat);
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.visible = false;
+            mesh.userData.carIndex = i;
+            scene.add(mesh);
+            carMeshes.push(mesh);
+        }
+
+        function createSectorLine(color) {
+            const geometry = new THREE.CircleGeometry(25, 32);
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending,
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.rotation.order = "YXZ";
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.visible = false;
+            mesh.renderOrder = -1;
+            scene.add(mesh);
+            return mesh;
+        }
+        const startLineMesh = createSectorLine(0xffd700); // Yellow
+        const sector1LineMesh = createSectorLine(0xff00ff); // Purple
+        const sector2LineMesh = createSectorLine(0x00ffff); // Cyan
+        const customSectorMeshes = [];
+
+        window.lastTrackPointsLength = 0;
+        window.lastTrackPointsLengthCustom = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+            updateMapOverlays();
+        }
+        animate();
+
+        function updateTrackCameraBounds() {
+            const width = mapContainer.clientWidth || 400;
+            const height = mapContainer.clientHeight || 400;
+            aspect = width / height;
+            trackViewSize = trackBaseViewSize / trackZoom;
+            camera.left = -trackViewSize * aspect;
+            camera.right = trackViewSize * aspect;
+            camera.top = trackViewSize;
+            camera.bottom = -trackViewSize;
+            camera.position.set(trackViewCenter.x, 500, trackViewCenter.z);
+            camera.lookAt(trackViewCenter.x, 0, trackViewCenter.z);
+            camera.updateProjectionMatrix();
+        }
+
+        function resizeThreeJS() {
+            if (mapContainer.clientWidth === 0) return;
+            const width = mapContainer.clientWidth;
+            const height = mapContainer.clientHeight;
+            renderer.setSize(width, height);
+            updateTrackCameraBounds();
+        }
+        window.addEventListener("resize", () => {
+            resizeThreeJS();
+            drawGGraph();
+        });
+
+        function setMapZoom(nextZoom) {
+            trackZoom = Math.max(0.65, Math.min(5, nextZoom));
+            updateTrackCameraBounds();
+            updateMapOverlays();
+        }
+
+        function panTrackMap(deltaX, deltaY) {
+            const height = mapContainer.clientHeight || 1;
+            const worldPerPixel = (trackViewSize * 2) / height;
+            trackViewCenter.x -= deltaX * worldPerPixel;
+            trackViewCenter.z -= deltaY * worldPerPixel;
+            updateTrackCameraBounds();
+            updateMapOverlays();
+        }
+
+        function getPointerDistance(points) {
+            const dx = points[0].clientX - points[1].clientX;
+            const dy = points[0].clientY - points[1].clientY;
+            return Math.hypot(dx, dy);
+        }
+
+        function getPointerMidpoint(points) {
+            return {
+                x: (points[0].clientX + points[1].clientX) / 2,
+                y: (points[0].clientY + points[1].clientY) / 2,
+            };
+        }
+
+        mapZoomIn.addEventListener("click", (event) => {
+            event.stopPropagation();
+            setMapZoom(trackZoom * 1.2);
+        });
+        mapZoomOut.addEventListener("click", (event) => {
+            event.stopPropagation();
+            setMapZoom(trackZoom / 1.2);
+        });
+        mapWrapper.addEventListener(
+            "wheel",
+            (event) => {
+                event.preventDefault();
+                setMapZoom(trackZoom * (event.deltaY < 0 ? 1.12 : 1 / 1.12));
+            },
+            { passive: false },
+        );
+
+        mapWrapper.addEventListener("pointerdown", (event) => {
+            if (!event.target.closest("#track-map-container, #map-label-layer"))
+                return;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            mapPointers.set(event.pointerId, event);
+            suppressNextMapClick = false;
+
+            const points = Array.from(mapPointers.values());
+            if (points.length === 1) {
+                isMapPanning = true;
+                lastPanPoint = { x: event.clientX, y: event.clientY };
+            } else if (points.length === 2) {
+                isMapPanning = false;
+                lastPinchDistance = getPointerDistance(points);
+                lastPanPoint = getPointerMidpoint(points);
+            }
+        });
+
+        mapWrapper.addEventListener(
+            "pointermove",
+            (event) => {
+                if (!mapPointers.has(event.pointerId)) return;
+                event.preventDefault();
+                mapPointers.set(event.pointerId, event);
+                const points = Array.from(mapPointers.values());
+
+                if (points.length === 1 && isMapPanning && lastPanPoint) {
+                    const point = points[0];
+                    const deltaX = point.clientX - lastPanPoint.x;
+                    const deltaY = point.clientY - lastPanPoint.y;
+                    if (Math.abs(deltaX) + Math.abs(deltaY) > 2)
+                        suppressNextMapClick = true;
+                    panTrackMap(deltaX, deltaY);
+                    lastPanPoint = { x: point.clientX, y: point.clientY };
+                } else if (points.length === 2) {
+                    const distance = getPointerDistance(points);
+                    const midpoint = getPointerMidpoint(points);
+                    if (lastPinchDistance > 0) {
+                        setMapZoom(trackZoom * (distance / lastPinchDistance));
+                        suppressNextMapClick = true;
+                    }
+                    if (lastPanPoint)
+                        panTrackMap(
+                            midpoint.x - lastPanPoint.x,
+                            midpoint.y - lastPanPoint.y,
+                        );
+                    lastPinchDistance = distance;
+                    lastPanPoint = midpoint;
+                }
+            },
+            { passive: false },
+        );
+
+        function endMapPointer(event) {
+            mapPointers.delete(event.pointerId);
+            const points = Array.from(mapPointers.values());
+            if (points.length === 1) {
+                isMapPanning = true;
+                lastPanPoint = { x: points[0].clientX, y: points[0].clientY };
+                lastPinchDistance = 0;
+            } else {
+                isMapPanning = false;
+                lastPanPoint = null;
+                lastPinchDistance = 0;
+            }
+        }
+
+        mapWrapper.addEventListener("pointerup", endMapPointer);
+        mapWrapper.addEventListener("pointercancel", endMapPointer);
+
+        mapWrapper.addEventListener("click", (event) => {
+            if (suppressNextMapClick) {
+                suppressNextMapClick = false;
+                return;
+            }
+            const rect = renderer.domElement.getBoundingClientRect();
+            pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+            const hits = raycaster.intersectObjects(
+                carMeshes.filter((mesh) => mesh.visible),
+                false,
+            );
+            selectedCarIndex =
+                hits.length > 0 ? hits[0].object.userData.carIndex : null;
+            updateMapOverlays();
+        });
+
+        function calculatePitStrategy(data) {
+            const maxWear = Math.max(
+                data.car.wear.fl,
+                data.car.wear.fr,
+                data.car.wear.rl,
+                data.car.wear.rr,
+            );
+            const weather = data.session.weather;
+            const currentCompound = data.car.compound.toUpperCase();
+            const lapsRemaining =
+                data.session.lapsLeft || data.session.lapsTotal - data.lap.lapNum;
+            const pitStatus = data.lap.pitStatus;
+
+            if (pitStatus === "PITTING" || pitStatus === "IN PIT LANE")
+                return {
+                    text: "IN PITS",
+                    color: "#000",
+                    bgColor: "var(--fia-yellow)",
+                    border: "none",
+                };
+            const isRaining =
+                weather === "Light Rain" ||
+                weather === "Heavy Rain" ||
+                weather === "Storm";
+            const onDryTyres =
+                !currentCompound.includes("INTER") &&
+                !currentCompound.includes("WET");
+
+            if (isRaining && onDryTyres)
+                return {
+                    text: "BOX FOR WETS",
+                    color: "#FFF",
+                    bgColor: "var(--f1-red)",
+                    border: "none",
+                };
+            if (
+                !isRaining &&
+                (currentCompound.includes("INTER") || currentCompound.includes("WET"))
+            )
+                return {
+                    text: "BOX FOR SLICKS",
+                    color: "#FFF",
+                    bgColor: "var(--f1-red)",
+                    border: "none",
+                };
+            if (maxWear > 70)
+                return {
+                    text: "PUNCTURE RISK: BOX",
+                    color: "#FFF",
+                    bgColor: "var(--f1-red)",
+                    border: "none",
+                };
+            else if (maxWear > 55)
+                return {
+                    text: "PIT WINDOW OPEN",
+                    color: "#000",
+                    bgColor: "var(--fia-yellow)",
+                    border: "none",
+                };
+            else if (maxWear > 45)
+                return {
+                    text: "PREPARE TO BOX",
+                    color: "var(--fia-yellow)",
+                    bgColor: "var(--f1-dark)",
+                    border: "1px solid var(--fia-yellow)",
+                };
+            if (lapsRemaining <= 2 && maxWear < 70 && lapsRemaining > 0)
+                return {
+                    text: "PUSH TO END",
+                    color: "#000",
+                    bgColor: "var(--fia-purple)",
+                    border: "none",
+                };
+            return {
+                text: "STAY OUT",
+                color: "var(--fia-green)",
+                bgColor: "var(--f1-dark)",
+                border: "1px solid var(--fia - green)",
+            };
+        }
+
+        let ws;
+
+        function getWebSocketUrls() {
+            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            const urls = [`${protocol}//${window.location.host}`];
+            const nodeUrl = `${protocol}//${window.location.hostname}:3000`;
+            const legacyUrl = `${protocol}//${window.location.hostname}:8085`;
+            if (!urls.includes(nodeUrl)) urls.push(nodeUrl);
+            if (!urls.includes(legacyUrl)) urls.push(legacyUrl);
+            return urls;
+        }
+
+        let currentCustomSectors = ["", ""];
+
+        function promptAddSector() {
+            document.getElementById("sec1-input").value = currentCustomSectors[0];
+            document.getElementById("sec2-input").value =
+                Number(currentCustomSectors[1]) - Number(currentCustomSectors[0]);
+            document.getElementById("sector-modal").style.display = "flex";
+        }
+
+        function submitSectors() {
+            const s1 = document.getElementById("sec1-input").value.trim();
+            const s2 = document.getElementById("sec2-input").value.trim();
+
+            currentCustomSectors = [s1, s2];
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ action: "resetSectors" }));
+
+                const ms1 = parseInt(s1, 10);
+                const ms2 = parseInt(s2, 10);
+
+                if (ms1 > 0)
+                    ws.send(JSON.stringify({ action: "addSector", timeMs: ms1 }));
+                if (ms2 > 0)
+                    ws.send(JSON.stringify({ action: "addSector", timeMs: ms2 }));
+            }
+
+            document.getElementById("sector-modal").style.display = "none";
+        }
+
+        function setText(id, value) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const next = String(value);
+            if (el.innerText !== next) el.innerText = next;
+        }
+
+        function setElementText(el, value) {
+            if (!el) return;
+            const next = String(value);
+            if (el.innerText !== next) el.innerText = next;
+        }
+
+        function setHtml(id, value) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (el.innerHTML !== value) el.innerHTML = value;
+        }
+
+        function setElementHtml(el, value) {
+            if (!el) return;
+            if (el.innerHTML !== value) el.innerHTML = value;
+        }
+
+        function setStyle(el, prop, value) {
+            if (!el || el.style[prop] === value) return;
+            el.style[prop] = value;
+        }
+
+        function setStyleById(id, prop, value) {
+            setStyle(document.getElementById(id), prop, value);
+        }
+
+        function getTeamColorHex(teamColor) {
+            if (typeof teamColor === "number") return teamColor;
+            if (typeof teamColor !== "string") return 0xffffff;
+            const parsed = parseInt(teamColor.replace("#", "0x"), 16);
+            return Number.isFinite(parsed) ? parsed : 0xffffff;
+        }
+
+        function getTeamColorCss(driver, data) {
+            const teamColor =
+                driver?.teamColor ?? data?.allCars?.[driver?.carIndex]?.teamColor;
+            const hex = getTeamColorHex(teamColor)
+                .toString(16)
+                .padStart(6, "0")
+                .slice(-6);
+            return `#${hex}`;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(
+                /[&<>"']/g,
+                (char) =>
+                    ({
+                        "&": "&amp;",
+                        "<": "&lt;",
+                        ">": "&gt;",
+                        '"': "&quot;",
+                        "'": "&#39;",
+                    })[char],
+            );
+        }
+
+        function getDriverName(data, carIndex) {
+            return data?.participants?.[carIndex]
+                ? data.participants[carIndex]
+                : `CAR ${carIndex}`;
+        }
+
+        function getDriverAbbr(name, carIndex) {
+            const clean = String(name || "")
+                .replace(/[^a-z0-9 ]/gi, "")
+                .trim();
+            if (!clean) return `C${carIndex}`;
+            const parts = clean.split(/\s+/);
+            const source = parts.length > 1 ? parts[parts.length - 1] : clean;
+            return source.slice(0, 3).toUpperCase();
+        }
+
+        function getLeaderboardDriver(data, carIndex) {
+            return Array.isArray(data?.leaderboard)
+                ? data.leaderboard.find((driver) => driver.carIndex === carIndex)
+                : null;
+        }
+
+        function getTrackGapToFront(data, driver) {
+            const rows = Array.isArray(data?.leaderboard) ? data.leaderboard : [];
+            const trackLength = data?.session?.trackLength || 0;
+            const currDistance = Number(
+                driver.lapDistance ??
+                data?.allCars?.[driver.carIndex]?.lapDistance ??
+                0,
+            );
+
+            if (!trackLength || !Number.isFinite(currDistance))
+                return driver?.gapText || "--";
+
+            let nearestGap = Infinity;
+            rows.forEach((row) => {
+                if (row.carIndex === driver.carIndex || row.pitStatus > 0) return;
+                const rowDistance = Number(
+                    row.lapDistance ?? data?.allCars?.[row.carIndex]?.lapDistance ?? 0,
+                );
+                if (!Number.isFinite(rowDistance)) return;
+
+                let gap = rowDistance - currDistance;
+                if (gap <= 0) gap += trackLength;
+                if (gap > 0 && gap < nearestGap) nearestGap = gap;
+            });
+
+            return Number.isFinite(nearestGap)
+                ? `${Math.round(nearestGap)} m`
+                : "CLEAR";
+        }
+
+        function getPopupGapText(data, driver) {
+            const sessionType = data?.session?.type || "";
+            const isRace =
+                sessionType.includes("Race") || sessionType.includes("Sprint");
+            if (isRace) return driver?.gapText || "--";
+            return getTrackGapToFront(data, driver);
+        }
+
+        function isRaceSession(data) {
+            const sessionType = data?.session?.type || "";
+            return sessionType.includes("Race") || sessionType.includes("Sprint");
+        }
+
+        function worldToMapScreen(position) {
+            const projected = position.clone().project(camera);
+            return {
+                x: (projected.x * 0.5 + 0.5) * (mapContainer.clientWidth || 1),
+                y: (-projected.y * 0.5 + 0.5) * (mapContainer.clientHeight || 1),
+            };
+        }
+
+        function updateMapOverlays() {
+            if (!latestMapData || !mapLabelLayer || mapContainer.clientWidth === 0)
+                return;
+
+            let labelsHtml = "";
+            carScreenData.length = 0;
+            carMeshes.forEach((mesh) => {
+                if (!mesh.visible) return;
+                const carIndex = mesh.userData.carIndex;
+                const driver = getLeaderboardDriver(latestMapData, carIndex) || {
+                    carIndex,
+                };
+                const name = getDriverName(latestMapData, carIndex);
+                const abbr = getDriverAbbr(name, carIndex);
+                const teamColor = getTeamColorCss(driver, latestMapData);
+                const point = worldToMapScreen(mesh.position);
+
+                carScreenData.push({ carIndex, x: point.x, y: point.y });
+                labelsHtml += `<div class="driver-callout" style="left:${point.x}px; top:${point.y}px; 
+color:${teamColor};">${escapeHtml(abbr)}</div>`;
+            });
+
+            if (selectedCarIndex !== null) {
+                const selected = carScreenData.find(
+                    (car) => car.carIndex === selectedCarIndex,
+                );
+                const driver = getLeaderboardDriver(
+                    latestMapData,
+                    selectedCarIndex,
+                ) || {
+                    carIndex: selectedCarIndex,
+                };
+                if (selected) {
+                    const name = getDriverName(latestMapData, selectedCarIndex);
+                    const team =
+                        driver.teamName ||
+                        latestMapData?.allCars?.[selectedCarIndex]?.teamName ||
+                        "Unknown";
+                    const teamColor = getTeamColorCss(driver, latestMapData);
+                    labelsHtml += `<div class="track-popup" style="left:${selected.x}px; top:${selected.y}px; 
+color:${teamColor};">
+                          <div class="name">${escapeHtml(name.toUpperCase())}</div>
+                          <div class="meta"><span>Team</span><span>${escapeHtml(team)}</span></div>
+                          <div class="meta"><span>Gap Front</span><span>${escapeHtml(
+                        getPopupGapText(latestMapData, driver),
+                    )}</span></div>
+                      </div>`;
+                } else {
+                    selectedCarIndex = null;
+                }
+            }
+            // start marker is now a 3D mesh
+
+            // Draw custom sector labels
+            if (typeof customSectorMeshes !== "undefined") {
+                customSectorMeshes.forEach((mesh, idx) => {
+                    if (mesh.visible) {
+                        const point = worldToMapScreen(mesh.position);
+                        let labelText = "";
+                        let color = "#ffaa00";
+                        if (idx === 0) {
+                            labelText = "FINISH";
+                            color = "#ffd700";
+                        } else {
+                            labelText = `S${idx}`;
+                        }
+                        labelsHtml += `<div style="position: absolute; left:${point.x}px; top:${point.y}px; 
+transform: translate(-50%, -150%); color:${color}; font-size: 0.7rem; font-family: 'Roboto Mono', monospace; 
+font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText}</div>`;
+                    }
+                });
+            }
+
+            if (mapLabelLayer.innerHTML !== labelsHtml)
+                mapLabelLayer.innerHTML = labelsHtml;
+        }
+
+        function animateClassificationSwap(container, nextHtml, nextOrder) {
+            if (!container) return;
+
+            const previousOrder = container.dataset.order
+                ? container.dataset.order.split(",")
+                : [];
+            const shouldAnimate =
+                previousOrder.length > 0 &&
+                previousOrder.join(",") !== nextOrder.join(",");
+            const firstRects = new Map();
+
+            if (shouldAnimate) {
+                container
+                    .querySelectorAll(".lb-row[data-car-index]")
+                    .forEach((row) => {
+                        firstRects.set(row.dataset.carIndex, row.getBoundingClientRect());
+                    });
+            }
+
+            if (container.innerHTML !== nextHtml) container.innerHTML = nextHtml;
+            container.dataset.order = nextOrder.join(",");
+
+            if (!shouldAnimate) return;
+
+            container.querySelectorAll(".lb-row[data-car-index]").forEach((row) => {
+                const first = firstRects.get(row.dataset.carIndex);
+                if (!first) return;
+
+                const last = row.getBoundingClientRect();
+                const deltaY = first.top - last.top;
+                if (Math.abs(deltaY) < 1) return;
+
+                row.animate(
+                    [
+                        { transform: `translateY(${deltaY}px)`, zIndex: 2 },
+                        { transform: "translateY(0)", zIndex: 2 },
+                    ],
+                    {
+                        duration: 360,
+                        easing: "cubic-bezier(0.2, 0, 0, 1)",
+                    },
+                );
+            });
+        }
+
+        function clampPercent(value) {
+            const number = Number(value);
+            if (!Number.isFinite(number)) return 0;
+            return Math.max(0, Math.min(100, number));
+        }
+
+        function getWearColor(wearPercent) {
+            const w = Math.max(0, Math.min(100, wearPercent));
+            // Map: 0% wear → green (hue 130), ~40% → yellow (hue 55), 70%+ → red (hue 0)
+            let hue;
+            if (w <= 30) {
+                hue = 130 - (w / 30) * 40; // 130 → 90
+            } else if (w <= 55) {
+                hue = 90 - ((w - 30) / 25) * 50; // 90 → 40
+            } else {
+                hue = 40 - ((w - 55) / 45) * 40; // 40 → 0
+            }
+            hue = Math.max(0, hue);
+            const saturation = 85 + (w / 100) * 15; // 85% → 100%
+            const lightness = w > 70 ? 48 : 50;
+            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        }
+
+        function updateCarTyreVisual(wearData, compound) {
+            ["fl", "fr", "rl", "rr"].forEach((corner) => {
+                const wear = Math.round(wearData[corner] || 0);
+                const color = getWearColor(wear);
+
+                // Update SVG tyre rectangle color
+                const tyreRect = document.getElementById(`tyre-rect-${corner}`);
+                if (tyreRect) {
+                    tyreRect.setAttribute("fill", color);
+                }
+
+                // Update SVG wear percentage text
+                const tyrePct = document.getElementById(`tyre-pct-${corner}`);
+                if (tyrePct) {
+                    tyrePct.textContent = `${wear}%`;
+                }
+
+                // Update wear bar in data panel
+                const wearBar = document.getElementById(`wear-bar-${corner}`);
+                if (wearBar) {
+                    wearBar.style.width = `${wear}%`;
+                    wearBar.style.backgroundColor = color;
+                }
+
+                // Update wear text in data panel
+                const wearText = document.getElementById(`wear-text-${corner}`);
+                if (wearText) {
+                    wearText.textContent = `${wear}% Wear`;
+                    wearText.style.color = color;
+                }
+            });
+
+            // Update compound label on car SVG
+            const compVal = document.getElementById("car-compound-value");
+            if (compVal) compVal.textContent = (compound || "--").toUpperCase();
+
+            // Also update the bottom row displays
+            setText("tyre-compound-display", compound || "--");
+        }
+
+        function drawGGraph() {
+            const dpr = window.devicePixelRatio || 1;
+            const width = gGraph.clientWidth || 300;
+            const height = gGraph.clientHeight || 90;
+            if (
+                gGraph.width !== Math.floor(width * dpr) ||
+                gGraph.height !== Math.floor(height * dpr)
+            ) {
+                gGraph.width = Math.floor(width * dpr);
+                gGraph.height = Math.floor(height * dpr);
+            }
+
+            gGraphCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            gGraphCtx.clearRect(0, 0, width, height);
+            gGraphCtx.fillStyle = "#06060e";
+            gGraphCtx.fillRect(0, 0, width, height);
+
+            const graphLeft = 36;
+            const graphRight = width - 6;
+            const graphTop = 6;
+            const graphBottom = height - 14;
+            const graphHeight = graphBottom - graphTop;
+            const graphWidth = graphRight - graphLeft;
+            const graphMax = Math.max(4, Math.ceil(maxGSeen));
+
+            gGraphCtx.strokeStyle = "rgba(255,255,255,0.05)";
+            gGraphCtx.lineWidth = 1;
+            gGraphCtx.fillStyle = "#6e6e80";
+            gGraphCtx.font = "10px Roboto Mono, monospace";
+            gGraphCtx.textAlign = "right";
+            gGraphCtx.textBaseline = "middle";
+            for (let i = 0; i <= 4; i++) {
+                const value = (graphMax / 4) * i;
+                const y = graphBottom - (i / 4) * graphHeight;
+                gGraphCtx.beginPath();
+                gGraphCtx.moveTo(graphLeft, y);
+                gGraphCtx.lineTo(graphRight, y);
+                gGraphCtx.stroke();
+                gGraphCtx.fillText(`${value.toFixed(0)}G`, graphLeft - 6, y);
+            }
+
+            if (gHistory.length < 2) return;
+
+            // Draw gradient fill under line
+            gGraphCtx.beginPath();
+            gHistory.forEach((value, index) => {
+                const x = graphLeft + (index / (gHistory.length - 1)) * graphWidth;
+                const y =
+                    graphBottom - (Math.min(value, graphMax) / graphMax) * graphHeight;
+                if (index === 0) gGraphCtx.moveTo(x, y);
+                else gGraphCtx.lineTo(x, y);
+            });
+            gGraphCtx.lineTo(graphRight, graphBottom);
+            gGraphCtx.lineTo(graphLeft, graphBottom);
+            gGraphCtx.closePath();
+            const gradient = gGraphCtx.createLinearGradient(
+                0,
+                graphTop,
+                0,
+                graphBottom,
+            );
+            gradient.addColorStop(0, "rgba(255, 214, 10, 0.15)");
+            gradient.addColorStop(1, "rgba(255, 214, 10, 0)");
+            gGraphCtx.fillStyle = gradient;
+            gGraphCtx.fill();
+
+            // Draw the line
+            gGraphCtx.strokeStyle = "#ffd60a";
+            gGraphCtx.lineWidth = 2;
+            gGraphCtx.lineJoin = "round";
+            gGraphCtx.lineCap = "round";
+            gGraphCtx.beginPath();
+            gHistory.forEach((value, index) => {
+                const x = graphLeft + (index / (gHistory.length - 1)) * graphWidth;
+                const y =
+                    graphBottom - (Math.min(value, graphMax) / graphMax) * graphHeight;
+                if (index === 0) gGraphCtx.moveTo(x, y);
+                else gGraphCtx.lineTo(x, y);
+            });
+            gGraphCtx.stroke();
+
+            // Glow dot at the latest point
+            if (gHistory.length > 0) {
+                const lastX = graphRight;
+                const lastVal = gHistory[gHistory.length - 1];
+                const lastY =
+                    graphBottom -
+                    (Math.min(lastVal, graphMax) / graphMax) * graphHeight;
+                gGraphCtx.fillStyle = "#ffd60a";
+                gGraphCtx.shadowColor = "rgba(255, 214, 10, 0.6)";
+                gGraphCtx.shadowBlur = 8;
+                gGraphCtx.beginPath();
+                gGraphCtx.arc(lastX, lastY, 3, 0, Math.PI * 2);
+                gGraphCtx.fill();
+                gGraphCtx.shadowBlur = 0;
+            }
+        }
+
+        function getGForceFeel(latG, longG, vertG, totalG) {
+            const absLat = Math.abs(latG);
+            const absLong = Math.abs(longG);
+            const absVert = Math.abs(vertG);
+
+            if (totalG >= 3.5)
+                return { text: "LIMIT LOAD", color: "var(--f1-red)" };
+            if (absLong >= 2.2 && longG < 0)
+                return { text: "HEAVY BRAKING", color: "var(--f1-red)" };
+            if (absLong >= 1.8 && longG > 0)
+                return { text: "HARD LAUNCH", color: "var(--fia-green)" };
+            if (absLat >= 2.2)
+                return { text: "HIGH CORNERING", color: "var(--fia-yellow)" };
+            if (absVert >= 1.6)
+                return { text: "VERTICAL LOAD", color: "var(--fia-purple)" };
+            if (totalG >= 1.3) return { text: "LOADED", color: "var(--fia-blue)" };
+            return { text: "STABLE", color: "var(--text-muted)" };
+        }
+
+        function updateGForceDisplay(latG, longG, vertG, currentMs) {
+            if (currentMs === lastCurrentMsForG) return; // Paused or no time change
+            lastCurrentMsForG = currentMs;
+
+            const sensorG = Math.hypot(latG, longG, vertG);
+            const sensorLooksValid = sensorG <= MAX_REASONABLE_SENSOR_G;
+            const experiencedG = sensorLooksValid ? sensorG : 0;
+            const gFeel = !sensorLooksValid
+                ? { text: "SENSOR SPIKE", color: "var(--fia-yellow)" }
+                : getGForceFeel(latG, longG, vertG, experiencedG);
+
+            maxGSeen = Math.max(maxGSeen, experiencedG);
+            gHistory.push(experiencedG);
+            if (gHistory.length > 180) gHistory.shift();
+
+            setText("g-total", `${experiencedG.toFixed(2)} G`);
+            setText("g-max", `${maxGSeen.toFixed(2)} G`);
+            setText("g-feel", gFeel.text);
+            setStyleById("g-feel", "color", gFeel.color);
+            drawGGraph();
+        }
+
+        function connectWebSocket(urlIndex = 0) {
+            const urls = getWebSocketUrls();
+            ws = new WebSocket(urls[urlIndex]);
+            ws.onopen = () => {
+                setText("ws-status", "CONNECTED");
+                setStyleById("ws-status", "color", "var(--fia-green)");
+                ws.send(JSON.stringify({ action: "getAvailableTracks" }));
+            };
+            ws.onerror = () => {
+                if (urlIndex + 1 < urls.length) {
+                    connectWebSocket(urlIndex + 1);
+                    return;
+                }
+                setText("ws-status", "OFFLINE");
+                setStyleById("ws-status", "color", "var(--f1-red)");
+            };
+            ws.onmessage = handleTelemetryMessage;
+        }
+
+        function loadOfflineTrack(trackId) {
+            if (trackId && ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ action: "getTrackData", trackId: trackId }));
+            }
+        }
+
+        function formatMs(ms) {
+            if (!ms || ms === 0) return "--:--.---";
+            const m = Math.floor(ms / 60000);
+            const s = Math.floor((ms % 60000) / 1000);
+            const milli = ms % 1000;
+            return `${m}:${s.toString().padStart(2, "0")}.${milli.toString().padStart(3, "0")}`;
+        }
+
+        function formatSectorMs(ms) {
+            if (!ms || ms <= 0) return "--.---";
+            return (ms / 1000).toFixed(3);
+        }
+
+        function updateSectorDisplay(
+            sectorId,
+            ms,
+            state,
+            msRefSessionBest,
+            msRefPersonalBest,
+        ) {
+            const row = document.getElementById(`sector-row-${sectorId}`);
+            const chip = document.getElementById(`lap-${sectorId}-state`);
+            const normalizedState = state || "pending";
+            const chipText =
+                normalizedState === "live"
+                    ? "LIVE"
+                    : normalizedState === "complete"
+                        ? "DONE"
+                        : "WAIT";
+
+            const valEl = document.getElementById(`lap-${sectorId}`);
+            if (valEl) {
+                valEl.textContent = formatSectorMs(ms);
+                valEl.classList.remove("purple", "green", "yellow");
+                if (ms > 0) {
+                    if (msRefSessionBest > 0 && ms <= msRefSessionBest)
+                        valEl.classList.add("purple");
+                    else if (msRefPersonalBest > 0 && ms <= msRefPersonalBest)
+                        valEl.classList.add("green");
+                    else valEl.classList.add("yellow");
+                }
+            }
+
+            setElementText(chip, chipText);
+            if (row) {
+                row.classList.toggle("live", normalizedState === "live");
+                row.classList.toggle("complete", normalizedState === "complete");
+            }
+        }
+
+        function lapHistoryMs(lapData, key) {
+            if (!lapData) return 0;
+            if (typeof lapData === "number") return key === "lapTime" ? lapData : 0;
+            return Number(lapData[key] || 0);
+        }
+
+        function formatDeltaMs(diffMs) {
+            if (!Number.isFinite(diffMs)) return "--";
+            const prefix = diffMs > 0 ? "+" : "";
+            return `${prefix}${(diffMs / 1000).toFixed(3)}s`;
+        }
+
+        function setDeltaText(id, diffMs) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (!Number.isFinite(diffMs)) {
+                setElementText(el, "--");
+                setStyle(el, "color", "var(--text-muted)");
+                return;
+            }
+            setElementText(el, formatDeltaMs(diffMs));
+            setStyle(
+                el,
+                "color",
+                diffMs <= 0 ? "var(--fia-green)" : "var(--f1-red)",
+            );
+        }
+
+        function updateSectorDeltas(data, playerLbData) {
+            const history = Array.isArray(playerLbData?.lapHistory)
+                ? playerLbData.lapHistory
+                : [];
+            const previousLap =
+                history.length >= 2 ? history[history.length - 2] : null;
+            const sectorKeys = ["s1", "s2", "s3"];
+
+            sectorKeys.forEach((key) => {
+                const currentMs = Number(
+                    data.lap[`live${key.toUpperCase()}`] ?? data.lap[key] ?? 0,
+                );
+                const previousMs = lapHistoryMs(previousLap, key);
+                const sessionBest =
+                    key === "s1"
+                        ? data.session.sessionBestS1
+                        : key === "s2"
+                            ? data.session.sessionBestS2
+                            : data.session.sessionBestS3;
+                const personalBest = Number(
+                    playerLbData?.[`best${key.toUpperCase()}`] || 0,
+                );
+                const bestMs =
+                    personalBest > 0
+                        ? personalBest
+                        : Number.isFinite(sessionBest)
+                            ? sessionBest
+                            : 0;
+
+                setDeltaText(
+                    `lap-${key}-prev`,
+                    currentMs > 0 && previousMs > 0 ? currentMs - previousMs : NaN,
+                );
+                setDeltaText(
+                    `lap-${key}-best`,
+                    currentMs > 0 && bestMs > 0 ? currentMs - bestMs : NaN,
+                );
+            });
+        }
+
+        function handleTelemetryMessage(event) {
+            const data = JSON.parse(event.data);
+
+            if (data.type === "availableTracks") {
+                const trackMap = {
+                    0: "Melbourne",
+                    2: "Shanghai",
+                    3: "Sakhir (Bahrain)",
+                    4: "Catalunya",
+                    5: "Monaco",
+                    6: "Montreal",
+                    7: "Silverstone",
+                    9: "Hungaroring",
+                    10: "Spa",
+                    11: "Monza",
+                    12: "Singapore",
+                    13: "Suzuka",
+                    14: "Abu Dhabi",
+                    15: "Texas",
+                    16: "Brazil",
+                    17: "Austria",
+                    19: "Mexico",
+                    20: "Baku (Azerbaijan)",
+                    26: "Zandvoort",
+                    27: "Imola",
+                    29: "Jeddah",
+                    30: "Miami",
+                    31: "Las Vegas",
+                    32: "Losail",
+                    39: "Silverstone (Reverse)",
+                    40: "Austria (Reverse)",
+                    41: "Zandvoort (Reverse)",
+                    42: "Madrid",
+                };
+                const select = document.getElementById("track-selector");
+                if (select && data.tracks && data.tracks.length > 0) {
+                    select.innerHTML = '<option value="">Load Track...</option>';
+                    data.tracks
+                        .sort((a, b) => a - b)
+                        .forEach((id) => {
+                            const opt = document.createElement("option");
+                            opt.value = id;
+                            const tName = trackMap[id]
+                                ? trackMap[id].toUpperCase()
+                                : `TRACK ${id}`;
+                            opt.textContent = `${tName}`;
+                            select.appendChild(opt);
+                        });
+                }
+                return;
+            }
+
+            if (data.type === "trackDataResponse") {
+                if (data.data && data.data.trackPoints) {
+                    window.lastTrackPointsLength = 0;
+                    window.overrideTrackData = {
+                        allCars: [],
+                        trackPoints: data.data.trackPoints,
+                        startLine: data.data.startLine,
+                        sector1: data.data.sector1,
+                        sector2: data.data.sector2,
+                    };
+                }
+                return;
+            }
+
+            const playerLbData = data.leaderboard
+                ? data.leaderboard.find((d) => d.carIndex === data.playerIndex)
+                : null;
+
+            setText("track-name", data.session.trackName.toUpperCase());
+            setText("session-type", data.session.type.toUpperCase());
+            setText("weather", data.session.weather.toUpperCase());
+            setText("track-temp", `${data.session.trackTemp} °C`);
+
+            // New Distance & Laps metrics mapping
+            setText("lap-num", data.lap.lapNum);
+            setText("laps-total", data.session.lapsTotal);
+            setText("laps-left", data.session.lapsLeft || 0);
+            setText(
+                "track-length",
+                `${(data.session.trackLength / 1000).toFixed(3)} km`,
+            );
+            setText(
+                "race-dist",
+                `${(data.session.raceDistance / 1000).toFixed(3)} km`,
+            );
+            setText("pos", "--");
+
+            const flagBox = document.getElementById("fia-flag");
+            setElementText(flagBox, `${data.car.flag} FLAG`);
+            if (data.car.flag === "YELLOW") {
+                setStyle(flagBox, "backgroundColor", "var(--fia-yellow)");
+                setStyle(flagBox, "color", "#000");
+            } else if (data.car.flag === "RED") {
+                setStyle(flagBox, "backgroundColor", "var(--f1-red)");
+                setStyle(flagBox, "color", "#FFF");
+            } else if (data.car.flag === "BLUE") {
+                setStyle(flagBox, "backgroundColor", "var(--fia-blue)");
+                setStyle(flagBox, "color", "#000");
+            } else {
+                setStyle(flagBox, "backgroundColor", "var(--fia-green)");
+                setStyle(flagBox, "color", "#000");
+            }
+
+            setText("sc-status", data.session.sc);
+
+            if (data.penalties) {
+                setText(
+                    "pen-time",
+                    data.penalties.timePenalties > 0
+                        ? `${data.penalties.timePenalties} s`
+                        : "0 s",
+                );
+                setText("pen-warn", data.penalties.warnings || 0);
+                setText("pen-cc", data.penalties.cornerCuts || 0);
+                setText(
+                    "pen-dt-sg",
+                    `${data.penalties.driveThrough || 0} / ${data.penalties.stopGo || 0}`,
+                );
+                document.getElementById("lap-invalid-row").style.display =
+                    data.penalties.invalidLap === 1 ? "flex" : "none";
+            }
+            setText("pit-status", data.lap.pitStatus);
+            setText("tyre-compound", data.car.compound);
+            setText("tyre-age", `${data.car.tyreAge} Laps`);
+            setText("gap-front", data.lap.gapFront || "+0.000");
+
+            const stratBox = document.getElementById("strategy-box");
+            const strategyInfo = calculatePitStrategy(data);
+            setElementText(stratBox, strategyInfo.text);
+            setStyle(stratBox, "color", strategyInfo.color);
+            setStyle(stratBox, "backgroundColor", strategyInfo.bgColor);
+            setStyle(stratBox, "border", strategyInfo.border);
+
+            setText("lap-current", formatMs(data.lap.currentMs));
+
+            const lastMsEl = document.getElementById("lap-last");
+            if (lastMsEl) {
+                lastMsEl.textContent = formatMs(data.lap.lastMs);
+                lastMsEl.classList.remove("purple", "green", "yellow");
+                if (data.lap.lastMs > 0) {
+                    if (
+                        data.session.sessionFastestLapMs > 0 &&
+                        data.lap.lastMs <= data.session.sessionFastestLapMs
+                    )
+                        lastMsEl.classList.add("purple");
+                    else if (
+                        playerLbData &&
+                        playerLbData.bestLapMs > 0 &&
+                        data.lap.lastMs <= playerLbData.bestLapMs
+                    )
+                        lastMsEl.classList.add("green");
+                    else lastMsEl.classList.add("yellow");
+                }
+            }
+
+            const bestMsEl = document.getElementById("lap-best");
+            if (bestMsEl) {
+                bestMsEl.textContent = formatMs(data.lap.bestMs);
+                bestMsEl.classList.remove("purple", "green", "yellow");
+                if (data.lap.bestMs > 0) {
+                    if (
+                        data.session.sessionFastestLapMs > 0 &&
+                        data.lap.bestMs <= data.session.sessionFastestLapMs
+                    )
+                        bestMsEl.classList.add("purple");
+                    else bestMsEl.classList.add("green");
+                }
+            }
+
+            const sb1 = data.session.sessionBestS1;
+            const sb2 = data.session.sessionBestS2;
+            const sb3 = data.session.sessionBestS3;
+            const pb1 = playerLbData ? playerLbData.bestS1 : 0;
+            const pb2 = playerLbData ? playerLbData.bestS2 : 0;
+            const pb3 = playerLbData ? playerLbData.bestS3 : 0;
+
+            updateSectorDisplay(
+                "s1",
+                data.lap.liveS1 ?? data.lap.s1,
+                data.lap.s1State,
+                sb1,
+                pb1,
+            );
+            updateSectorDisplay(
+                "s2",
+                data.lap.liveS2 ?? data.lap.s2,
+                data.lap.s2State,
+                sb2,
+                pb2,
+            );
+            updateSectorDisplay(
+                "s3",
+                data.lap.liveS3 ?? data.lap.s3,
+                data.lap.s3State,
+                sb3,
+                pb3,
+            );
+            updateSectorDeltas(data, playerLbData);
+
+            const recordMs =
+                data.session.allTimeFastestLapMs === Infinity
+                    ? 0
+                    : data.session.allTimeFastestLapMs;
+            setText("lap-record", formatMs(recordMs));
+            setText(
+                "record-driver",
+                data.session.allTimeFastestDriver !== "Unknown"
+                    ? `(${data.session.allTimeFastestDriver})`
+                    : "",
+            );
+
+            const isMenu =
+                data.session.trackName === "TRACK NOT FOUND" ||
+                data.session.trackName === "Unknown";
+            const isLive = !isMenu;
+            const trackSelector = document.getElementById("track-selector");
+            if (trackSelector) {
+                trackSelector.style.display = isMenu ? "block" : "none";
+            }
+
+            if (isLive && window.overrideTrackData) {
+                window.overrideTrackData = null;
+                window.lastTrackPointsLength = 0;
+            }
+
+            const mapDataToUse = isLive ? data : window.overrideTrackData || null;
+
+            if (mapDataToUse) {
+                latestMapData = mapDataToUse;
+
+                if (
+                    mapDataToUse.startLine &&
+                    mapDataToUse.startLine.yaw !== undefined
+                ) {
+                    startLineMesh.position.set(
+                        mapDataToUse.startLine.x,
+                        0,
+                        mapDataToUse.startLine.z,
+                    );
+                    startLineMesh.rotation.y = -mapDataToUse.startLine.yaw;
+                    startLineMesh.visible = true;
+                } else {
+                    startLineMesh.visible = false;
+                }
+                if (mapDataToUse.sector1 && mapDataToUse.sector1.yaw !== undefined) {
+                    sector1LineMesh.position.set(
+                        mapDataToUse.sector1.x,
+                        0,
+                        mapDataToUse.sector1.z,
+                    );
+                    sector1LineMesh.rotation.y = -mapDataToUse.sector1.yaw;
+                    sector1LineMesh.visible = true;
+                } else {
+                    sector1LineMesh.visible = false;
+                }
+                if (mapDataToUse.sector2 && mapDataToUse.sector2.yaw !== undefined) {
+                    sector2LineMesh.position.set(
+                        mapDataToUse.sector2.x,
+                        0,
+                        mapDataToUse.sector2.z,
+                    );
+                    sector2LineMesh.rotation.y = -mapDataToUse.sector2.yaw;
+                    sector2LineMesh.visible = true;
+                } else {
+                    sector2LineMesh.visible = false;
+                }
+
+                if (
+                    mapDataToUse.trackPoints &&
+                    mapDataToUse.trackPoints.length !== window.lastTrackPointsLength
+                ) {
+                    window.lastTrackPointsLength = mapDataToUse.trackPoints.length;
+                    if (mapDataToUse.trackPoints.length > 0) {
+                        let minX = Infinity,
+                            maxX = -Infinity,
+                            minZ = Infinity,
+                            maxZ = -Infinity;
+                        const threePts = [];
+                        mapDataToUse.trackPoints.forEach((pt) => {
+                            if (pt.x < minX) minX = pt.x;
+                            if (pt.x > maxX) maxX = pt.x;
+                            if (pt.z < minZ) minZ = pt.z;
+                            if (pt.z > maxZ) maxZ = pt.z;
+                            threePts.push(new THREE.Vector3(pt.x, 0, pt.z));
+                        });
+                        if (threePts.length > 2) {
+                            threePts.push(threePts[0].clone());
+                        }
+                        trackGeometry.setFromPoints(threePts);
+
+                        const centerX = (minX + maxX) / 2;
+                        const centerZ = (minZ + maxZ) / 2;
+                        const maxDim = Math.max(maxX - minX, maxZ - minZ);
+                        const newViewSize = maxDim / 2 + 200;
+
+                        trackViewCenter.set(centerX, 0, centerZ);
+                        trackBaseViewSize = Math.max(300, newViewSize);
+                        gridHelper.position.set(centerX, -1, centerZ);
+                        updateTrackCameraBounds();
+                    }
+                }
+
+                if (mapDataToUse.customSectorLines) {
+                    mapDataToUse.customSectorLines.forEach((sectorObj, i) => {
+                        let mesh = customSectorMeshes[i];
+                        if (!mesh) {
+                            mesh = createSectorLine(i === 0 ? 0xffd700 : 0xffaa00);
+                            customSectorMeshes.push(mesh);
+                        }
+
+                        if (
+                            sectorObj &&
+                            sectorObj.x !== undefined &&
+                            sectorObj.z !== undefined
+                        ) {
+                            mesh.position.set(sectorObj.x, 0, sectorObj.z);
+                            if (sectorObj.yaw !== undefined)
+                                mesh.rotation.y = -sectorObj.yaw;
+                            mesh.visible = true;
+                        }
+                    });
+
+                    for (
+                        let i = mapDataToUse.customSectorLines.length;
+                        i < customSectorMeshes.length;
+                        i++
+                    ) {
+                        customSectorMeshes[i].visible = false;
+                    }
+                }
+
+                for (let i = 0; i < carMeshes.length; i++) {
+                    const carData = mapDataToUse.allCars
+                        ? mapDataToUse.allCars[i]
+                        : null;
+                    const mesh = carMeshes[i];
+
+                    if (
+                        !carData ||
+                        !Number.isFinite(carData.x) ||
+                        !Number.isFinite(carData.z) ||
+                        (carData.x === 0 && carData.z === 0)
+                    ) {
+                        mesh.visible = false;
+                    } else {
+                        mesh.visible = true;
+                        mesh.position.set(carData.x, 0, carData.z);
+                        const teamHex = getTeamColorHex(carData.teamColor);
+                        mesh.material.color.setHex(teamHex);
+
+                        if (i === mapDataToUse.playerIndex) {
+                            mesh.scale.set(1.5, 1.5, 1.5);
+                            mesh.renderOrder = 999;
+                        } else {
+                            mesh.scale.set(1, 1, 1);
+                            mesh.renderOrder = 1;
+                        }
+                    }
+                }
+            }
+
+            setText("speed", data.inputs.speed);
+            setText("gear", data.inputs.gear);
+            setText("rpm", data.inputs.rpm);
+            setText("steer", data.inputs.steer.toFixed(2));
+            setText("drs", data.inputs.drs);
+            setStyleById(
+                "drs",
+                "color",
+                data.inputs.drs === "OPEN" ? "var(--fia-green)" : "var(--text-main)",
+            );
+            setStyleById(
+                "throttle",
+                "width",
+                `${clampPercent(data.inputs.throttle)}%`,
+            );
+            setText("thr-val", `${Math.round(data.inputs.throttle)}%`);
+            setStyleById("brake", "width", `${clampPercent(data.inputs.brake)}%`);
+            setText("brk-val", `${Math.round(data.inputs.brake)}%`);
+            setStyleById("clutch", "width", `${clampPercent(data.inputs.clutch)}%`);
+            setText("clu-val", `${data.inputs.clutch}%`);
+
+            setText("g-lat", `${data.motion.gLat.toFixed(2)}`);
+            setText("g-long", `${data.motion.gLong.toFixed(2)}`);
+            setText("g-vert", `${(data.motion.gVert || 0).toFixed(2)}`);
+            updateGForceDisplay(
+                data.motion.gLat,
+                data.motion.gLong,
+                data.motion.gVert || 0,
+                data.lap.currentMs,
+            );
+            setText("pitch", `${data.motion.pitch.toFixed(2)}`);
+            setText("roll", `${data.motion.roll.toFixed(2)}`);
+            setStyleById(
+                "susp-fl",
+                "width",
+                `${clampPercent(Math.abs(data.motion.susp.fl * 15))}%`,
+            );
+            setStyleById(
+                "susp-fr",
+                "width",
+                `${clampPercent(Math.abs(data.motion.susp.fr * 15))}%`,
+            );
+            setStyleById(
+                "susp-rl",
+                "width",
+                `${clampPercent(Math.abs(data.motion.susp.rl * 15))}%`,
+            );
+            setStyleById(
+                "susp-rr",
+                "width",
+                `${clampPercent(Math.abs(data.motion.susp.rr * 15))}%`,
+            );
+
+            setText("engine-temp", `${data.car.engineTemp} °C`);
+            ["fl", "fr", "rl", "rr"].forEach((c) => {
+                setText(`temp-surf-${c}`, data.car.surfTemp[c]);
+                setText(`temp-in-${c}`, data.car.inTemp[c]);
+                setText(`press-${c}`, data.car.press[c].toFixed(1));
+                setText(`brake-temp-${c}`, data.car.brakeTemp[c]);
+            });
+            updateCarTyreVisual(data.car.wear, data.car.compound);
+            setText("tyre-age-display", `${data.car.tyreAge} Laps`);
+
+            setText("ers-mode", data.ers.mode);
+            setStyleById(
+                "ers-battery",
+                "width",
+                `${clampPercent(data.ers.battery)}%`,
+            );
+            setText("ers-val", `${Math.round(data.ers.battery)}%`);
+            setText("fuel", `${data.setup.fuel.toFixed(2)} kg`);
+            setText("pit-limit", data.session.pitLimit);
+
+            setText("wing-f", data.setup.wingF);
+            setText("wing-r", data.setup.wingR);
+            setText("diff-on", `${data.setup.diffOn}%`);
+            setText("diff-off", `${data.setup.diffOff}%`);
+            setText("camber-f", data.setup.camberF.toFixed(2));
+            setText("camber-r", data.setup.camberR.toFixed(2));
+            setText("toe-f", data.setup.toeF.toFixed(2));
+            setText("toe-r", data.setup.toeR.toFixed(2));
+            setText("bbias", `${data.setup.bBias}%`);
+
+            if (data.leaderboard && data.leaderboard.length > 0) {
+                const sessionType = data.session.type || "";
+                const isTimeBased =
+                    sessionType.includes("Practice") ||
+                    sessionType.includes("Q") ||
+                    sessionType.includes("Time Trial");
+                const isRace =
+                    sessionType.includes("Race") || sessionType.includes("Sprint");
+
+                let headersHtml = `<span class="col-pos">POS</span><span class="col-driver">DRIVER</span>`;
+
+                if (isTimeBased) {
+                    headersHtml += `<span class="col-best">BEST</span>
+                                    <span class="col-gap">GAP</span>
+                                    <span class="col-laps">LAPS</span>
+                                    <span class="col-stat">STAT</span>`;
+                } else if (isRace) {
+                    headersHtml += `<span class="col-tyre">TYRE</span>
+                                    <span class="col-int">INT</span>
+                                    <span class="col-laps">LAPS</span>`;
+                } else {
+                    headersHtml += `<span class="col-laps">LAPS</span>`;
+                }
+
+                setHtml("leaderboard-headers", headersHtml);
+
+                let lbHtml = "";
+                const statusMap = {
+                    0: "GARAGE",
+                    1: "FLYING",
+                    2: "IN LAP",
+                    3: "OUT LAP",
+                    4: "TRACK",
+                };
+                let leaderboardRows = Array.isArray(data.leaderboard)
+                    ? [...data.leaderboard]
+                    : [];
+
+                if (isTimeBased) {
+                    leaderboardRows.sort((a, b) => {
+                        if (a.bestLapMs > 0 && b.bestLapMs > 0)
+                            return a.bestLapMs - b.bestLapMs;
+                        if (a.bestLapMs > 0) return -1;
+                        if (b.bestLapMs > 0) return 1;
+                        return (a.carIndex || 0) - (b.carIndex || 0);
+                    });
+
+                    const leaderLapMs = leaderboardRows[0]?.bestLapMs || 0;
+                    leaderboardRows = leaderboardRows.map((driver, idx) => {
+                        return {
+                            ...driver,
+                            calcPos: idx + 1,
+                            calcGapLeaderMs:
+                                leaderLapMs > 0 && driver.bestLapMs > 0
+                                    ? driver.bestLapMs - leaderLapMs
+                                    : 0,
+                        };
+                    });
+                }
+
+                leaderboardRows.forEach((driver, index) => {
+                    const isFastest =
+                        driver.carIndex === data.session.fastestLapCarIndex &&
+                        driver.bestLapMs > 0;
+                    const isPlayer = driver.carIndex === data.playerIndex;
+                    const nameColor = isPlayer
+                        ? "#fff"
+                        : isFastest
+                            ? "var(--fia-purple)"
+                            : "var(--text-main)";
+                    const bgCol = isPlayer ? "rgba(255, 255, 255, 0.1)" : "transparent";
+                    const displayPos = isTimeBased
+                        ? driver.calcPos || driver.pos || "--"
+                        : driver.pos || "--";
+                    const teamColor = getTeamColorCss(driver, data);
+
+                    let driverName =
+                        data.participants && data.participants[driver.carIndex]
+                            ? data.participants[driver.carIndex].toUpperCase()
+                            : `CAR ${driver.carIndex}`;
+                    const flBadge = isFastest ? '<span class="fl-icon">⏱</span>' : "";
+
+                    let rowHtml = `<div class="lb-row" data-car-index="${driver.carIndex}" style="background: ${bgCol};">
+                        <span class="val col-pos">${displayPos}</span>
+                        <span class="val col-driver" style="color: ${nameColor};">
+                            <span class="team-stripe" style="background: ${teamColor}; color: ${teamColor};"></span>
+                            <span class="driver-name-text">${driverName}${flBadge}</span>
+                        </span>`;
+
+                    if (isTimeBased) {
+                        let bestStr =
+                            driver.bestLapMs > 0 ? formatMs(driver.bestLapMs) : "--:--.---";
+                        let gapStr =
+                            driver.calcPos === 1
+                                ? "LEAD"
+                                : driver.calcGapLeaderMs > 0
+                                    ? `+${(driver.calcGapLeaderMs / 1000).toFixed(3)}`
+                                    : "--";
+                        let lapStr = driver.lapNum;
+
+                        let statStr =
+                            driver.pitStatus === 1 || driver.pitStatus === 2
+                                ? "PIT"
+                                : statusMap[driver.driverStatus] || "TRACK";
+                        let statCol =
+                            statStr === "FLYING"
+                                ? "var(--fia-purple)"
+                                : statStr === "PIT"
+                                    ? "var(--fia-yellow)"
+                                    : "var(--text-muted)";
+
+                        rowHtml += `<span class="val col-best" style="color: ${isFastest ? "var(--fia-purple)" : "#fff"};">${bestStr}</span>
+                                    <span class="val col-gap">${gapStr}</span>
+                                    <span class="val col-laps">${lapStr}</span>
+                                    <span class="val col-stat" style="color: ${statCol};">${statStr}</span>`;
+                    } else if (isRace) {
+                        let compound = (driver.tyre || "-").split(" ")[0];
+                        let intStr = index === 0 ? "LEAD" : driver.gapText || "--";
+                        let lapStr = `${driver.lapNum}/${data.session.lapsTotal}`;
+
+                        rowHtml += `<span class="val col-tyre" style="color: ${driver.tyreClass || "#FFF"};">${compound}</span>
+                                    <span class="val col-int">${intStr}</span>
+                                    <span class="val col-laps">${lapStr}</span>`;
+                    } else {
+                        rowHtml += `<span class="val col-laps">${driver.lapNum}</span>`;
+                    }
+
+                    rowHtml += `</div>`;
+                    lbHtml += rowHtml;
+                });
+                animateClassificationSwap(
+                    document.getElementById("leaderboard-container"),
+                    lbHtml,
+                    leaderboardRows.map((driver) => String(driver.carIndex)),
+                );
+
+                const playerRow = leaderboardRows.find(
+                    (d) => d.carIndex === data.playerIndex,
+                );
+                setText(
+                    "pos",
+                    data.lap.pos > 0
+                        ? data.lap.pos
+                        : isTimeBased
+                            ? playerRow?.calcPos || "--"
+                            : playerRow?.pos || "--",
+                );
+
+                const hHead = document.getElementById("history-head");
+                const hBody = document.getElementById("history-body");
+                let maxLaps = 0;
+                leaderboardRows.forEach((d) => {
+                    if (d.lapHistory && d.lapHistory.length > maxLaps)
+                        maxLaps = d.lapHistory.length;
+                });
+
+                if (maxLaps > 0) {
+                    let headHtml = `<tr><th class="sticky-pos">POS</th><th class="sticky-name">DRIVER</th>`;
+                    for (let i = 1; i <= maxLaps; i++) headHtml += `<th>LAP ${i}</th>`;
+                    const fullHeadHtml = headHtml + `</tr>`;
+                    if (window.lastHistoryHeadHtml !== fullHeadHtml) {
+                        window.lastHistoryHeadHtml = fullHeadHtml;
+                        setElementHtml(hHead, fullHeadHtml);
+                    }
+
+                    let bodyHtml = "";
+                    leaderboardRows.forEach((driver) => {
+                        let driverName =
+                            data.participants && data.participants[driver.carIndex]
+                                ? data.participants[driver.carIndex].toUpperCase()
+                                : `CAR ${driver.carIndex}`;
+                        let displayPos = isTimeBased
+                            ? driver.calcPos || driver.pos || "--"
+                            : driver.pos || "--";
+                        const teamColor = getTeamColorCss(driver, data);
+
+                        let tyreLetter = "U";
+                        if (driver.tyre) {
+                            const uTyre = driver.tyre.toUpperCase();
+                            if (uTyre.includes("SOFT")) tyreLetter = "S";
+                            else if (uTyre.includes("MEDIUM")) tyreLetter = "M";
+                            else if (uTyre.includes("HARD")) tyreLetter = "H";
+                            else if (uTyre.includes("INTER")) tyreLetter = "I";
+                            else if (uTyre.includes("WET")) tyreLetter = "W";
+                        }
+                        let tyreDot = `<span style="display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; border: 2px solid ${driver.tyreClass || "#FFF"}; color: ${driver.tyreClass || "#FFF"}; font-size: 10px; font-weight: 700; margin-right: 8px; vertical-align: middle;">${tyreLetter}</span>`;
+
+                        let rHtml = `<tr>
+                            <td class="sticky-pos" style="font-weight: bold;">P${displayPos}</td>
+                            <td class="sticky-name" style="font-weight: 600;">
+                                <span class="history-driver">
+                                    ${tyreDot}
+                                    <span class="team-stripe" style="background: ${teamColor}; color: ${teamColor};"></span>
+                                    <span>${driverName}</span>
+                                </span>
+                            </td>`;
+
+                        for (let i = 0; i < maxLaps; i++) {
+                            const lapData = driver.lapHistory[i] || {};
+                            const lapTimeMs =
+                                typeof lapData === "object"
+                                    ? lapData.lapTime || 0
+                                    : lapData || 0;
+                            const s1 = typeof lapData === "object" ? lapData.s1 || 0 : 0;
+                            const s2 = typeof lapData === "object" ? lapData.s2 || 0 : 0;
+                            const s3 = typeof lapData === "object" ? lapData.s3 || 0 : 0;
+                            const lapValid =
+                                typeof lapData === "object" &&
+                                    lapData.validFlags !== undefined
+                                    ? lapData.validFlags & 0x01
+                                    : 1;
+
+                            let styleClass = "lap-cell";
+                            if (lapTimeMs > 0) {
+                                if (!lapValid) styleClass += " time-invalid";
+                                else if (
+                                    data.session.sessionFastestLapMs > 0 &&
+                                    lapTimeMs <= data.session.sessionFastestLapMs
+                                )
+                                    styleClass += " time-sb";
+                                else if (
+                                    driver.bestLapMs > 0 &&
+                                    lapTimeMs <= driver.bestLapMs
+                                )
+                                    styleClass += " time-pb";
+                                else styleClass += " time-yellow";
+                            }
+                            const sb1 = data.session.sessionBestS1 || 0;
+                            const sb2 = data.session.sessionBestS2 || 0;
+                            const sb3 = data.session.sessionBestS3 || 0;
+                            const pb1 = driver.bestS1 || 0;
+                            const pb2 = driver.bestS2 || 0;
+                            const pb3 = driver.bestS3 || 0;
+                            const onClickAttr =
+                                lapTimeMs > 0
+                                    ? `onclick="showSectorPopup(event, ${s1}, ${s2}, ${s3}, ${sb1}, ${sb2}, ${sb3}, ${pb1}, ${pb2}, ${pb3})"`
+                                    : "";
+                            rHtml += `<td class="${styleClass}" ${onClickAttr} style="${lapTimeMs > 0 ? "cursor:pointer;" : ""}">${formatMs(lapTimeMs)}</td>`;
+                        }
+                        bodyHtml += rHtml + `</tr>`;
+                    });
+                    if (window.lastHistoryBodyHtml !== bodyHtml) {
+                        window.lastHistoryBodyHtml = bodyHtml;
+                        setElementHtml(hBody, bodyHtml);
+                    }
+                }
+            } else {
+                setText("pos", data.lap.pos > 0 ? data.lap.pos : "--");
+            }
+        }
+
+        function showSectorPopup(
+            event,
+            s1,
+            s2,
+            s3,
+            sb1,
+            sb2,
+            sb3,
+            pb1,
+            pb2,
+            pb3,
+        ) {
+            let popup = document.getElementById("sector-time-popup");
+            if (!popup) {
+                popup = document.createElement("div");
+                popup.id = "sector-time-popup";
+                popup.className = "track-popup";
+                document.body.appendChild(popup);
+                document.addEventListener("click", (e) => {
+                    if (e.target !== popup && !e.target.closest("td.lap-cell")) {
+                        popup.style.display = "none";
+                    }
+                });
+            }
+
+            function getColorClass(ms, sb, pb) {
+                if (!ms || ms <= 0) return "";
+                if (sb > 0 && ms <= sb) return "val purple";
+                if (pb > 0 && ms <= pb) return "val green";
+                return "val yellow";
+            }
+
+            const c1 = getColorClass(s1, sb1, pb1);
+            const c2 = getColorClass(s2, sb2, pb2);
+            const c3 = getColorClass(s3, sb3, pb3);
+
+            popup.innerHTML = `
+                <div class="name">SECTOR TIMES</div>
+                <div class="meta"><span>S1</span><span class="${c1}">${s1 > 0 ? (s1 / 1000).toFixed(3) : "--.---"}</span></div>
+                <div class="meta"><span>S2</span><span class="${c2}">${s2 > 0 ? (s2 / 1000).toFixed(3) : "--.---"}</span></div>
+                <div class="meta"><span>S3</span><span class="${c3}">${s3 > 0 ? (s3 / 1000).toFixed(3) : "--.---"}</span></div>
+            `;
+            popup.style.display = "block";
+            popup.style.left = event.pageX + 10 + "px";
+            popup.style.top = event.pageY - 20 + "px";
+            event.stopPropagation();
+        }
+
+        connectWebSocket();
+    </script>
+    <div id="sector-modal" style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+      ">
+        <div class="panel" style="width: 320px; box-shadow: var(--shadow-panel)">
+            <div class="panel-header">Set Custom Sectors</div>
+            <div style="
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            font-family: &quot;Roboto Mono&quot;, monospace;
+          ">
+                Format: Pure Milliseconds (e.g. 25000)
+            </div>
+
+            <div class="data-row" style="margin-bottom: 8px">
+                <span class="label">Sector 1</span>
+                <input type="number" id="sec1-input" class="sec-input" placeholder="28500" style="
+              background: var(--f1-dark);
+              border: 1px solid var(--f1-border);
+              color: #fff;
+              width: 120px;
+              text-align: right;
+              padding: 6px;
+              font-family: &quot;Roboto Mono&quot;, monospace;
+              font-size: 1rem;
+              border-radius: 4px;
+            " />
+            </div>
+            <div class="data-row" style="margin-bottom: 8px">
+                <span class="label">Sector 2</span>
+                <input type="number" id="sec2-input" class="sec-input" placeholder="52000" style="
+              background: var(--f1-dark);
+              border: 1px solid var(--f1-border);
+              color: #fff;
+              width: 120px;
+              text-align: right;
+              padding: 6px;
+              font-family: &quot;Roboto Mono&quot;, monospace;
+              font-size: 1rem;
+              border-radius: 4px;
+            " />
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px">
+                <button onclick="
+              document.getElementById('sector-modal').style.display = 'none'
+            " style="
+              flex: 1;
+              padding: 10px;
+              background: var(--f1-dark-alt);
+              border: 1px solid var(--f1-border);
+              color: var(--text-main);
+              cursor: pointer;
+              border-radius: 4px;
+              font-family: &quot;Titillium Web&quot;, sans-serif;
+              font-weight: 600;
+            ">
+                    Cancel
+                </button>
+                <button onclick="submitSectors()" style="
+              flex: 1;
+              padding: 10px;
+              background: var(--fia-purple);
+              border: none;
+              color: #fff;
+              cursor: pointer;
+              border-radius: 4px;
+              font-family: &quot;Titillium Web&quot;, sans-serif;
+              font-weight: 700;
+              font-size: 1.05rem;
+            ">
+                    Apply Sectors
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
