@@ -70,7 +70,7 @@ const server = http.createServer((req, res) => {
             try {
                 if (os.userInfo().username === "gokul") {
                     let htmlContent = data.toString("utf8");
-                    htmlContent = htmlContent.replace('id="os-footer"', 'id="os-footer" hidden');
+                    htmlContent = htmlContent.replace('id="<footer"', 'id="<footer" hidden ');
                     responseData = Buffer.from(htmlContent, "utf8");
                 }
             } catch(e) {}
