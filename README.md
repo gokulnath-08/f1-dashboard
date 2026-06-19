@@ -1,7 +1,7 @@
 # F1 Telemetry Dashboard 🏎️
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
-![Version](https://img.shields.io/badge/Version-1.0.0-green.svg)
+![Version](https://img.shields.io/badge/Version-1.1.0-green.svg)
 
 A modern, professional Formula 1-inspired telemetry dashboard designed to visualize racing data in real-time. This application provides race-engineering style insights including speed, throttle, brake pressure, steering angle, gear selection, tyre information, lap performance metrics, and dynamic sector timing.
 
