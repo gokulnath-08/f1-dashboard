@@ -7,6 +7,14 @@ const os = require("os");
 
 const PORT = 3000;
 
+const args = process.argv.slice(2);
+let hz = parseInt(args[0], 10);
+const validHz = [10, 20, 30, 60];
+if (!validHz.includes(hz)) {
+    hz = 20;
+}
+const intervalMs = Math.round(1000 / hz);
+
 
 const trackMapsDir = path.join(__dirname, 'track_maps');
 if (!fs.existsSync(trackMapsDir)) {
@@ -57,11 +65,22 @@ const server = http.createServer((req, res) => {
             return;
         }
 
+        let responseData = data;
+        if (req.url === "/" || req.url === "/index.html") {
+            try {
+                if (os.userInfo().username === "gokul") {
+                    let htmlContent = data.toString("utf8");
+                    htmlContent = htmlContent.replace('id="os-footer"', 'id="os-footer" hidden');
+                    responseData = Buffer.from(htmlContent, "utf8");
+                }
+            } catch(e) {}
+        }
+
         res.writeHead(200, {
             "Content-Type": contentTypes[ext] || "text/plain"
         });
 
-        res.end(data);
+        res.end(responseData);
     });
 });
 
@@ -1166,10 +1185,10 @@ setInterval(() => {
     clients.forEach((ws) => {
         if (ws.readyState === WebSocket.OPEN) ws.send(payload);
     });
-}, 50);
+}, intervalMs);
 
 f1Client.start();
-console.log('🏎️  UNIFIED COMMAND CENTER ONLINE (20Hz)');
+console.log(`🏎️  UNIFIED COMMAND CENTER ONLINE (${hz}Hz)`);
 console.log('Listening for UDP on port 20777...');
 
 function displayAllLocalIPv4() {

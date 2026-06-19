@@ -1,7 +1,7 @@
 # F1 Telemetry Dashboard 🏎️
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
-![Version](https://img.shields.io/badge/Version-1.1.0-green.svg)
+![Version](https://img.shields.io/badge/Version-1.2.0-green.svg)
 
 A modern, professional Formula 1-inspired telemetry dashboard designed to visualize racing data in real-time. This application provides race-engineering style insights including speed, throttle, brake pressure, steering angle, gear selection, tyre information, lap performance metrics, and dynamic sector timing.
 
@@ -57,11 +57,12 @@ It seamlessly intercepts UDP telemetry data from F1 racing titles and streams it
 ### Usage
 
 1.  **Start the Telemetry Server:**
-    Run the provided batch file or start the server manually:
+    Run the server manually using Node.js, optionally specifying the update rate (Hz). 
+    Valid inputs are `10`, `20`, `30`, and `60` (F1 game standards). If omitted or invalid, it defaults to `20`.
     ```bash
-    node server.js
+    node server.js 60
     ```
-    *(Alternatively, double-click `run.bat` on Windows)*
+    *(Alternatively, double-click `run.bat` on Windows for the default 20Hz)*
 
 2.  **Configure the F1 Game:**
     *   Go to **Settings > Telemetry Settings** in your F1 game.
