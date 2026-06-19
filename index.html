@@ -2508,7 +2508,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             return `${prefix}${(diffMs / 1000).toFixed(3)}s`;
         }
 
-        function setDeltaText(id, diffMs) {
+        function setDeltaText(id, diffMs, colorOverride) {
             const el = document.getElementById(id);
             if (!el) return;
             if (!Number.isFinite(diffMs)) {
@@ -2520,7 +2520,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             setStyle(
                 el,
                 "color",
-                diffMs <= 0 ? "var(--fia-green)" : "var(--f1-red)",
+                colorOverride || (diffMs <= 0 ? "var(--fia-green)" : "var(--f1-red)"),
             );
         }
 
@@ -2533,6 +2533,13 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const sectorKeys = ["s1", "s2", "s3"];
 
             sectorKeys.forEach((key) => {
+                const state = data.lap[`${key}State`];
+                if (state !== "complete") {
+                    setDeltaText(`lap-${key}-prev`, NaN);
+                    setDeltaText(`lap-${key}-best`, NaN);
+                    return;
+                }
+
                 const currentMs = Number(
                     data.lap[`live${key.toUpperCase()}`] ?? data.lap[key] ?? 0,
                 );
@@ -2553,14 +2560,21 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                             ? sessionBest
                             : 0;
 
-                setDeltaText(
-                    `lap-${key}-prev`,
-                    currentMs > 0 && previousMs > 0 ? currentMs - previousMs : NaN,
-                );
-                setDeltaText(
-                    `lap-${key}-best`,
-                    currentMs > 0 && bestMs > 0 ? currentMs - bestMs : NaN,
-                );
+                const prevDiff = currentMs > 0 && previousMs > 0 ? currentMs - previousMs : NaN;
+                setDeltaText(`lap-${key}-prev`, prevDiff, prevDiff <= 0 ? "var(--fia-green)" : "var(--fia-yellow)");
+
+                const bestDiff = currentMs > 0 && bestMs > 0 ? currentMs - bestMs : NaN;
+                let bestColor = "var(--text-muted)";
+                if (Number.isFinite(bestDiff)) {
+                    if (sessionBest > 0 && currentMs <= sessionBest) {
+                        bestColor = "var(--fia-purple)";
+                    } else if (personalBest > 0 && currentMs <= personalBest) {
+                        bestColor = "var(--fia-green)";
+                    } else {
+                        bestColor = "var(--fia-yellow)";
+                    }
+                }
+                setDeltaText(`lap-${key}-best`, bestDiff, bestColor);
             });
         }
 
