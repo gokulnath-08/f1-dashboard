@@ -9,19 +9,43 @@ It seamlessly intercepts UDP telemetry data from F1 racing titles and streams it
 
 ---
 
-## 🌟 Key Features
+## 🌟 Comprehensive Feature Set
 
-*   **Real-Time Telemetry Visualization**: Streams game data over WebSockets for instant dashboard updates.
-*   **FIA-Inspired Interface**: A clean, professional dark-mode UI designed to look like real race engineer timing screens.
-*   **Live Input Monitoring**: Real-time gauges for Throttle, Brake, Clutch, Steering, and DRS status.
-*   **Dynamic Track Maps**: Uses `Three.js` to render live 3D track maps with custom sectors, start lines, and real-time car positioning.
-*   **Advanced Timing & Sector Analysis**: 
-    *   Tracks live and completed sector times.
-    *   Automatically applies F1-standard coloring: **Purple** (Overall Best), **Green** (Personal Best), and **Yellow** (Slower).
-    *   Computes instantaneous deltas against session bests and previous laps.
-*   **Tyre & Vehicle Health**: Tracks tyre wear, compound type, surface/inner temperatures, brake temperatures, and engine stats.
-*   **Live Leaderboards & Session History**: Displays full session classifications, tyre histories, and lap-by-lap breakdowns for all participants.
-*   **G-Force & Motion Data**: Real-time G-Force meters and vehicle pitch/roll tracking.
+### 📡 Server & Networking Engine
+*   **High-Frequency Telemetry Parsing**: Decodes raw UDP packets using `@deltazeroproduction/f1-udp-parser`.
+*   **Variable WebSocket Broadcasting**: Configurable server update rate (Hz) to match your game output (10, 20, 30, or 60 Hz) for optimized network performance.
+*   **Multi-Client Support**: Run the server once and connect multiple dashboards from different devices (e.g., tablet, phone, secondary monitor) simultaneously via your local network.
+
+### ⏱️ Advanced Timing & Sector Analysis
+*   **Live Instantaneous Sectors**: Calculates accurate live sector timings (`liveS1`, `liveS2`, `liveS3`) based on real-time track distance, rather than waiting for the game's official split broadcast.
+*   **F1-Standard Sector Colors**: Automatically applies standard coloring logic upon sector completion: **Purple** (Overall Best), **Green** (Personal Best), and **Yellow** (Slower).
+*   **Custom Sector Creation**: Users can drop custom sector lines on the track map dynamically to analyze micro-sectors.
+
+### 👻 Ghost Data & Live Delta Tracking
+*   **Persistent Track Records**: The backend automatically tracks and saves the all-time fastest lap for every circuit to local JSON files (`laptime/fastest_TRACKID.json`).
+*   **Telemetry Ghost Capture**: When you set a new track record, the server captures a high-resolution telemetry ghost mapping time against track distance.
+*   **Live Delta to Record**: The server interpolates your current track distance against the ghost telemetry in real-time to compute a highly accurate live delta (+/- seconds) against the track record.
+
+### 🗺️ Dynamic 3D Track Mapping
+*   **Auto-Generation**: If a track is unmapped, the server uses your car's X and Z coordinates to "drive" and physically draw the track layout, saving it permanently (`track_maps/track_TRACKID.json`).
+*   **Intelligent Sector Lines**: Uses your telemetry split times to automatically drop official Sector 1 and Sector 2 lines at the exact physical coordinates on the 3D map.
+*   **Auto-Pit Lane**: Algorithmically estimates and draws the pit lane trajectory based on the main track geometry.
+
+### 📊 Dynamic Leaderboards & Intervals
+*   **Time Attack / Quali Mode**: Sorts the grid by lap times, formatting gaps precisely to the Pole Sitter.
+*   **Race Interval Engine**: Sorts the grid by physical position and calculates live interval gaps to the car ahead.
+*   **Fallback Interval Math**: If the game's official delta drops out, the server calculates an estimated time gap using physical distance and relative speed (marked with a `*`).
+
+### 🏎️ Vehicle Physics & Health Monitoring
+*   **Live Input Gauges**: Throttle, Brake, Clutch, Steering Angle, Gear, RPM, and Speed.
+*   **Motion & Suspension**: Pitch, Roll, Lateral/Longitudinal/Vertical G-Forces, and individual suspension positions.
+*   **Tyre Management**: Tracks Visual and Actual compounds, tyre age, individual tyre wear (FL, FR, RL, RR), surface temperatures, inner temperatures, and pressures.
+*   **Powertrain & Brakes**: Monitors Engine Temperature, individual Brake Temperatures, and ERS (Battery % and Deploy Mode).
+
+### 🚦 Race Control & Session Data
+*   **Automatic Metadata**: Translates raw game IDs into real-world Track Names, Session Types, and Team Names/Colors.
+*   **Safety Status**: Tracks Track Flags (Green, Yellow, Blue, Red), Safety Car status (Full, VSC), and live weather.
+*   **Steward Information**: Tracks warnings, corner-cutting violations, invalidated lap statuses, and unserved drive-through/stop-go penalties.
 
 ---
 
@@ -82,7 +106,9 @@ It seamlessly intercepts UDP telemetry data from F1 racing titles and streams it
 *   `server.js`: The main Node.js backend. Listens for UDP telemetry and broadcasts it via WebSockets.
 *   `index.html`: The frontend dashboard layout and core logic.
 *   `styles.css`: (If present) The CSS styling for the dashboard.
-*   `track_maps/`: Contains JSON files defining the 3D track geometries and coordinate paths.
+*   `track_maps/`: Contains JSON files dynamically generated by the server defining the 3D track geometries.
+*   `laptime/`: Contains all-time fastest lap records per track.
+*   `telemetry/`: Contains Ghost telemetry arrays for delta tracking.
 *   `package.json`: Project metadata and dependencies.
 
 ---
