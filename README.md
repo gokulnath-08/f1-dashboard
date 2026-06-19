@@ -1,7 +1,7 @@
 # F1 Telemetry Dashboard 🏎️
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
-![Version](https://img.shields.io/badge/Version-1.2.0-green.svg)
+![Version](https://img.shields.io/badge/Version-1.3.0-green.svg)
 
 A modern, professional Formula 1-inspired telemetry dashboard designed to visualize racing data in real-time. This application provides race-engineering style insights including speed, throttle, brake pressure, steering angle, gear selection, tyre information, lap performance metrics, and dynamic sector timing.
 
@@ -46,6 +46,10 @@ It seamlessly intercepts UDP telemetry data from F1 racing titles and streams it
 *   **Automatic Metadata**: Translates raw game IDs into real-world Track Names, Session Types, and Team Names/Colors.
 *   **Safety Status**: Tracks Track Flags (Green, Yellow, Blue, Red), Safety Car status (Full, VSC), and live weather.
 *   **Steward Information**: Tracks warnings, corner-cutting violations, invalidated lap statuses, and unserved drive-through/stop-go penalties.
+
+### 🎥 Online Streaming & Remote Viewing
+*   **OBS / StreamLabs Integration**: Perfect for sim racing streamers! Capture the dashboard window or add it as a Browser Source to overlay professional, live telemetry directly onto your Twitch or YouTube stream.
+*   **Live Viewer Access**: Host the Node.js backend publicly (e.g., using `ngrok`, local network tunneling, or port forwarding) and share the URL with your viewers, friends, or a dedicated race engineer. They can open the dashboard in their own web browser and monitor your live telemetry and inputs in absolute real-time, creating an interactive pit-wall experience!
 
 ---
 
