@@ -1115,7 +1115,7 @@
                 cursor: pointer;
                 font-weight: bold;
                 font-family: &quot;Roboto Mono&quot;, monospace;
-                display: flex;
+                display: none;
                 align-items: center;
                 justify-content: center;
                 line-height: 1;
@@ -1597,12 +1597,10 @@
         function switchTab(tabId, btnElement) {
             document
                 .querySelectorAll(".tab-content")
-                .forEach((tab) => tab.classList.remove("active"));
+                .forEach((tab) => setClass(tab, tab.id === tabId ? "active" : null, ["active"]));
             document
                 .querySelectorAll(".nav-btn")
-                .forEach((btn) => btn.classList.remove("active"));
-            document.getElementById(tabId).classList.add("active");
-            btnElement.classList.add("active");
+                .forEach((btn) => setClass(btn, btn === btnElement ? "active" : null, ["active"]));
             if (tabId === "tab-radar")
                 setTimeout(() => {
                     resizeThreeJS();
@@ -1997,37 +1995,92 @@
             document.getElementById("sector-modal").style.display = "none";
         }
 
+        const domCache = new Map();
+
         function setText(id, value) {
+            const next = String(value);
+            const cacheKey = `text_${id}`;
+            if (domCache.get(cacheKey) === next) return;
             const el = document.getElementById(id);
             if (!el) return;
-            const next = String(value);
-            if (el.innerText !== next) el.innerText = next;
+            el.textContent = next;
+            domCache.set(cacheKey, next);
         }
 
         function setElementText(el, value) {
             if (!el) return;
             const next = String(value);
-            if (el.innerText !== next) el.innerText = next;
+            if (el.id) {
+                const cacheKey = `text_${el.id}`;
+                if (domCache.get(cacheKey) === next) return;
+                el.textContent = next;
+                domCache.set(cacheKey, next);
+            } else {
+                if (el.textContent !== next) el.textContent = next;
+            }
         }
 
         function setHtml(id, value) {
+            const cacheKey = `html_${id}`;
+            if (domCache.get(cacheKey) === value) return;
             const el = document.getElementById(id);
             if (!el) return;
-            if (el.innerHTML !== value) el.innerHTML = value;
+            el.innerHTML = value;
+            domCache.set(cacheKey, value);
         }
 
         function setElementHtml(el, value) {
             if (!el) return;
-            if (el.innerHTML !== value) el.innerHTML = value;
+            if (el.id) {
+                const cacheKey = `html_${el.id}`;
+                if (domCache.get(cacheKey) === value) return;
+                el.innerHTML = value;
+                domCache.set(cacheKey, value);
+            } else {
+                if (el.innerHTML !== value) el.innerHTML = value;
+            }
         }
 
         function setStyle(el, prop, value) {
-            if (!el || el.style[prop] === value) return;
-            el.style[prop] = value;
+            if (!el) return;
+            if (el.id) {
+                const cacheKey = `style_${el.id}_${prop}`;
+                if (domCache.get(cacheKey) === value) return;
+                el.style[prop] = value;
+                domCache.set(cacheKey, value);
+            } else {
+                if (el.style[prop] !== value) el.style[prop] = value;
+            }
         }
 
         function setStyleById(id, prop, value) {
-            setStyle(document.getElementById(id), prop, value);
+            const cacheKey = `style_${id}_${prop}`;
+            if (domCache.get(cacheKey) === value) return;
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style[prop] = value;
+            domCache.set(cacheKey, value);
+        }
+
+        function setClass(el, activeClass, possibleClasses = []) {
+            if (!el) return;
+            let cacheKey = null;
+            if (el.id) {
+                cacheKey = `class_${el.id}`;
+                if (domCache.get(cacheKey) === activeClass) return;
+            }
+            
+            for (let i = 0; i < possibleClasses.length; i++) {
+                const c = possibleClasses[i];
+                if (c !== activeClass && el.classList.contains(c)) {
+                    el.classList.remove(c);
+                }
+            }
+            if (activeClass && !el.classList.contains(activeClass)) {
+                el.classList.add(activeClass);
+            }
+            
+            if (cacheKey) domCache.set(cacheKey, activeClass);
         }
 
         function getTeamColorHex(teamColor) {
@@ -2515,21 +2568,20 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             const valEl = document.getElementById(`lap-${sectorId}`);
             if (valEl) {
-                valEl.textContent = formatSectorMs(ms);
-                valEl.classList.remove("purple", "green", "yellow");
+                setElementText(valEl, formatSectorMs(ms));
+                let colorClass = null;
                 if (ms > 0) {
-                    if (msRefSessionBest > 0 && ms <= msRefSessionBest)
-                        valEl.classList.add("purple");
-                    else if (msRefPersonalBest > 0 && ms <= msRefPersonalBest)
-                        valEl.classList.add("green");
-                    else valEl.classList.add("yellow");
+                    if (msRefSessionBest > 0 && ms <= msRefSessionBest) colorClass = "purple";
+                    else if (msRefPersonalBest > 0 && ms <= msRefPersonalBest) colorClass = "green";
+                    else colorClass = "yellow";
                 }
+                setClass(valEl, colorClass, ["purple", "green", "yellow"]);
             }
 
             setElementText(chip, chipText);
             if (row) {
-                row.classList.toggle("live", normalizedState === "live");
-                row.classList.toggle("complete", normalizedState === "complete");
+                const rowClass = normalizedState === "live" ? "live" : (normalizedState === "complete" ? "complete" : null);
+                setClass(row, rowClass, ["live", "complete"]);
             }
         }
 
@@ -2774,9 +2826,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             const lastMsEl = document.getElementById("lap-last");
             if (lastMsEl) {
-                lastMsEl.textContent = formatMs(displayLastMs);
-                lastMsEl.classList.remove("purple", "green", "yellow");
-
+                setElementText(lastMsEl, formatMs(displayLastMs));
+                
                 const pbLap = playerLbData?.bestLapMs;
                 const sbLap = data.session.sessionFastestLapMs;
                 const isQualiOrTT = data.session.sessionCategory === "TimeAttack";
@@ -2784,11 +2835,13 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     ? (sbLap > 0 ? sbLap : (pbLap > 0 ? pbLap : 0))
                     : (pbLap > 0 ? pbLap : (sbLap > 0 ? sbLap : 0));
 
+                let lastMsColor = null;
                 if (displayLastMs > 0) {
-                    if (sbLap > 0 && displayLastMs <= sbLap) lastMsEl.classList.add("purple");
-                    else if (pbLap > 0 && displayLastMs <= pbLap) lastMsEl.classList.add("green");
-                    else lastMsEl.classList.add("yellow");
+                    if (sbLap > 0 && displayLastMs <= sbLap) lastMsColor = "purple";
+                    else if (pbLap > 0 && displayLastMs <= pbLap) lastMsColor = "green";
+                    else lastMsColor = "yellow";
                 }
+                setClass(lastMsEl, lastMsColor, ["purple", "green", "yellow"]);
 
                 const prevDiff = displayLastMs > 0 && displayLastPrevMs > 0 ? displayLastMs - displayLastPrevMs : NaN;
                 const bestDiff = displayLastMs > 0 && bestLapRef > 0 ? displayLastMs - bestLapRef : NaN;
@@ -2806,16 +2859,16 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             const bestMsEl = document.getElementById("lap-best");
             if (bestMsEl) {
-                bestMsEl.textContent = formatMs(data.lap.bestMs);
-                bestMsEl.classList.remove("purple", "green", "yellow");
+                setElementText(bestMsEl, formatMs(data.lap.bestMs));
+                let bestMsColor = null;
                 if (data.lap.bestMs > 0) {
-                    if (
-                        data.session.sessionFastestLapMs > 0 &&
-                        data.lap.bestMs <= data.session.sessionFastestLapMs
-                    )
-                        bestMsEl.classList.add("purple");
-                    else bestMsEl.classList.add("green");
+                    if (data.session.sessionFastestLapMs > 0 && data.lap.bestMs <= data.session.sessionFastestLapMs) {
+                        bestMsColor = "purple";
+                    } else {
+                        bestMsColor = "green";
+                    }
                 }
+                setClass(bestMsEl, bestMsColor, ["purple", "green", "yellow"]);
             }
 
             const sb1 = data.session.sessionBestS1;
