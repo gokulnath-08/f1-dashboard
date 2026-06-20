@@ -504,6 +504,42 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
         }
 
+        .track-popup .name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--f1-border);
+            padding-bottom: 4px;
+        }
+
+        .track-popup .meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 0.95rem;
+            font-family: "Roboto Mono", monospace;
+        }
+
+        .track-popup .meta span:first-child {
+            color: var(--text-muted);
+            margin-right: 15px;
+        }
+
+        .track-popup .meta span:last-child {
+            font-weight: 600;
+        }
+
+        .track-popup .meta .val.purple { color: var(--fia-purple); }
+        .track-popup .meta .val.green { color: var(--fia-green); }
+        .track-popup .meta .val.yellow { color: var(--fia-yellow); }
+
+        #sector-time-popup {
+            min-width: 150px;
+            border-left-color: var(--fia-purple);
+        }
+
         .map-zoom-controls {
             position: absolute;
             top: 12px;
@@ -910,28 +946,18 @@
                         <span class="label">Current</span>
                         <div style="text-align: right">
                             <span class="val highlight val-large" id="lap-current">--:--.---</span>
-                            <div id="delta-live" style="
-                    font-size: 0.9rem;
-                    font-family: &quot;Roboto Mono&quot;, monospace;
-                    font-weight: bold;
-                    margin-top: -2px;
-                  ">
-                                --
-                            </div>
-                            <div id="delta-reference" style="
-                    font-size: 0.7rem;
-                    color: var(--text-muted);
-                    font-family: &quot;Roboto Mono&quot;, monospace;
-                    margin-top: -2px;
-                  ">
-                                Fastest ref: --:--.---
-                            </div>
                         </div>
                     </div>
-                    <div class="data-row">
-                        <span class="label">Last Lap</span>
+                    <div class="data-row" style="align-items: flex-start;">
+                        <span class="label" style="margin-top: 4px;">Last Lap</span>
                         <div style="text-align: right">
                             <span class="val" id="lap-last">--:--.---</span>
+                            <div class="sector-delta">
+                                <span>Prev</span><span id="lap-last-prev">--</span>
+                            </div>
+                            <div class="sector-delta">
+                                <span>Best</span><span id="lap-last-best">--</span>
+                            </div>
                         </div>
                     </div>
                     <div class="data-row">
@@ -1460,6 +1486,10 @@
                 <div class="data-row" style="margin-top: 25px">
                     <span class="label">Fuel Mass</span>
                     <span class="val val-xlarge" id="fuel">0.00 kg</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Fuel Laps</span>
+                    <span class="val val-xlarge" id="fuel-laps">0.00</span>
                 </div>
                 <div class="data-row">
                     <span class="label">Pit Limit</span>
@@ -2535,8 +2565,12 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const history = Array.isArray(playerLbData?.lapHistory)
                 ? playerLbData.lapHistory
                 : [];
-            const previousLap =
-                history.length >= 2 ? history[history.length - 2] : null;
+            const isHolding = data.lap.currentMs < 5000 && history.length >= 2;
+            const previousLap = isHolding
+                ? (history.length >= 3 ? history[history.length - 3] : null)
+                : (history.length >= 2 ? history[history.length - 2] : null);
+                
+            const isQualiOrTT = data.session.sessionCategory === "TimeAttack";
             const sectorKeys = ["s1", "s2", "s3"];
 
             sectorKeys.forEach((key) => {
@@ -2560,12 +2594,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 const personalBest = Number(
                     playerLbData?.[`best${key.toUpperCase()}`] || 0,
                 );
-                const bestMs =
-                    personalBest > 0
-                        ? personalBest
-                        : Number.isFinite(sessionBest)
-                            ? sessionBest
-                            : 0;
+                
+                const bestMs = isQualiOrTT
+                    ? (sessionBest > 0 ? sessionBest : (personalBest > 0 ? personalBest : 0))
+                    : (personalBest > 0 ? personalBest : (Number.isFinite(sessionBest) && sessionBest > 0 ? sessionBest : 0));
 
                 const prevDiff = currentMs > 0 && previousMs > 0 ? currentMs - previousMs : NaN;
                 setDeltaText(`lap-${key}-prev`, prevDiff, prevDiff <= 0 ? "var(--fia-green)" : "var(--fia-yellow)");
@@ -2582,7 +2614,16 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     }
                 }
                 setDeltaText(`lap-${key}-best`, bestDiff, bestColor);
+
+                // --- Real-time console debugging ---
+                console.log(`[Sector ${key.toUpperCase()}] Completed! 
+  -> Current: ${formatMs(currentMs)} 
+  -> Prev:    ${formatMs(previousMs)} (Diff: ${formatDeltaMs(prevDiff)}) 
+  -> Best:    ${formatMs(bestMs)} (Diff: ${formatDeltaMs(bestDiff)})`);
+                // -----------------------------------
             });
+
+            // laptime deltas removed from here and moved to lap-last logic
         }
 
         function handleTelemetryMessage(event) {
@@ -2720,26 +2761,47 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             setStyle(stratBox, "backgroundColor", strategyInfo.bgColor);
             setStyle(stratBox, "border", strategyInfo.border);
 
-            setText("lap-current", formatMs(data.lap.currentMs));
+            const history = Array.isArray(playerLbData?.lapHistory)
+                ? playerLbData.lapHistory
+                : [];
+            
+            const isHoldingLap = data.lap.currentMs < 5000 && history.length >= 2;
+
+            const lapN = history.length >= 2 ? history[history.length - 2] : null;
+            const lapNMinus1 = history.length >= 3 ? history[history.length - 3] : null;
+            const displayLastMs = lapHistoryMs(lapN, "lapTime") || data.lap.lastMs;
+            const displayLastPrevMs = lapHistoryMs(lapNMinus1, "lapTime");
 
             const lastMsEl = document.getElementById("lap-last");
             if (lastMsEl) {
-                lastMsEl.textContent = formatMs(data.lap.lastMs);
+                lastMsEl.textContent = formatMs(displayLastMs);
                 lastMsEl.classList.remove("purple", "green", "yellow");
-                if (data.lap.lastMs > 0) {
-                    if (
-                        data.session.sessionFastestLapMs > 0 &&
-                        data.lap.lastMs <= data.session.sessionFastestLapMs
-                    )
-                        lastMsEl.classList.add("purple");
-                    else if (
-                        playerLbData &&
-                        playerLbData.bestLapMs > 0 &&
-                        data.lap.lastMs <= playerLbData.bestLapMs
-                    )
-                        lastMsEl.classList.add("green");
+
+                const pbLap = playerLbData?.bestLapMs;
+                const sbLap = data.session.sessionFastestLapMs;
+                const isQualiOrTT = data.session.sessionCategory === "TimeAttack";
+                const bestLapRef = isQualiOrTT
+                    ? (sbLap > 0 ? sbLap : (pbLap > 0 ? pbLap : 0))
+                    : (pbLap > 0 ? pbLap : (sbLap > 0 ? sbLap : 0));
+
+                if (displayLastMs > 0) {
+                    if (sbLap > 0 && displayLastMs <= sbLap) lastMsEl.classList.add("purple");
+                    else if (pbLap > 0 && displayLastMs <= pbLap) lastMsEl.classList.add("green");
                     else lastMsEl.classList.add("yellow");
                 }
+
+                const prevDiff = displayLastMs > 0 && displayLastPrevMs > 0 ? displayLastMs - displayLastPrevMs : NaN;
+                const bestDiff = displayLastMs > 0 && bestLapRef > 0 ? displayLastMs - bestLapRef : NaN;
+
+                setDeltaText("lap-last-prev", prevDiff, prevDiff <= 0 ? "var(--fia-green)" : "var(--fia-yellow)");
+                
+                let bestColor = "var(--text-muted)";
+                if (Number.isFinite(bestDiff)) {
+                    if (sbLap > 0 && displayLastMs <= sbLap) bestColor = "var(--fia-purple)";
+                    else if (pbLap > 0 && displayLastMs <= pbLap) bestColor = "var(--fia-green)";
+                    else bestColor = "var(--fia-yellow)";
+                }
+                setDeltaText("lap-last-best", bestDiff, bestColor);
             }
 
             const bestMsEl = document.getElementById("lap-best");
@@ -2763,6 +2825,25 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const pb2 = playerLbData ? playerLbData.bestS2 : 0;
             const pb3 = playerLbData ? playerLbData.bestS3 : 0;
 
+            // history and isHoldingLap calculated above
+            const originalLapData = { ...data.lap };
+
+            if (isHoldingLap) {
+                const heldLapData = history[history.length - 2];
+                const dS1 = lapHistoryMs(heldLapData, "s1");
+                const dS2 = lapHistoryMs(heldLapData, "s2");
+                const dS3 = lapHistoryMs(heldLapData, "s3");
+
+                data.lap = {
+                    ...data.lap,
+                    s1: dS1, liveS1: dS1, s1State: "complete",
+                    s2: dS2, liveS2: dS2, s2State: "complete",
+                    s3: dS3, liveS3: dS3, s3State: "complete"
+                };
+            }
+
+            setText("lap-current", formatMs(data.lap.currentMs));
+
             updateSectorDisplay(
                 "s1",
                 data.lap.liveS1 ?? data.lap.s1,
@@ -2784,7 +2865,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 sb3,
                 pb3,
             );
+            
             updateSectorDeltas(data, playerLbData);
+            
+            data.lap = originalLapData;
 
             const recordMs =
                 data.session.allTimeFastestLapMs === Infinity
@@ -3019,6 +3103,12 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             );
             setText("ers-val", `${Math.round(data.ers.battery)}%`);
             setText("fuel", `${data.setup.fuel.toFixed(2)} kg`);
+            if (data.setup.fuelLaps !== undefined) {
+                setText("fuel-laps", data.setup.fuelLaps.toFixed(2));
+                setStyleById("fuel-laps", "color", data.setup.fuelLaps < 0 ? "var(--fia-red)" : "var(--text-main)");
+            }
+
+            setText("flag", data.car.flag);
             setText("pit-limit", data.session.pitLimit);
 
             setText("wing-f", data.setup.wingF);

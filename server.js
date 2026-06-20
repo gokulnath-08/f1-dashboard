@@ -180,12 +180,61 @@ const weatherMap = { 0: 'Clear', 1: 'Light Cloud', 2: 'Overcast', 3: 'Light Rain
 const scMap = { 0: 'Clear', 1: 'Full SC', 2: 'VSC', 3: 'Formation', 4: 'SC Ending' };
 const ersMap = { 0: 'None', 1: 'Medium', 2: 'Hotlap', 3: 'Overtake' };
 
+const gameModeMap = {
+    4: 'Grand Prix ‘23', 5: 'Time Trial', 6: 'Splitscreen', 7: 'Online Custom',
+    15: 'Online Weekly Event', 17: 'Story Mode (Braking Point)', 27: 'My Team Career ‘25',
+    28: 'Driver Career ‘25', 29: 'Career ’25 Online', 30: 'Challenge Career ‘25',
+    75: 'Story Mode (APXGP)', 127: 'Benchmark'
+};
+
 const sessionMap = {
     0: 'Unknown', 1: 'Practice 1', 2: 'Practice 2', 3: 'Practice 3', 4: 'Short Practice',
-    5: 'Q1', 6: 'Q2', 7: 'Q3', 8: 'Short Q', 9: 'One-Shot Q',
-    10: 'Race', 11: 'Race 2', 12: 'Race 3', 13: 'Time Trial', 14: 'Sprint',
-    15: 'Sprint Shootout 1', 16: 'Sprint Shootout 2', 17: 'Sprint Shootout 3',
-    18: 'Time Trial', 19: 'One-Shot Sprint Shootout'
+    5: 'Qualifying 1', 6: 'Qualifying 2', 7: 'Qualifying 3', 8: 'Short Qualifying', 9: 'One-Shot Qualifying',
+    10: 'Sprint Shootout 1', 11: 'Sprint Shootout 2', 12: 'Sprint Shootout 3', 13: 'Short Sprint Shootout',
+    14: 'One-Shot Sprint Shootout', 15: 'Race', 16: 'Race 2', 17: 'Race 3', 18: 'Time Trial'
+};
+
+const rulesetMap = {
+    0: 'Practice & Qualifying', 1: 'Race', 2: 'Time Trial', 12: 'Elimination'
+};
+
+const surfaceMap = {
+    0: 'Tarmac', 1: 'Rumble strip', 2: 'Concrete', 3: 'Rock', 4: 'Gravel', 5: 'Mud',
+    6: 'Sand', 7: 'Grass', 8: 'Water', 9: 'Cobblestone', 10: 'Metal', 11: 'Ridged'
+};
+
+const penaltyMap = {
+    0: 'Drive through', 1: 'Stop Go', 2: 'Grid penalty', 3: 'Penalty reminder', 4: 'Time penalty',
+    5: 'Warning', 6: 'Disqualified', 7: 'Removed from formation lap', 8: 'Parked too long timer',
+    9: 'Tyre regulations', 10: 'This lap invalidated', 11: 'This and next lap invalidated',
+    12: 'This lap invalidated without reason', 13: 'This and next lap invalidated without reason',
+    14: 'This and previous lap invalidated', 15: 'This and previous lap invalidated without reason',
+    16: 'Retired', 17: 'Black flag timer'
+};
+
+const infringementMap = {
+    0: 'Blocking by slow driving', 1: 'Blocking by wrong way driving', 2: 'Reversing off the start line',
+    3: 'Big Collision', 4: 'Small Collision', 5: 'Collision failed to hand back position single',
+    6: 'Collision failed to hand back position multiple', 7: 'Corner cutting gained time',
+    8: 'Corner cutting overtake single', 9: 'Corner cutting overtake multiple', 10: 'Crossed pit exit lane',
+    11: 'Ignoring blue flags', 12: 'Ignoring yellow flags', 13: 'Ignoring drive through',
+    14: 'Too many drive throughs', 15: 'Drive through reminder serve within n laps',
+    16: 'Drive through reminder serve this lap', 17: 'Pit lane speeding', 18: 'Parked for too long',
+    19: 'Ignoring tyre regulations', 20: 'Too many penalties', 21: 'Multiple warnings',
+    22: 'Approaching disqualification', 23: 'Tyre regulations select single',
+    24: 'Tyre regulations select multiple', 25: 'Lap invalidated corner cutting',
+    26: 'Lap invalidated running wide', 27: 'Corner cutting ran wide gained time minor',
+    28: 'Corner cutting ran wide gained time significant', 29: 'Corner cutting ran wide gained time extreme',
+    30: 'Lap invalidated wall riding', 31: 'Lap invalidated flashback used',
+    32: 'Lap invalidated reset to track', 33: 'Blocking the pitlane', 34: 'Jump start',
+    35: 'Safety car to car collision', 36: 'Safety car illegal overtake',
+    37: 'Safety car exceeding allowed pace', 38: 'Virtual safety car exceeding allowed pace',
+    39: 'Formation lap below allowed speed', 40: 'Formation lap parking',
+    41: 'Retired mechanical failure', 42: 'Retired terminally damaged',
+    43: 'Safety car falling too far back', 44: 'Black flag timer', 45: 'Unserved stop go penalty',
+    46: 'Unserved drive through penalty', 47: 'Engine component change', 48: 'Gearbox change',
+    49: 'Parc Fermé change', 50: 'League grid penalty', 51: 'Retry penalty',
+    52: 'Illegal time gain', 53: 'Mandatory pitstop', 54: 'Attribute assigned'
 };
 
 const formulaMap = {
@@ -206,19 +255,27 @@ const trackMap = {
 const flagMap = { '-1': 'GREEN', 0: 'GREEN', 1: 'GREEN', 2: 'BLUE', 3: 'YELLOW', 4: 'RED' };
 const pitMap = { 0: 'ON TRACK', 1: 'PITTING', 2: 'IN PIT LANE' };
 const teamMap = {
+    0: '#27F4D2', 1: '#E8002D', 2: '#3671C6', 3: '#64C4FF', 4: '#229971', 5: '#0093CC',
+    6: '#6692FF', 7: '#B6BABD', 8: '#FF8000', 9: '#52E252', 41: '#FFFFFF', 104: '#FFFFFF',
     220: '#27F4D2', 221: '#E8002D', 222: '#3671C6', 223: '#64C4FF', 224: '#229971', 225: '#0093CC',
-    226: '#6692FF', 227: '#B6BABD', 228: '#FF8000', 229: '#52E252', 230: '#FFFFFF'
+    226: '#6692FF', 227: '#B6BABD', 228: '#FF8000', 229: '#52E252', 230: '#FFFFFF', 255: '#FFFFFF'
 };
 const teamNameMap = {
+    0: 'Mercedes', 1: 'Ferrari', 2: 'Red Bull Racing', 3: 'Williams', 4: 'Aston Martin', 5: 'Alpine',
+    6: 'RB', 7: 'Haas', 8: 'McLaren', 9: 'Kick Sauber', 41: 'F1 Generic', 104: 'My Team',
     220: 'Mercedes', 221: 'Ferrari', 222: 'Red Bull Racing', 223: 'Williams', 224: 'Aston Martin', 225: 'Alpine',
-    226: 'RB', 227: 'Haas', 228: 'McLaren', 229: 'Kick Sauber', 230: 'F1 Generic'
+    226: 'RB', 227: 'Haas', 228: 'McLaren', 229: 'Kick Sauber', 230: 'F1 Generic', 255: 'Network/Spectator'
 };
 
 let lastPrintedSessionTeamUID = null;
 
 function getParticipantTeamId(participant) {
     if (!participant) return undefined;
-    return participant.m_teamId !== undefined ? participant.m_teamId : participant.teamId;
+    const tid = participant.m_teamId !== undefined ? participant.m_teamId : participant.teamId;
+    if (tid !== undefined && !teamMap[tid]) {
+        console.log(`UNKNOWN TEAM ID DETECTED: ${tid} for driver ${participant.m_name || 'unknown'}`);
+    }
+    return tid;
 }
 
 let currentSessionUID = null;
@@ -252,7 +309,7 @@ let state = {
     motion: { pitch: 0, roll: 0, gLat: 0, gLong: 0, gVert: 0, susp: { fl: 0, fr: 0, rl: 0, rr: 0 } },
     inputs: { speed: 0, gear: 'N', rpm: 0, throttle: 0, brake: 0, clutch: 0, steer: 0, drs: 'CLOSED' },
     ers: { mode: 'None', battery: 0 },
-    setup: { wingF: 0, wingR: 0, diffOn: 0, diffOff: 0, camberF: 0, camberR: 0, toeF: 0, toeR: 0, bBias: 50, fuel: 0 },
+    setup: { wingF: 0, wingR: 0, diffOn: 0, diffOff: 0, camberF: 0, camberR: 0, toeF: 0, toeR: 0, bBias: 50, fuel: 0, fuelLaps: 0 },
     car: { tyreAge: 0, flag: 'GREEN', compound: 'Unknown', engineTemp: 0, wear: { fl: 0, fr: 0, rl: 0, rr: 0 }, surfTemp: { fl: 0, fr: 0, rl: 0, rr: 0 }, inTemp: { fl: 0, fr: 0, rl: 0, rr: 0 }, press: { fl: 0, fr: 0, rl: 0, rr: 0 }, brakeTemp: { fl: 0, fr: 0, rl: 0, rr: 0 } }
 };
 
@@ -329,39 +386,30 @@ function getSectorTime(obj, sectorNum) {
 }
 
 function getLiveSectorTiming(currentMs, sector, s1, s2, s3) {
-    const completedS1 = s1 > 0 ? s1 : 0;
-    const completedS2 = s2 > 0 ? s2 : 0;
-    const completedS3 = s3 > 0 ? s3 : 0;
     const live = {
-        s1: completedS1,
-        s2: completedS2,
-        s3: completedS3,
-        s1State: completedS1 > 0 ? 'complete' : 'pending',
-        s2State: completedS2 > 0 ? 'complete' : 'pending',
-        s3State: completedS3 > 0 ? 'complete' : 'pending'
+        s1: s1 || 0,
+        s2: s2 || 0,
+        s3: s3 || 0,
+        liveS1: s1 || 0,
+        liveS2: s2 || 0,
+        liveS3: s3 || 0,
+        s1State: 'pending',
+        s2State: 'pending',
+        s3State: 'pending'
     };
 
     if (sector === 0) {
-        live.s1 = Math.max(0, currentMs);
         live.s1State = 'live';
-        live.s2 = 0;
-        live.s2State = 'pending';
-        live.s3 = 0;
-        live.s3State = 'pending';
+        live.liveS1 = Math.max(0, currentMs);
     } else if (sector === 1) {
-        live.s1 = completedS1;
-        live.s1State = completedS1 > 0 ? 'complete' : 'pending';
-        live.s2 = Math.max(0, currentMs - completedS1);
+        live.s1State = 'complete';
         live.s2State = 'live';
-        live.s3 = 0;
-        live.s3State = 'pending';
+        live.liveS2 = Math.max(0, currentMs - live.s1);
     } else if (sector === 2) {
-        live.s1 = completedS1;
-        live.s1State = completedS1 > 0 ? 'complete' : 'pending';
-        live.s2 = completedS2;
-        live.s2State = completedS2 > 0 ? 'complete' : 'pending';
-        live.s3 = Math.max(0, currentMs - completedS1 - completedS2);
+        live.s1State = 'complete';
+        live.s2State = 'complete';
         live.s3State = 'live';
+        live.liveS3 = Math.max(0, currentMs - live.s1 - live.s2);
     }
 
     return live;
@@ -653,7 +701,7 @@ f1Client.on('sessionHistory', (data) => {
     const historyArray = data.m_lapHistoryData || data.lapHistoryData || [];
 
     allLapHistories[carIndex] = historyArray.slice(0, numLaps).map(lap => {
-        const lapTime = lap.m_lapTimeInMS || lap.lapTimeInMS || 0;
+        const lapTime = lap.m_lapTimeInMS || lap.lapTimeInMS || (lap.m_lapTime ? Math.round(lap.m_lapTime * 1000) : 0) || (lap.lapTime ? Math.round(lap.lapTime * 1000) : 0) || 0;
         return {
             lapTime: lapTime,
             s1: getSectorTime(lap, 1),
@@ -761,7 +809,7 @@ f1Client.on('lapData', (data) => {
         const lap = data.m_lapData ? data.m_lapData[i] : data.lapData[i];
 
         // Lap Transition Logic
-        if (lap.m_currentLapNum > carPhysics[i].lapNum || (lap.m_lapDistance < 50 && carPhysics[i].lapDistance > (state.session.trackLength - 200))) {
+        if (lap.m_currentLapNum > carPhysics[i].lapNum) {
             // Crossed the line
             lastLapTelemetry[i] = currentLapTelemetry[i];
             currentLapTelemetry[i] = [];
@@ -873,11 +921,7 @@ f1Client.on('lapData', (data) => {
             fastestLapIndex = i;
         }
 
-        if (carDataTracker[i].lapNum !== lap.m_currentLapNum) {
-            carDataTracker[i].s1 = 0;
-            carDataTracker[i].s2 = 0;
-            carDataTracker[i].s3 = 0;
-        }
+        // Let the UDP track sector times naturally without forcing 0 on lap change.
         carDataTracker[i].pos = lap.m_carPosition;
         carDataTracker[i].lapNum = lap.m_currentLapNum;
         carDataTracker[i].pitStatus = lap.m_pitStatus;
@@ -889,17 +933,7 @@ f1Client.on('lapData', (data) => {
             if (sector === 2 && state.lap.currentSector === 1) state.lap.pendingS2 = true;
             state.lap.currentSector = sector;
 
-            if (state.lap.lapNum !== lap.m_currentLapNum) {
-                state.lap.s1 = 0;
-                state.lap.s2 = 0;
-                state.lap.s3 = 0;
-                state.lap.liveS1 = 0;
-                state.lap.liveS2 = 0;
-                state.lap.liveS3 = 0;
-                state.lap.s1State = 'pending';
-                state.lap.s2State = 'pending';
-                state.lap.s3State = 'pending';
-            }
+            // State is updated strictly by the packet
 
             state.lap.lastMs = lap.m_lastLapTimeInMS || (lap.m_lastLapTime * 1000) || 0;
             state.lap.currentMs = curMs;
@@ -919,9 +953,9 @@ f1Client.on('lapData', (data) => {
                 state.lap.s2,
                 state.lap.s3
             );
-            state.lap.liveS1 = liveSectorTiming.s1;
-            state.lap.liveS2 = liveSectorTiming.s2;
-            state.lap.liveS3 = liveSectorTiming.s3;
+            state.lap.liveS1 = liveSectorTiming.liveS1;
+            state.lap.liveS2 = liveSectorTiming.liveS2;
+            state.lap.liveS3 = liveSectorTiming.liveS3;
             state.lap.s1State = liveSectorTiming.s1State;
             state.lap.s2State = liveSectorTiming.s2State;
             state.lap.s3State = liveSectorTiming.s3State;
@@ -1033,6 +1067,7 @@ f1Client.on('carStatus', (data) => {
     state.ers.battery = (pStat.m_ersStoreEnergy / 4000000) * 100;
     state.ers.mode = ersMap[pStat.m_ersDeployMode] || pStat.m_ersDeployMode;
     state.setup.fuel = pStat.m_fuelInTank || pStat.m_fuelMass || state.setup.fuel;
+    state.setup.fuelLaps = pStat.m_fuelRemainingLaps || 0;
     state.car.tyreAge = pStat.m_tyresAgeLaps || 0;
 });
 
