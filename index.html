@@ -1189,9 +1189,14 @@
                     <div class="fill-bar" id="clutch" style="background: var(--fia-yellow)"></div>
                 </div>
 
-                <div class="data-row" style="margin-top: 15px">
-                    <span class="label">Steering Angle</span>
-                    <span class="val" id="steer">0.00</span>
+                <div class="label" style="margin-top: 15px">
+                    Steering Angle
+                    <span id="steer-val" style="float: right; color: var(--text-main)">0.00</span>
+                </div>
+                <div class="bar-bg" style="position: relative; display: flex; justify-content: center;">
+                    <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.4); z-index: 2; transform: translateX(-50%);"></div>
+                    <div class="fill-bar" id="steer-left" style="background: var(--fia-green); width: 0%; position: absolute; right: 50%; top: 0; bottom: 0; border-radius: 4px 0 0 4px;"></div>
+                    <div class="fill-bar" id="steer-right" style="background: var(--fia-green); width: 0%; position: absolute; left: 50%; top: 0; bottom: 0; border-radius: 0 4px 4px 0;"></div>
                 </div>
                 <div class="data-row">
                     <span class="label">DRS</span>
@@ -3273,7 +3278,15 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             setText("speed", data.inputs.speed);
             setText("gear", data.inputs.gear);
             setText("rpm", data.inputs.rpm);
-            setText("steer", data.inputs.steer.toFixed(2));
+            const steerVal = data.inputs.steer || 0;
+            setText("steer-val", steerVal.toFixed(2));
+            if (steerVal >= 0) {
+                setStyleById("steer-right", "width", `${Math.min(steerVal * 50, 50)}%`);
+                setStyleById("steer-left", "width", "0%");
+            } else {
+                setStyleById("steer-left", "width", `${Math.min(Math.abs(steerVal) * 50, 50)}%`);
+                setStyleById("steer-right", "width", "0%");
+            }
             setText("drs", data.inputs.drs);
             setStyleById(
                 "drs",
