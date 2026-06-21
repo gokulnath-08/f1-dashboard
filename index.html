@@ -234,6 +234,13 @@
             text-transform: uppercase;
         }
 
+        .label1 {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
         /* ══════════ RESTORED TELEMETRY COLORS & FONTS ══════════ */
         .val {
             font-family: "Roboto Mono", monospace;
@@ -793,19 +800,17 @@
             }
 
             .car-visual-center {
-                grid-column: 1 / 3;
-                grid-row: 2;
-                min-height: 280px;
+                display: none;
             }
 
             .tyre-pos-rl {
                 grid-column: 1;
-                grid-row: 3;
+                grid-row: 2;
             }
 
             .tyre-pos-rr {
                 grid-column: 2;
-                grid-row: 3;
+                grid-row: 2;
             }
 
             .map-wrapper {
@@ -1017,8 +1022,8 @@
                         </div>
                     </div>
                     <div class="data-row" style="margin-top: 8px">
-                        <span class="label" style="color: var(--fia-purple)">Track Record
-                            <span id="record-driver" style="font-size: 0.75rem; color: var(--text-muted)"></span></span>
+                        <span class="label1" style="color: var(--fia-purple)">Track Record
+                            <span id="record-driver" style="font-size: 0.8rem; color: var(--text-muted)"></span></span>
                         <div style="text-align: right">
                             <span class="val" id="lap-record" style="
                     color: var(--fia-purple);
@@ -1260,7 +1265,11 @@
                 <div class="panel-header">Tyre Carcass &amp; Brake Thermals</div>
                 <div class="car-tyre-layout">
                     <!-- Front Left Data -->
-                    <div class="tyre-box tyre-pos-fl">
+                    <div class="tyre-box tyre-pos-fl" style="position: relative;">
+                        <!-- Tyre Compound Circle -->
+                        <div id="tyre-compound-circle-fl" style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
+                            -
+                        </div>
                         <div class="label">FRONT LEFT</div>
                         <div class="val highlight val-large">
                             <span id="temp-surf-fl">0</span>°C /
@@ -1277,7 +1286,11 @@
                     </div>
 
                     <!-- Front Right Data -->
-                    <div class="tyre-box tyre-pos-fr">
+                    <div class="tyre-box tyre-pos-fr" style="position: relative;">
+                        <!-- Tyre Compound Circle -->
+                        <div id="tyre-compound-circle-fr" style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
+                            -
+                        </div>
                         <div class="label">FRONT RIGHT</div>
                         <div class="val highlight val-large">
                             <span id="temp-surf-fr">0</span>°C /
@@ -1429,7 +1442,11 @@
                     </div>
 
                     <!-- Rear Left Data -->
-                    <div class="tyre-box tyre-pos-rl">
+                    <div class="tyre-box tyre-pos-rl" style="position: relative;">
+                        <!-- Tyre Compound Circle -->
+                        <div id="tyre-compound-circle-rl" style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
+                            -
+                        </div>
                         <div class="label">REAR LEFT</div>
                         <div class="val highlight val-large">
                             <span id="temp-surf-rl">0</span>°C /
@@ -1446,7 +1463,11 @@
                     </div>
 
                     <!-- Rear Right Data -->
-                    <div class="tyre-box tyre-pos-rr">
+                    <div class="tyre-box tyre-pos-rr" style="position: relative;">
+                        <!-- Tyre Compound Circle -->
+                        <div id="tyre-compound-circle-rr" style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
+                            -
+                        </div>
                         <div class="label">REAR RIGHT</div>
                         <div class="val highlight val-large">
                             <span id="temp-surf-rr">0</span>°C /
@@ -2507,6 +2528,25 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             // Update compound label on car SVG
             const compVal = document.getElementById("car-compound-value");
             if (compVal) compVal.textContent = (compound || "--").toUpperCase();
+
+            // Update the compound circle for all boxes
+            const compoundStr = (compound || "").toUpperCase();
+            let cLetter = "-";
+            let cColor = "var(--text-main)";
+            if (compoundStr.includes("SOFT")) { cLetter = "S"; cColor = "var(--f1-red)"; }
+            else if (compoundStr.includes("MEDIUM")) { cLetter = "M"; cColor = "var(--fia-yellow)"; }
+            else if (compoundStr.includes("HARD")) { cLetter = "H"; cColor = "#FFF"; }
+            else if (compoundStr.includes("INTER")) { cLetter = "I"; cColor = "var(--fia-green)"; }
+            else if (compoundStr.includes("WET")) { cLetter = "W"; cColor = "var(--fia-blue)"; }
+
+            ["fl", "fr", "rl", "rr"].forEach((corner) => {
+                const circle = document.getElementById(`tyre-compound-circle-${corner}`);
+                if (circle) {
+                    circle.textContent = cLetter;
+                    circle.style.borderColor = cColor;
+                    circle.style.color = cColor;
+                }
+            });
 
             // Also update the bottom row displays
             setText("tyre-compound-display", compound || "--");
