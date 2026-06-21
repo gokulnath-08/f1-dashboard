@@ -1,3 +1,4 @@
+// --- Imports and Configuration ---
 const { F1TelemetryClient } = require('@deltazeroproduction/f1-udp-parser');
 const WebSocket = require('ws');
 const http = require("http");
@@ -7,6 +8,7 @@ const os = require("os");
 
 const PORT = 3000;
 
+// Parse the tick rate from command line arguments (default: 20Hz)
 const args = process.argv.slice(2);
 let hz = parseInt(args[0], 10);
 const validHz = [10, 20, 30, 60];
@@ -15,7 +17,8 @@ if (!validHz.includes(hz)) {
 }
 const intervalMs = Math.round(1000 / hz);
 
-
+// --- File System Initialization ---
+// Ensure required directories exist for storing track data and ghost laps
 const trackMapsDir = path.join(__dirname, 'track_maps');
 if (!fs.existsSync(trackMapsDir)) {
     fs.mkdirSync(trackMapsDir);
@@ -46,6 +49,8 @@ if (fs.existsSync(fastestJsonPath)) {
 }
 
 
+// --- HTTP Server ---
+// Serves static files for the dashboard and training UI
 const server = http.createServer((req, res) => {
 
     let filePath = path.join(__dirname, req.url === "/" ? "index.html" : req.url);
@@ -90,6 +95,10 @@ function abs_diff(a, b) { return Math.abs((a || 0) - (b || 0)); }
 
 let clients = [];
 
+/**
+ * Handles incoming WebSocket connections from the front-end dashboard.
+ * Parses messages to retrieve saved track data or add custom timing sectors.
+ */
 function handleWsConnection(ws) {
     console.log('✅ Advanced Strategy Command Center Connected!');
     clients.push(ws);
@@ -313,6 +322,13 @@ let state = {
     car: { tyreAge: 0, flag: 'GREEN', compound: 'Unknown', engineTemp: 0, wear: { fl: 0, fr: 0, rl: 0, rr: 0 }, surfTemp: { fl: 0, fr: 0, rl: 0, rr: 0 }, inTemp: { fl: 0, fr: 0, rl: 0, rr: 0 }, press: { fl: 0, fr: 0, rl: 0, rr: 0 }, brakeTemp: { fl: 0, fr: 0, rl: 0, rr: 0 } }
 };
 
+/**
+ * Mathematically approximates the shape of the pit lane based on the main track coordinates.
+ * Finds the starting stretch of the track and applies an offset calculation.
+ * 
+ * @param {Array} trackPoints - The array of recorded track coordinates {x, z}
+ * @returns {Array} Approximate pit lane coordinates
+ */
 function buildApproxPitLane(trackPoints) {
     if (!Array.isArray(trackPoints) || trackPoints.length < 18) return [];
 
@@ -340,9 +356,18 @@ function buildApproxPitLane(trackPoints) {
 }
 
 
+// Initialize the F1 Telemetry UDP Listener on standard port 20777
 const f1Client = new F1TelemetryClient({ port: 20777, format: 2026 });
 
-
+/**
+ * Robust helper function to extract sector times from the F1 UDP packet.
+ * Due to version differences and inconsistencies in the parser library, 
+ * this checks multiple possible key names.
+ * 
+ * @param {Object} obj - The lap data object from the packet
+ * @param {number} sectorNum - The sector number (1, 2, or 3)
+ * @returns {number} The sector time in milliseconds
+ */
 function getSectorTime(obj, sectorNum) {
     if (!obj) return 0;
 
@@ -385,6 +410,10 @@ function getSectorTime(obj, sectorNum) {
     return totalMs;
 }
 
+/**
+ * Calculates the current live timing for the active sector based on the total lap time
+ * and the completed sector times. Returns an object with the timing state.
+ */
 function getLiveSectorTiming(currentMs, sector, s1, s2, s3) {
     const live = {
         s1: s1 || 0,
@@ -435,6 +464,12 @@ function getAccurateSessionName(sessionType, formula) {
 }
 
 
+// --- UDP Event Handlers ---
+
+/**
+ * Motion Packet Handler
+ * Updates 3D world coordinates (x, z, yaw) for all cars and records track map data if the circuit is unknown.
+ */
 f1Client.on('motion', (data) => {
     setPlayerIndex(data.m_header);
     const pIdx = state.playerIndex;
@@ -507,6 +542,10 @@ f1Client.on('motion', (data) => {
     }
 });
 
+/**
+ * Extended Motion Packet Handler
+ * Updates suspension positioning for telemetry graphs.
+ */
 f1Client.on('motionEx', (data) => {
     if (data.m_suspensionPosition) {
         state.motion.susp.rl = data.m_suspensionPosition[0] || 0;
@@ -516,6 +555,11 @@ f1Client.on('motionEx', (data) => {
     }
 });
 
+/**
+ * Loads the ghost lap telemetry reference for delta calculations for a specific track.
+ * 
+ * @param {number} trackId - The ID of the current track
+ */
 function loadTrackDeltaReference(trackId) {
     const record = allTimeFastest[trackId];
     if (!record) {
@@ -549,6 +593,11 @@ function loadTrackDeltaReference(trackId) {
 }
 
 
+/**
+ * Session Packet Handler
+ * Detects session/track changes, wipes stale telemetry data, loads existing track maps,
+ * and updates session environment details (weather, temp, safety car status).
+ */
 f1Client.on('session', (data) => {
     const uid = data.m_header.m_sessionUID;
     const newSessionUID = typeof uid === 'bigint' ? uid.toString() : String(uid);
@@ -695,6 +744,10 @@ f1Client.on('session', (data) => {
 });
 
 
+/**
+ * Session History Packet Handler
+ * Parses past lap times and sector times for the given car to populate classification tables and track records.
+ */
 f1Client.on('sessionHistory', (data) => {
     const carIndex = data.m_carIdx !== undefined ? data.m_carIdx : data.carIdx;
     const numLaps = data.m_numLaps !== undefined ? data.m_numLaps : data.numLaps;
@@ -737,6 +790,14 @@ f1Client.on('sessionHistory', (data) => {
     }
 });
 
+/**
+ * Helper function to interpolate and extract a precise coordinate (x, z, yaw, distance)
+ * from an array of telemetry points for a given timestamp.
+ * 
+ * @param {Array} telemetry - The array of recorded telemetry points {t, x, z, yaw, d}
+ * @param {number} targetTimeMs - The target time in milliseconds to extract
+ * @returns {Object|null} The interpolated coordinate
+ */
 function extractCoordinateFromTelemetry(telemetry, targetTimeMs) {
     if (!telemetry || telemetry.length === 0 || targetTimeMs <= 0) return null;
     let idx = telemetry.findIndex(pt => pt.t >= targetTimeMs);
@@ -768,6 +829,16 @@ function shouldSetSectorLine(existing, coord) {
     return !existing || !Number.isFinite(existing.x) || !Number.isFinite(existing.z) || (existing.x === 0 && existing.z === 0);
 }
 
+/**
+ * Replays telemetry to determine exactly where a car was on track when it crossed 
+ * sector 1 and sector 2 lines. This locks the visual sector lines to the track map.
+ * 
+ * @param {number} carIndex - The car index to use for mapping
+ * @param {number} sector1Ms - The elapsed time when the car crossed sector 1
+ * @param {number} sector2Ms - The elapsed time when the car crossed sector 2
+ * @param {Array} telemetry - The car's telemetry data array
+ * @returns {boolean} True if the track map was updated
+ */
 function lockOfficialSectorLinesFromTelemetry(carIndex, sector1Ms, sector2Ms, telemetry) {
     if (currentTrackId === -1 || !Array.isArray(telemetry) || telemetry.length < 5) return false;
 
@@ -799,6 +870,11 @@ function lockOfficialSectorLinesFromTelemetry(carIndex, sector1Ms, sector2Ms, te
     return trackUpdated;
 }
 
+/**
+ * Lap Data Packet Handler
+ * Handles lap transitions, records track records (ghost laps), live telemetry history,
+ * and extracts critical timing data (current lap time, sectors, delta to leader).
+ */
 f1Client.on('lapData', (data) => {
     setPlayerIndex(data.m_header);
     const pIdx = state.playerIndex;
@@ -984,6 +1060,10 @@ f1Client.on('lapData', (data) => {
 });
 
 
+/**
+ * Participants Packet Handler
+ * Updates driver names and resolves team colors from the team IDs.
+ */
 f1Client.on('participants', (data) => {
     setPlayerIndex(data.m_header);
     let newNames = [];
@@ -999,6 +1079,10 @@ f1Client.on('participants', (data) => {
 });
 
 
+/**
+ * Car Setups Packet Handler
+ * Reads the player's current car setup including aero, differential, geometry, and fuel load.
+ */
 f1Client.on('carSetups', (data) => {
     setPlayerIndex(data.m_header);
     const setup = data.m_carSetups[state.playerIndex];
@@ -1013,6 +1097,10 @@ f1Client.on('carSetups', (data) => {
 });
 
 
+/**
+ * Car Telemetry Packet Handler
+ * Updates real-time car metrics (speed, throttle, brake, gears, DRS, temps, and pressures) for all cars.
+ */
 f1Client.on('carTelemetry', (data) => {
     setPlayerIndex(data.m_header);
     const pIdx = state.playerIndex;
@@ -1044,6 +1132,10 @@ f1Client.on('carTelemetry', (data) => {
 });
 
 
+/**
+ * Car Status Packet Handler
+ * Parses tyre compounds, FIA flags, ERS battery levels, and fuel remaining.
+ */
 f1Client.on('carStatus', (data) => {
     setPlayerIndex(data.m_header);
     const pIdx = state.playerIndex;
@@ -1072,6 +1164,10 @@ f1Client.on('carStatus', (data) => {
 });
 
 
+/**
+ * Car Damage Packet Handler
+ * Tracks tyre wear percentages for the player's car to feed the pit stop strategy engine.
+ */
 f1Client.on('carDamage', (data) => {
     setPlayerIndex(data.m_header);
     const wear = data.m_carDamageData[state.playerIndex].m_tyresWear;
@@ -1080,6 +1176,11 @@ f1Client.on('carDamage', (data) => {
 });
 
 
+/**
+ * Main Broadcast Loop
+ * Runs at the configured tick rate (intervalMs). Aggregates all telemetry, processes the leaderboard 
+ * with accurate track gaps/intervals, calculates ghost lap deltas, and broadcasts the state to WebSockets.
+ */
 setInterval(() => {
     let newLeaderboard = [];
 
@@ -1226,6 +1327,9 @@ f1Client.start();
 console.log(`🏎️  UNIFIED COMMAND CENTER ONLINE (${hz}Hz)`);
 console.log('Listening for UDP on port 20777...');
 
+/**
+ * Helper to display all available local network IP addresses for the dashboard server.
+ */
 function displayAllLocalIPv4() {
     const interfaces = os.networkInterfaces();
     console.log('\n📡 --- Available Network Dashboards ---');

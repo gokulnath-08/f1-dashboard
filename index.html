@@ -1594,6 +1594,10 @@
 
 
     <script>
+        /**
+         * Switches the active UI tab and hides the others.
+         * Resizes the WebGL map rendering canvas if the radar tab is selected.
+         */
         function switchTab(tabId, btnElement) {
             document
                 .querySelectorAll(".tab-content")
@@ -1683,6 +1687,9 @@
             carMeshes.push(mesh);
         }
 
+        /**
+         * Creates a visual sector line overlay for the track map.
+         */
         function createSectorLine(color) {
             const geometry = new THREE.CircleGeometry(25, 32);
             const material = new THREE.MeshBasicMaterial({
@@ -1706,6 +1713,11 @@
 
         window.lastTrackPointsLength = 0;
         window.lastTrackPointsLengthCustom = 0;
+        
+        /**
+         * Main render loop for Three.js. Requests the next animation frame and 
+         * redraws the scene and dynamic map overlays (driver labels).
+         */
         function animate() {
             requestAnimationFrame(animate);
             renderer.render(scene, camera);
@@ -1713,6 +1725,10 @@
         }
         animate();
 
+        /**
+         * Recalculates the Orthographic camera bounds (view size and aspect ratio)
+         * whenever the window is resized or the user zooms the map.
+         */
         function updateTrackCameraBounds() {
             const width = mapContainer.clientWidth || 400;
             const height = mapContainer.clientHeight || 400;
@@ -1727,6 +1743,9 @@
             camera.updateProjectionMatrix();
         }
 
+        /**
+         * Resizes the WebGL renderer and camera frustum to match the container DOM element size.
+         */
         function resizeThreeJS() {
             if (mapContainer.clientWidth === 0) return;
             const width = mapContainer.clientWidth;
@@ -1739,12 +1758,18 @@
             drawGGraph();
         });
 
+        /**
+         * Updates the map zoom level within defined min/max bounds.
+         */
         function setMapZoom(nextZoom) {
             trackZoom = Math.max(0.65, Math.min(5, nextZoom));
             updateTrackCameraBounds();
             updateMapOverlays();
         }
 
+        /**
+         * Translates the center coordinate of the track map camera based on drag events.
+         */
         function panTrackMap(deltaX, deltaY) {
             const height = mapContainer.clientHeight || 1;
             const worldPerPixel = (trackViewSize * 2) / height;
@@ -1754,12 +1779,18 @@
             updateMapOverlays();
         }
 
+        /**
+         * Calculates the straight-line distance between two pointer events (for pinch-to-zoom).
+         */
         function getPointerDistance(points) {
             const dx = points[0].clientX - points[1].clientX;
             const dy = points[0].clientY - points[1].clientY;
             return Math.hypot(dx, dy);
         }
 
+        /**
+         * Calculates the midpoint between two pointer events (for two-finger panning).
+         */
         function getPointerMidpoint(points) {
             return {
                 x: (points[0].clientX + points[1].clientX) / 2,
@@ -1837,6 +1868,9 @@
             { passive: false },
         );
 
+        /**
+         * Resolves the end of a map drag/pinch interaction and resets variables.
+         */
         function endMapPointer(event) {
             mapPointers.delete(event.pointerId);
             const points = Array.from(mapPointers.values());
@@ -1872,6 +1906,13 @@
             updateMapOverlays();
         });
 
+        /**
+         * Analyzes tyre wear, weather conditions, and remaining laps to calculate 
+         * dynamic pit stop recommendations for the driver.
+         * 
+         * @param {Object} data - The full telemetry state object
+         * @returns {Object} A styling object containing text, color, background, and border
+         */
         function calculatePitStrategy(data) {
             const maxWear = Math.max(
                 data.car.wear.fl,
@@ -1955,6 +1996,12 @@
 
         let ws;
 
+        /**
+         * Derives the optimal WebSocket URL endpoints depending on whether the dashboard
+         * is loaded locally, over HTTPS, or using a legacy port config.
+         * 
+         * @returns {Array<string>} List of possible WebSocket URLs to attempt connection
+         */
         function getWebSocketUrls() {
             const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
             const urls = [`${protocol}//${window.location.host}`];
@@ -1967,6 +2014,10 @@
 
         let currentCustomSectors = ["", ""];
 
+        /**
+         * Opens the modal dialog to allow the user to input custom sector times.
+         * Pre-fills the inputs with the currently active custom sectors if any.
+         */
         function promptAddSector() {
             document.getElementById("sec1-input").value = currentCustomSectors[0];
             document.getElementById("sec2-input").value =
@@ -1974,6 +2025,10 @@
             document.getElementById("sector-modal").style.display = "flex";
         }
 
+        /**
+         * Submits the user-defined custom sector times to the server via WebSocket.
+         * Triggers a reset on the server before adding the new times.
+         */
         function submitSectors() {
             const s1 = document.getElementById("sec1-input").value.trim();
             const s2 = document.getElementById("sec2-input").value.trim();
@@ -1997,6 +2052,13 @@
 
         const domCache = new Map();
 
+        /**
+         * High-performance text content updater. Uses a DOM cache Map to prevent
+         * redundant DOM reflows and repaints if the value hasn't actually changed.
+         * 
+         * @param {string} id - The DOM element ID to update
+         * @param {any} value - The new text value
+         */
         function setText(id, value) {
             const next = String(value);
             const cacheKey = `text_${id}`;
@@ -2020,6 +2082,9 @@
             }
         }
 
+        /**
+         * High-performance innerHTML updater. Uses DOM cache.
+         */
         function setHtml(id, value) {
             const cacheKey = `html_${id}`;
             if (domCache.get(cacheKey) === value) return;
@@ -2041,6 +2106,9 @@
             }
         }
 
+        /**
+         * High-performance CSS style property updater. Uses DOM cache.
+         */
         function setStyle(el, prop, value) {
             if (!el) return;
             if (el.id) {
@@ -2053,6 +2121,9 @@
             }
         }
 
+        /**
+         * High-performance CSS style property updater by ID. Uses DOM cache.
+         */
         function setStyleById(id, prop, value) {
             const cacheKey = `style_${id}_${prop}`;
             if (domCache.get(cacheKey) === value) return;
@@ -2062,6 +2133,9 @@
             domCache.set(cacheKey, value);
         }
 
+        /**
+         * Safely manages setting an active class while removing mutually exclusive classes.
+         */
         function setClass(el, activeClass, possibleClasses = []) {
             if (!el) return;
             let cacheKey = null;
@@ -2083,6 +2157,10 @@
             if (cacheKey) domCache.set(cacheKey, activeClass);
         }
 
+        /**
+         * Converts a team color string or integer to a valid hexadecimal number.
+         * Falls back to white if invalid.
+         */
         function getTeamColorHex(teamColor) {
             if (typeof teamColor === "number") return teamColor;
             if (typeof teamColor !== "string") return 0xffffff;
@@ -2090,6 +2168,9 @@
             return Number.isFinite(parsed) ? parsed : 0xffffff;
         }
 
+        /**
+         * Returns a valid CSS hex color string for the specified driver's team.
+         */
         function getTeamColorCss(driver, data) {
             const teamColor =
                 driver?.teamColor ?? data?.allCars?.[driver?.carIndex]?.teamColor;
@@ -2100,6 +2181,9 @@
             return `#${hex}`;
         }
 
+        /**
+         * Sanitizes HTML strings to prevent XSS injection.
+         */
         function escapeHtml(value) {
             return String(value ?? "").replace(
                 /[&<>"']/g,
@@ -2114,12 +2198,18 @@
             );
         }
 
+        /**
+         * Resolves a driver's name from the participant array or provides a fallback name.
+         */
         function getDriverName(data, carIndex) {
             return data?.participants?.[carIndex]
                 ? data.participants[carIndex]
                 : `CAR ${carIndex}`;
         }
 
+        /**
+         * Generates a 3-letter abbreviation from a driver's name (typically the first 3 letters of the surname).
+         */
         function getDriverAbbr(name, carIndex) {
             const clean = String(name || "")
                 .replace(/[^a-z0-9 ]/gi, "")
@@ -2130,12 +2220,19 @@
             return source.slice(0, 3).toUpperCase();
         }
 
+        /**
+         * Finds the leaderboard entry for a specific car index.
+         */
         function getLeaderboardDriver(data, carIndex) {
             return Array.isArray(data?.leaderboard)
                 ? data.leaderboard.find((driver) => driver.carIndex === carIndex)
                 : null;
         }
 
+        /**
+         * Calculates the physical track distance gap (in meters) to the car immediately ahead on track.
+         * Accounts for track length wrapping.
+         */
         function getTrackGapToFront(data, driver) {
             const rows = Array.isArray(data?.leaderboard) ? data.leaderboard : [];
             const trackLength = data?.session?.trackLength || 0;
@@ -2166,6 +2263,10 @@
                 : "CLEAR";
         }
 
+        /**
+         * Returns the appropriate text to display for the gap in the track map popup.
+         * Uses official intervals in a race, and physical distance in practice/quali.
+         */
         function getPopupGapText(data, driver) {
             const sessionType = data?.session?.type || "";
             const isRace =
@@ -2174,11 +2275,17 @@
             return getTrackGapToFront(data, driver);
         }
 
+        /**
+         * Checks if the current session is a Race or Sprint session.
+         */
         function isRaceSession(data) {
             const sessionType = data?.session?.type || "";
             return sessionType.includes("Race") || sessionType.includes("Sprint");
         }
 
+        /**
+         * Projects a 3D world coordinate into 2D screen coordinates for DOM overlay positioning.
+         */
         function worldToMapScreen(position) {
             const projected = position.clone().project(camera);
             return {
@@ -2187,6 +2294,10 @@
             };
         }
 
+        /**
+         * Core UI map update loop. Calculates positions for driver labels based on the 3D car meshes,
+         * prevents label overlap through a basic physics-based separation algorithm, and updates the DOM.
+         */
         function updateMapOverlays() {
             if (!latestMapData || !mapLabelLayer || mapContainer.clientWidth === 0)
                 return;
@@ -2264,6 +2375,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 mapLabelLayer.innerHTML = labelsHtml;
         }
 
+        /**
+         * Smoothly animates the vertical repositioning of driver rows in the 
+         * leaderboard when their positions swap (overtakes/pit stops).
+         */
         function animateClassificationSwap(container, nextHtml, nextOrder) {
             if (!container) return;
 
@@ -2309,12 +2424,19 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             });
         }
 
+        /**
+         * Ensures a numerical value remains strictly between 0 and 100.
+         */
         function clampPercent(value) {
             const number = Number(value);
             if (!Number.isFinite(number)) return 0;
             return Math.max(0, Math.min(100, number));
         }
 
+        /**
+         * Converts a tyre wear percentage into an HSL color code.
+         * Transitions from Green (0-30%) -> Yellow (30-55%) -> Orange -> Red (70%+).
+         */
         function getWearColor(wearPercent) {
             const w = Math.max(0, Math.min(100, wearPercent));
             // Map: 0% wear → green (hue 130), ~40% → yellow (hue 55), 70%+ → red (hue 0)
@@ -2332,6 +2454,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
         }
 
+        /**
+         * Updates the graphical tyre wear widget for all four wheels based on real-time wear data.
+         * Colors the SVG elements and updates the percentage text fields.
+         */
         function updateCarTyreVisual(wearData, compound) {
             ["fl", "fr", "rl", "rr"].forEach((corner) => {
                 const wear = Math.round(wearData[corner] || 0);
@@ -2372,6 +2498,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             setText("tyre-compound-display", compound || "--");
         }
 
+        /**
+         * Renders the G-Force history graph onto the HTML5 Canvas.
+         * Draws the grid lines, history plot, area gradient, and current peak dot.
+         */
         function drawGGraph() {
             const dpr = window.devicePixelRatio || 1;
             const width = gGraph.clientWidth || 300;
@@ -2470,6 +2600,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             }
         }
 
+        /**
+         * Categorizes the current G-Force vectors into a human-readable state 
+         * (e.g. "HEAVY BRAKING", "HIGH CORNERING") with an associated warning color.
+         */
         function getGForceFeel(latG, longG, vertG, totalG) {
             const absLat = Math.abs(latG);
             const absLong = Math.abs(longG);
@@ -2489,6 +2623,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             return { text: "STABLE", color: "var(--text-muted)" };
         }
 
+        /**
+         * Receives raw G-Force telemetry, filters noise/spikes, updates the max peak,
+         * pushes the new value into the history array, and triggers the graph redraw.
+         */
         function updateGForceDisplay(latG, longG, vertG, currentMs) {
             if (currentMs === lastCurrentMsForG) return; // Paused or no time change
             lastCurrentMsForG = currentMs;
@@ -2511,6 +2649,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             drawGGraph();
         }
 
+        /**
+         * Connects the WebSocket client to the Node.js server.
+         * Implements fallback logic to try alternative ports if the primary connection fails.
+         */
         function connectWebSocket(urlIndex = 0) {
             const urls = getWebSocketUrls();
             ws = new WebSocket(urls[urlIndex]);
@@ -2530,12 +2672,19 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             ws.onmessage = handleTelemetryMessage;
         }
 
+        /**
+         * Requests historical track map data from the server for rendering a circuit 
+         * when offline or not actively receiving motion telemetry.
+         */
         function loadOfflineTrack(trackId) {
             if (trackId && ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ action: "getTrackData", trackId: trackId }));
             }
         }
 
+        /**
+         * Formats a raw millisecond integer into a standard M:SS.mmm timing string.
+         */
         function formatMs(ms) {
             if (!ms || ms === 0) return "--:--.---";
             const m = Math.floor(ms / 60000);
@@ -2544,11 +2693,18 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             return `${m}:${s.toString().padStart(2, "0")}.${milli.toString().padStart(3, "0")}`;
         }
 
+        /**
+         * Formats a raw millisecond integer into a sector S.mmm timing string.
+         */
         function formatSectorMs(ms) {
             if (!ms || ms <= 0) return "--.---";
             return (ms / 1000).toFixed(3);
         }
 
+        /**
+         * Updates a sector timing box UI. Analyzes the time against the session best 
+         * and personal best to assign Purple, Green, or Yellow visual states.
+         */
         function updateSectorDisplay(
             sectorId,
             ms,
@@ -2585,18 +2741,28 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             }
         }
 
+        /**
+         * Safely retrieves a millisecond timing value from a lap history object.
+         */
         function lapHistoryMs(lapData, key) {
             if (!lapData) return 0;
             if (typeof lapData === "number") return key === "lapTime" ? lapData : 0;
             return Number(lapData[key] || 0);
         }
 
+        /**
+         * Formats a millisecond time difference into a delta string (e.g., "+0.150s" or "-0.050s").
+         */
         function formatDeltaMs(diffMs) {
             if (!Number.isFinite(diffMs)) return "--";
             const prefix = diffMs > 0 ? "+" : "";
             return `${prefix}${(diffMs / 1000).toFixed(3)}s`;
         }
 
+        /**
+         * Sets text and color for delta displays, automatically handling green (negative) 
+         * and red (positive) state formatting unless a colorOverride is provided.
+         */
         function setDeltaText(id, diffMs, colorOverride) {
             const el = document.getElementById(id);
             if (!el) return;
@@ -2613,6 +2779,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             );
         }
 
+        /**
+         * Computes live micro-sector deltas (Prev Lap & Best Lap) based on the latest telemetry.
+         * Applies appropriate color-coding to UI elements based on improvement.
+         */
         function updateSectorDeltas(data, playerLbData) {
             const history = Array.isArray(playerLbData?.lapHistory)
                 ? playerLbData.lapHistory
@@ -2678,6 +2848,12 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             // laptime deltas removed from here and moved to lap-last logic
         }
 
+        /**
+         * The massive main telemetry parser loop. This is triggered 20-60 times a second.
+         * It parses the incoming JSON state from the backend WebSocket, updates all
+         * DOM elements (speed, rpm, inputs, track maps, leaderboards, gap times), 
+         * and manages the entire state of the dashboard interface.
+         */
         function handleTelemetryMessage(event) {
             const data = JSON.parse(event.data);
 
@@ -3157,8 +3333,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             setText("ers-val", `${Math.round(data.ers.battery)}%`);
             setText("fuel", `${data.setup.fuel.toFixed(2)} kg`);
             if (data.setup.fuelLaps !== undefined) {
-                setText("fuel-laps", data.setup.fuelLaps.toFixed(2));
-                setStyleById("fuel-laps", "color", data.setup.fuelLaps < 0 ? "var(--fia-red)" : "var(--text-main)");
+                const flVal = data.setup.fuelLaps;
+                const prefix = flVal > 0 ? "+" : "";
+                setText("fuel-laps", prefix + flVal.toFixed(2));
+                setStyleById("fuel-laps", "color", flVal < 0 ? "var(--f1-red)" : (flVal > 0 ? "var(--fia-green)" : "var(--text-main)"));
             }
 
             setText("flag", data.car.flag);
@@ -3254,13 +3432,13 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         data.participants && data.participants[driver.carIndex]
                             ? data.participants[driver.carIndex].toUpperCase()
                             : `CAR ${driver.carIndex}`;
-                    const flBadge = isFastest ? '<span class="fl-icon">⏱</span>' : "";
-
+                    const fastcolor = isFastest ? ' purple' : "";
+                    const fasticon = isFastest ? '<span class="fl-icon" style="color:purple"> ⏱</span>' : "";
                     let rowHtml = `<div class="lb-row" data-car-index="${driver.carIndex}" style="background: ${bgCol};">
                         <span class="val col-pos">${displayPos}</span>
                         <span class="val col-driver" style="color: ${nameColor};">
                             <span class="team-stripe" style="background: ${teamColor}; color: ${teamColor};"></span>
-                            <span class="driver-name-text">${driverName}${flBadge}</span>
+                            <span style="color:${fastcolor}" class="driver-name-text">${driverName}${fasticon}</span>
                         </span>`;
 
                     if (isTimeBased) {

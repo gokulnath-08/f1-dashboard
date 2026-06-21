@@ -216,7 +216,8 @@
     </div>
 
     <script>
-        // DOM Elements
+        // --- DOM Elements ---
+        // References to HTML elements for manipulating the UI, including the car visuals, telemetry bars, and coach panel.
         const trackWindow = document.getElementById('track-window');
         const car = document.getElementById('car');
         const wheelFL = document.getElementById('wheel-fl');
@@ -249,23 +250,27 @@
             document.getElementById('light-5')
         ];
 
+        // --- State Machine Variables ---
+        // Track the current drill phase and duration
         let currentPhase = 0;
         let timer = 0;
         let isSpun = false;
 
-        // Start Drill specific variables
+        // --- Start Drill Specific Variables ---
+        // Used to track the race start lights sequence and calculate reaction times
         let lightTimer = 0;
         let lightsLit = 0;
         let reactionStartTime = 0;
         let reactionTimeMeasured = false;
 
-        // Physics State Variables
+        // --- Physics State Variables ---
+        // Simplified physics for speed, max speed limit, lateral track position, and track scroll background position
         let speed = 0;
         const maxSpeed = 340;
         let carPosX = 95; 
         let trackPosY = 0;
 
-        // Reset phases when switching modes
+        // Reset all phases, speeds, and visualizations when switching drill modes from the dropdown
         cornerSelector.addEventListener('change', () => {
             currentPhase = 0;
             timer = 0;
@@ -278,6 +283,19 @@
             startLights.forEach(l => l.classList.remove('red'));
         });
 
+        /**
+         * Helper function to configure the coaching panel overlay.
+         * Updates the title, action instruction, color, and dynamic pedal/steering target zones.
+         * 
+         * @param {string} title - The header text (e.g. "Pre-Grid", "Phase 1")
+         * @param {string} action - The action instruction (e.g. "HARD BRAKE")
+         * @param {string} color - The hex color code for the border and text
+         * @param {string|null} btBottom - CSS bottom positioning for brake target zone (or null to hide)
+         * @param {string|null} btHeight - CSS height for brake target zone (or null to hide)
+         * @param {string|null} ttBottom - CSS bottom positioning for throttle target zone (or null to hide)
+         * @param {string|null} ttHeight - CSS height for throttle target zone (or null to hide)
+         * @param {boolean} showSteer - Whether to display the steering target box
+         */
         function setCoach(title, action, color, btBottom, btHeight, ttBottom, ttHeight, showSteer) {
             coachTitle.innerText = title;
             coachAction.innerText = action;
@@ -294,12 +312,22 @@
             else sTarget.style.display = 'none';
         }
 
+        /**
+         * Triggers a spin-out fail state. Turns on smoke visuals, rotates the car 180 degrees, 
+         * displays a failure message on the coach panel, and resets the simulation after a delay.
+         * 
+         * @param {string} message - The failure message to display (default: "SPUN OUT!")
+         */
         function triggerSpin(message = "SPUN OUT!") {
-            if(isSpun) return;
+            if(isSpun) return; // Prevent multiple spin triggers
             isSpun = true;
             setCoach("FAILED", message, "#ff0000", null, null, null, null, false);
+            
+            // Visual indicators for spin
             smokeL.style.opacity = 1; smokeR.style.opacity = 1;
             car.style.transform = "rotate(180deg)";
+            
+            // Auto-reset back to starting state after 2.5 seconds
             setTimeout(() => {
                 car.style.transform = "rotate(0deg)";
                 currentPhase = 0;
@@ -309,6 +337,11 @@
             }, 2500);
         }
 
+        /**
+         * Main render and logic loop. Reads controller inputs via Gamepad API, calculates
+         * simulated physics (speed, grip, lateral g-force equivalent), updates visuals, 
+         * and advances the state machine for the selected training drill.
+         */
         function updateTelemetry() {
             const gamepads = navigator.getGamepads();
             const gp = gamepads[0];
@@ -388,8 +421,10 @@
                 }
 
                 // --- TRACK LOGIC (STATE MACHINE) ---
+                // Manages the flow of the drills depending on the selected corner type
                 const mode = cornerSelector.value;
 
+                // Show or hide the F1 style race start lights depending on drill mode
                 if (mode === 'start') {
                     lightsContainer.style.display = 'flex';
                 } else {
@@ -397,7 +432,8 @@
                 }
 
                 switch(currentPhase) {
-                    case 0: // Phase 0: Press to Start / Initial Setup
+                    case 0: // Phase 0: Standby / Pre-Grid
+                        // Wait for any user input to initiate the drill sequence
                         if (mode === 'start') {
                             setCoach("Pre-Grid", "PRESS ANY BUTTON TO READY", "#00aaff", null, null, null, null, false);
                             startLights.forEach(l => l.classList.remove('red'));
@@ -423,9 +459,10 @@
                                     currentPhase = 2; timer = 0; lightsLit = 0; lightTimer = 0; 
                                 }
                             } else {
-                                timer = 0;
+                                timer = 0; // Reset timer if RPM leaves target zone
                             }
                         } else {
+                            // High speed straight logic before corner approaches
                             setCoach("Phase 1", "FULL THROTTLE", "#00ff00", null, null, "90%", "10%", false);
                             if(throttle > 0.9) {
                                 timer++;
@@ -537,16 +574,19 @@
                         break;
                 }
             } else if (isSpun) {
+                // Keep the track moving slightly while spun for realism, slowing down gradually
                 speed = Math.max(0, speed - 5);
                 trackPosY += speed * 0.1;
                 trackWindow.style.backgroundPositionY = `${trackPosY}px, ${trackPosY}px`;
             }
 
+            // Loop the telemetry update at screen refresh rate
             if (!isSpun) requestAnimationFrame(updateTelemetry);
-            else setTimeout(() => requestAnimationFrame(updateTelemetry), 50);
+            else setTimeout(() => requestAnimationFrame(updateTelemetry), 50); // Slower refresh when spun out
         }
 
-        // Initialize listener
+        // --- Initialization ---
+        // Wait for a gamepad (controller/wheel) to connect before starting the telemetry loop
         window.addEventListener("gamepadconnected", () => {
             document.getElementById('status').innerText = "Controller Connected! Press button to start.";
             updateTelemetry();
