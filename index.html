@@ -531,9 +531,17 @@
             font-weight: 600;
         }
 
-        .track-popup .meta .val.purple { color: var(--fia-purple); }
-        .track-popup .meta .val.green { color: var(--fia-green); }
-        .track-popup .meta .val.yellow { color: var(--fia-yellow); }
+        .track-popup .meta .val.purple {
+            color: var(--fia-purple);
+        }
+
+        .track-popup .meta .val.green {
+            color: var(--fia-green);
+        }
+
+        .track-popup .meta .val.yellow {
+            color: var(--fia-yellow);
+        }
 
         #sector-time-popup {
             min-width: 150px;
@@ -1587,7 +1595,8 @@
     </div>
 
     <!-- Open Source Footer -->
-    <footer style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--f1-border); margin-top: 20px; font-family: 'Roboto Mono', monospace;">
+    <footer
+        style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--f1-border); margin-top: 20px; font-family: 'Roboto Mono', monospace;">
         F1 Telemetry Dashboard &copy; Created by Gokulnath<br>
         Completely open source and free to use for racing enthusiasts and developers.
     </footer>
@@ -1713,7 +1722,7 @@
 
         window.lastTrackPointsLength = 0;
         window.lastTrackPointsLengthCustom = 0;
-        
+
         /**
          * Main render loop for Three.js. Requests the next animation frame and 
          * redraws the scene and dynamic map overlays (driver labels).
@@ -2143,7 +2152,7 @@
                 cacheKey = `class_${el.id}`;
                 if (domCache.get(cacheKey) === activeClass) return;
             }
-            
+
             for (let i = 0; i < possibleClasses.length; i++) {
                 const c = possibleClasses[i];
                 if (c !== activeClass && el.classList.contains(c)) {
@@ -2153,7 +2162,7 @@
             if (activeClass && !el.classList.contains(activeClass)) {
                 el.classList.add(activeClass);
             }
-            
+
             if (cacheKey) domCache.set(cacheKey, activeClass);
         }
 
@@ -2791,7 +2800,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const previousLap = isHolding
                 ? (history.length >= 3 ? history[history.length - 3] : null)
                 : (history.length >= 2 ? history[history.length - 2] : null);
-                
+
             const isQualiOrTT = data.session.sessionCategory === "TimeAttack";
             const sectorKeys = ["s1", "s2", "s3"];
 
@@ -2816,7 +2825,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 const personalBest = Number(
                     playerLbData?.[`best${key.toUpperCase()}`] || 0,
                 );
-                
+
                 const bestMs = isQualiOrTT
                     ? (sessionBest > 0 ? sessionBest : (personalBest > 0 ? personalBest : 0))
                     : (personalBest > 0 ? personalBest : (Number.isFinite(sessionBest) && sessionBest > 0 ? sessionBest : 0));
@@ -2992,7 +3001,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const history = Array.isArray(playerLbData?.lapHistory)
                 ? playerLbData.lapHistory
                 : [];
-            
+
             const isHoldingLap = data.lap.currentMs < 5000 && history.length >= 2;
 
             const lapN = history.length >= 2 ? history[history.length - 2] : null;
@@ -3003,7 +3012,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const lastMsEl = document.getElementById("lap-last");
             if (lastMsEl) {
                 setElementText(lastMsEl, formatMs(displayLastMs));
-                
+
                 const pbLap = playerLbData?.bestLapMs;
                 const sbLap = data.session.sessionFastestLapMs;
                 const isQualiOrTT = data.session.sessionCategory === "TimeAttack";
@@ -3023,7 +3032,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 const bestDiff = displayLastMs > 0 && bestLapRef > 0 ? displayLastMs - bestLapRef : NaN;
 
                 setDeltaText("lap-last-prev", prevDiff, prevDiff <= 0 ? "var(--fia-green)" : "var(--fia-yellow)");
-                
+
                 let bestColor = "var(--text-muted)";
                 if (Number.isFinite(bestDiff)) {
                     if (sbLap > 0 && displayLastMs <= sbLap) bestColor = "var(--fia-purple)";
@@ -3094,9 +3103,9 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 sb3,
                 pb3,
             );
-            
+
             updateSectorDeltas(data, playerLbData);
-            
+
             data.lap = originalLapData;
 
             const recordMs =
@@ -3333,10 +3342,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             setText("ers-val", `${Math.round(data.ers.battery)}%`);
             setText("fuel", `${data.setup.fuel.toFixed(2)} kg`);
             if (data.setup.fuelLaps !== undefined) {
-                const flVal = data.setup.fuelLaps;
-                const prefix = flVal > 0 ? "+" : "";
-                setText("fuel-laps", prefix + flVal.toFixed(2));
-                setStyleById("fuel-laps", "color", flVal < 0 ? "var(--f1-red)" : (flVal > 0 ? "var(--fia-green)" : "var(--text-main)"));
+                setText("fuel-laps", data.setup.fuelLaps.toFixed(2));
+                setStyleById("fuel-laps", "color", data.setup.fuelLaps < 0 ? "var(--fia-red)" : "var(--text-main)");
             }
 
             setText("flag", data.car.flag);
