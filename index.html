@@ -104,7 +104,7 @@
             border-color: var(--f1-border-strong);
         }
 
-        /* ══════════ PILL NAVIGATION ══════════ */
+         /* ══════════ PILL NAVIGATION ══════════ */
         .nav-bar {
             flex: 0 0 auto;
             display: flex;
@@ -138,6 +138,10 @@
             cursor: pointer;
             transition: all 0.2s ease;
             white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         .nav-btn:hover {
@@ -180,7 +184,9 @@
 
         #tab-tyres.active,
         #tab-leaderboard.active,
-        #tab-history.active {
+        #tab-history.active,
+        #tab-damage.active,
+        #tab-weather.active {
             display: flex;
             flex-direction: column;
             animation: fadeInUp 0.3s 0.1s ease both;
@@ -901,22 +907,36 @@
 
     <div class="nav-bar">
         <button class="nav-btn active" onclick="switchTab('tab-radar', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45V7h1.5v7.5l3.5 2.05-.76 1.45z"/></svg>
             Timing & Radar
         </button>
         <button class="nav-btn" onclick="switchTab('tab-telemetry', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3.5 18.5l6-6 4 4L22 6.92 20.59 5.5l-7.09 7.09-4-4L2 17.09l1.5 1.41z"/></svg>
             Telemetry
         </button>
         <button class="nav-btn" onclick="switchTab('tab-tyres', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>
             Tyre Data
         </button>
         <button class="nav-btn" onclick="switchTab('tab-engineering', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.73 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
             Engineering
         </button>
         <button class="nav-btn" onclick="switchTab('tab-leaderboard', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
             Classification
         </button>
         <button class="nav-btn" onclick="switchTab('tab-history', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" /></svg>
             Lap Analysis
+        </button>
+        <button class="nav-btn" onclick="switchTab('tab-damage', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2L1 21h22L12 2zm1 16h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            Car Damage
+        </button>
+        <button class="nav-btn" onclick="switchTab('tab-weather', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/></svg>
+            Weather
         </button>
     </div>
 
@@ -1118,22 +1138,27 @@
                             <option value="">Load Track...</option>
                         </select>
                     </div>
-                    <button onclick="promptAddSector()" style="
-                background: var(--fia-purple);
-                border: none;
-                color: #fff;
-                width: 24px;
-                height: 24px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-weight: bold;
-                font-family: &quot;Roboto Mono&quot;, monospace;
-                display: none;
-                align-items: center;
-                justify-content: center;
-                line-height: 1;
-              " title="Add Custom Sector by Time">
-                        +
+                    <button id="syncbttn" onclick="syncTrackLines()" style="
+                            background: rgba(255, 255, 255, 0.1);
+                            border: none;
+                            color: white;
+                            width: 32px;
+                            height: 32px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            backdrop-filter: blur(5px);
+                            z-index: 10;
+                            transition: background 0.2s;
+                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'"
+                        onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'"
+                        title="Sync Track Lines from Telemetry">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20"
+                            fill="currentColor">
+                            <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" />
+                        </svg>
                     </button>
                 </div>
                 <div class="map-wrapper">
@@ -1618,7 +1643,125 @@
                 </div>
             </div>
         </div>
+
+        <div id="tab-damage" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">Car Damage & Wear</div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <div class="data-row">
+                            <span class="label">Front Left Wing</span>
+                            <span class="val highlight" id="dmg-fl-wing">0%</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Front Right Wing</span>
+                            <span class="val highlight" id="dmg-fr-wing">0%</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Rear Wing</span>
+                            <span class="val highlight" id="dmg-r-wing">0%</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Floor</span>
+                            <span class="val highlight" id="dmg-floor">0%</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Diffuser</span>
+                            <span class="val highlight" id="dmg-diffuser">0%</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Sidepod</span>
+                            <span class="val highlight" id="dmg-sidepod">0%</span>
+                        </div>
+                        <div class="data-row" style="margin-top: 15px;">
+                            <span class="label">Brakes (FL / FR)</span>
+                            <span class="val highlight"><span id="dmg-brakes-fl">0%</span> / <span id="dmg-brakes-fr">0%</span></span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Brakes (RL / RR)</span>
+                            <span class="val highlight"><span id="dmg-brakes-rl">0%</span> / <span id="dmg-brakes-rr">0%</span></span>
+                        </div>
+                        <div class="data-row" style="margin-top: 15px;">
+                            <span class="label">Tyres (FL / FR)</span>
+                            <span class="val highlight"><span id="dmg-tyres-fl">0%</span> / <span id="dmg-tyres-fr">0%</span></span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Tyres (RL / RR)</span>
+                            <span class="val highlight"><span id="dmg-tyres-rl">0%</span> / <span id="dmg-tyres-rr">0%</span></span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="data-row">
+                            <span class="label">Gearbox</span>
+                            <span class="val highlight" id="dmg-gearbox">0%</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Engine (ICE)</span>
+                            <span class="val highlight" id="dmg-engine-ice">0%</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">MGU-H</span>
+                            <span class="val highlight" id="dmg-engine-mguh">0%</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">MGU-K</span>
+                            <span class="val highlight" id="dmg-engine-mguk">0%</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Turbo Charger</span>
+                            <span class="val highlight" id="dmg-engine-tc">0%</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Energy Store</span>
+                            <span class="val highlight" id="dmg-engine-es">0%</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Control Electronics</span>
+                            <span class="val highlight" id="dmg-engine-ce">0%</span>
+                        </div>
+                        <div class="data-row" style="margin-top: 15px;">
+                            <span class="label">DRS Fault</span>
+                            <span class="val highlight" id="dmg-drs-fault">OK</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">ERS Fault</span>
+                            <span class="val highlight" id="dmg-ers-fault">OK</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="label">Engine Blown</span>
+                            <span class="val highlight" id="dmg-engine-blown">OK</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-weather" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">Weather Forecast</div>
+                <div style="overflow-x: auto; padding: 15px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--f1-border); color: var(--text-muted);">
+                                <th style="padding: 8px 16px;">Offset (min)</th>
+                                <th style="padding: 8px 16px;">Condition</th>
+                                <th style="padding: 8px 16px;">Rain Chance</th>
+                                <th style="padding: 8px 16px;">Air Temp</th>
+                                <th style="padding: 8px 16px;">Track Temp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weather-tbody">
+                            <tr><td colspan="5" style="padding: 16px; color: var(--text-muted); text-align: center;">Waiting for weather data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
+
 
     <!-- Open Source Footer -->
     <footer
@@ -2050,39 +2193,17 @@
         let currentCustomSectors = ["", ""];
 
         /**
-         * Opens the modal dialog to allow the user to input custom sector times.
-         * Pre-fills the inputs with the currently active custom sectors if any.
+         * Requests the server to sync track lines from the fastest telemetry lap.
          */
-        function promptAddSector() {
-            document.getElementById("sec1-input").value = currentCustomSectors[0];
-            document.getElementById("sec2-input").value =
-                Number(currentCustomSectors[1]) - Number(currentCustomSectors[0]);
-            document.getElementById("sector-modal").style.display = "flex";
-        }
-
-        /**
-         * Submits the user-defined custom sector times to the server via WebSocket.
-         * Triggers a reset on the server before adding the new times.
-         */
-        function submitSectors() {
-            const s1 = document.getElementById("sec1-input").value.trim();
-            const s2 = document.getElementById("sec2-input").value.trim();
-
-            currentCustomSectors = [s1, s2];
-
+        function syncTrackLines() {
             if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ action: "resetSectors" }));
-
-                const ms1 = parseInt(s1, 10);
-                const ms2 = parseInt(s2, 10);
-
-                if (ms1 > 0)
-                    ws.send(JSON.stringify({ action: "addSector", timeMs: ms1 }));
-                if (ms2 > 0)
-                    ws.send(JSON.stringify({ action: "addSector", timeMs: ms2 }));
+                const trackId = document.getElementById("track-selector").value || currentTrackId;
+                if (!trackId || trackId === -1) {
+                    alert("Please select a track first.");
+                    return;
+                }
+                ws.send(JSON.stringify({ action: "syncTrackLines", trackId: parseInt(trackId, 10) }));
             }
-
-            document.getElementById("sector-modal").style.display = "none";
         }
 
         const domCache = new Map();
@@ -2891,16 +3012,20 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 }
                 setDeltaText(`lap-${key}-best`, bestDiff, bestColor);
 
-                // --- Real-time console debugging ---
-                console.log(`[Sector ${key.toUpperCase()}] Completed! 
-  -> Current: ${formatMs(currentMs)} 
-  -> Prev:    ${formatMs(previousMs)} (Diff: ${formatDeltaMs(prevDiff)}) 
-  -> Best:    ${formatMs(bestMs)} (Diff: ${formatDeltaMs(bestDiff)})`);
-                // -----------------------------------
             });
 
             // laptime deltas removed from here and moved to lap-last logic
         }
+
+        document.getElementById("track-selector").addEventListener('change', function () {
+
+            console.log(document.getElementById("track-selector").value);
+
+            if (document.getElementById("track-selector").value !== -1) {
+                document.getElementById("syncbttn").style.display = "block";
+            }
+        });
+
 
         /**
          * The massive main telemetry parser loop. This is triggered 20-60 times a second.
@@ -2910,6 +3035,11 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
          */
         function handleTelemetryMessage(event) {
             const data = JSON.parse(event.data);
+
+
+            if(document.getElementById("track-name").value !== "Unknown") {
+                document.getElementById("syncbttn").style.display = "block";
+            }
 
             if (data.type === "availableTracks") {
                 const trackMap = {
@@ -2944,7 +3074,9 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 };
                 const select = document.getElementById("track-selector");
                 if (select && data.tracks && data.tracks.length > 0) {
-                    select.innerHTML = '<option value="">Load Track...</option>';
+                    select.innerHTML = '<option value="-1">Load Track...</option>';
+                    document.getElementById("syncbttn").style.display = "none";
+
                     data.tracks
                         .sort((a, b) => a - b)
                         .forEach((id) => {
@@ -3152,6 +3284,67 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             updateSectorDeltas(data, playerLbData);
 
             data.lap = originalLapData;
+            
+            if (data.damage) {
+                const setDmgText = (id, val) => {
+                    const printVal = (val === undefined || val === null) ? 0 : val;
+                    setText(id, `${printVal}%`);
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.style.color = printVal > 70 ? '#ff4444' : (printVal > 30 ? 'var(--fia-yellow)' : (printVal > 0 ? 'var(--fia-green)' : 'white'));
+                    }
+                };
+                setDmgText("dmg-fl-wing", data.damage.m_frontLeftWingDamage);
+                setDmgText("dmg-fr-wing", data.damage.m_frontRightWingDamage);
+                setDmgText("dmg-r-wing", data.damage.m_rearWingDamage);
+                setDmgText("dmg-floor", data.damage.m_floorDamage);
+                setDmgText("dmg-diffuser", data.damage.m_diffuserDamage);
+                setDmgText("dmg-sidepod", data.damage.m_sidepodDamage);
+                setDmgText("dmg-brakes-fl", data.damage.m_brakesDamage[0]);
+                setDmgText("dmg-brakes-fr", data.damage.m_brakesDamage[1]);
+                setDmgText("dmg-brakes-rl", data.damage.m_brakesDamage[2]);
+                setDmgText("dmg-brakes-rr", data.damage.m_brakesDamage[3]);
+                setDmgText("dmg-tyres-fl", data.damage.m_tyresWear[0]);
+                setDmgText("dmg-tyres-fr", data.damage.m_tyresWear[1]);
+                setDmgText("dmg-tyres-rl", data.damage.m_tyresWear[2]);
+                setDmgText("dmg-tyres-rr", data.damage.m_tyresWear[3]);
+                setDmgText("dmg-gearbox", data.damage.m_gearBoxDamage);
+                setDmgText("dmg-engine-ice", data.damage.m_engineICEWear);
+                setDmgText("dmg-engine-mguh", data.damage.m_engineMGUHWear);
+                setDmgText("dmg-engine-mguk", data.damage.m_engineMGUKWear);
+                setDmgText("dmg-engine-tc", data.damage.m_engineTCWear);
+                setDmgText("dmg-engine-es", data.damage.m_engineESWear);
+                setDmgText("dmg-engine-ce", data.damage.m_engineCEWear);
+                
+                const drsEl = document.getElementById("dmg-drs-fault");
+                if (drsEl) { drsEl.textContent = data.damage.m_drsFault ? "FAULT" : "OK"; drsEl.style.color = data.damage.m_drsFault ? "red" : "white"; }
+                const ersEl = document.getElementById("dmg-ers-fault");
+                if (ersEl) { ersEl.textContent = data.damage.m_ersFault ? "FAULT" : "OK"; ersEl.style.color = data.damage.m_ersFault ? "red" : "white"; }
+                const engineEl = document.getElementById("dmg-engine-blown");
+                if (engineEl) { engineEl.textContent = data.damage.m_engineBlown ? "BLOWN" : "OK"; engineEl.style.color = data.damage.m_engineBlown ? "red" : "white"; }
+            }
+            
+            const tbody = document.getElementById("weather-tbody");
+            if (tbody) {
+                if (data.weatherForecast && data.weatherForecast.length > 0) {
+                    let html = "";
+                    const weatherMap = {0: "Clear", 1: "Light Cloud", 2: "Overcast", 3: "Light Rain", 4: "Heavy Rain", 5: "Storm", 6: "Unknown"};
+                    data.weatherForecast.forEach(sample => {
+                        html += `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td style="padding: 8px 16px;">${sample.m_timeOffset}</td>
+                                <td style="padding: 8px 16px;">${weatherMap[sample.m_weather] || 'Unknown'}</td>
+                                <td style="padding: 8px 16px;">${sample.m_rainPercentage}%</td>
+                                <td style="padding: 8px 16px;">${sample.m_airTemperature}°C</td>
+                                <td style="padding: 8px 16px;">${sample.m_trackTemperature}°C</td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                } else if (data.session && data.session.type !== 'Unknown') {
+                    tbody.innerHTML = '<tr><td colspan="5" style="padding: 16px; color: var(--text-muted); text-align: center;">No weather data for this session type.</td></tr>';
+                }
+            }
 
             const recordMs =
                 data.session.allTimeFastestLapMs === Infinity

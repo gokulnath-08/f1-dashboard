@@ -137,6 +137,55 @@ function handleWsConnection(ws) {
                 return;
             }
 
+            if (data.action === 'syncTrackLines') {
+                const tId = data.trackId !== undefined ? data.trackId : currentTrackId;
+                const telPath = path.join(telemetryDir, `telemetry_${tId}.json`);
+                if (!fs.existsSync(telPath)) return;
+                
+                try {
+                    const telData = JSON.parse(fs.readFileSync(telPath, 'utf8'));
+                    if (telData.length === 0) return;
+                    
+                    let newStart = null, newS1 = null, newS2 = null;
+                    
+                    // Start line is the point closest to d = 0
+                    const startLinePt = telData.reduce((prev, curr) => Math.abs(curr.d) < Math.abs(prev.d) ? curr : prev);
+                    newStart = { x: startLinePt.x, z: startLinePt.z, yaw: startLinePt.yaw || 0, d: startLinePt.d };
+                    
+                    // If we have sector distances from session, use them
+                    if (state.session.sector2Distance > 0 && state.session.sector3Distance > 0) {
+                        const s1Pt = telData.reduce((prev, curr) => Math.abs(curr.d - state.session.sector2Distance) < Math.abs(prev.d - state.session.sector2Distance) ? curr : prev);
+                        newS1 = { x: s1Pt.x, z: s1Pt.z, yaw: s1Pt.yaw || 0, d: s1Pt.d };
+                        
+                        const s2Pt = telData.reduce((prev, curr) => Math.abs(curr.d - state.session.sector3Distance) < Math.abs(prev.d - state.session.sector3Distance) ? curr : prev);
+                        newS2 = { x: s2Pt.x, z: s2Pt.z, yaw: s2Pt.yaw || 0, d: s2Pt.d };
+                    }
+                    
+                    if (tId === currentTrackId) {
+                        state.startLine = newStart || state.startLine;
+                        state.sector1 = newS1 || state.sector1;
+                        state.sector2 = newS2 || state.sector2;
+                    }
+                    
+                    const mapPath = path.join(trackMapsDir, `track_${tId}.json`);
+                    if (fs.existsSync(mapPath)) {
+                        const mapData = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+                        const isArray = Array.isArray(mapData);
+                        const updatedData = {
+                            trackPoints: isArray ? mapData : mapData.trackPoints || [],
+                            startLine: newStart || (isArray ? null : mapData.startLine),
+                            sector1: newS1 || (isArray ? null : mapData.sector1),
+                            sector2: newS2 || (isArray ? null : mapData.sector2)
+                        };
+                        fs.writeFileSync(mapPath, JSON.stringify(updatedData));
+                        console.log(`✅ Synced track lines for Map ${tId}`);
+                    }
+                } catch(e) {
+                    console.error("Error syncing track lines:", e);
+                }
+                return;
+            }
+
             if (data.action === 'addSector' && data.timeMs >= 0) {
                 if (data.timeMs === 0) {
                     if (!state.customSectorLines.find(s => s.d === 0)) state.customSectorLines.push({ x: state.startLine?.x || 0, z: state.startLine?.z || 0, yaw: state.startLine?.yaw || 0, d: 0 });
@@ -311,9 +360,10 @@ let state = {
     session: {
         trackName: 'Unknown', trackLength: 0, raceDistance: 0, lapsLeft: 0, type: 'Unknown', weather: '--',
         trackTemp: 0, airTemp: 0, sc: 'Clear', lapsTotal: 0, pitLimit: 80, fastestLapCarIndex: -1,
-        sessionFastestLapMs: Infinity, sessionBestS1: Infinity, sessionBestS2: Infinity, sessionBestS3: Infinity,
-        sessionCategory: 'Race', allTimeFastestLapMs: Infinity, allTimeFastestDriver: 'Unknown'
+        sessionFastestLapMs: Infinity, sessionBestS1: 0, trackId: 0, timeRemaining: 0, timeTotal: 0, safetyCarStatus: 'NONE', sessionType: 'NONE', sessionCategory: 'Race', allTimeFastestLapMs: Infinity, allTimeFastestDriver: 'Unknown', sector2Distance: 0, sector3Distance: 0
     },
+    weatherForecast: [],
+    damage: null,
     lap: { currentMs: 0, lastMs: 0, bestMs: 0, s1: 0, s2: 0, s3: 0, liveS1: 0, liveS2: 0, liveS3: 0, s1State: 'pending', s2State: 'pending', s3State: 'pending', pos: 0, lapNum: 0, gapFront: 0, pitStatus: 'ON TRACK', currentSector: 0, pendingS1: false, pendingS2: false, liveDeltaToRecord: 0, deltaToLeader: 0, ghostLapTimeMs: 0 },
     motion: { pitch: 0, roll: 0, gLat: 0, gLong: 0, gVert: 0, susp: { fl: 0, fr: 0, rl: 0, rr: 0 } },
     inputs: { speed: 0, gear: 'N', rpm: 0, throttle: 0, brake: 0, clutch: 0, steer: 0, drs: 'CLOSED' },
@@ -357,7 +407,7 @@ function buildApproxPitLane(trackPoints) {
 
 
 // Initialize the F1 Telemetry UDP Listener on standard port 20777
-const f1Client = new F1TelemetryClient({ port: 20777, format: 2026 });
+const f1Client = new F1TelemetryClient({ port: 20777, format: 2025 });
 
 /**
  * Robust helper function to extract sector times from the F1 UDP packet.
@@ -501,7 +551,7 @@ f1Client.on('motion', (data) => {
         const lapDist = carPhysics[pIdx].lapDistance;
         const speed = carPhysics[pIdx].speed;
 
-        if (speed > 10 && lapDist >= 0 && lapDist < 10) {
+        if (speed > 10 && lapDist >= 0 && lapDist < 50) {
             if (!state.startLine || lapDist < state.startLine.lapDistance) {
                 state.startLine = {
                     x: pMotion.m_worldPositionX,
@@ -601,6 +651,12 @@ function loadTrackDeltaReference(trackId) {
 f1Client.on('session', (data) => {
     const uid = data.m_header.m_sessionUID;
     const newSessionUID = typeof uid === 'bigint' ? uid.toString() : String(uid);
+
+    state.weatherForecast = data.m_weatherForecastSamples ? data.m_weatherForecastSamples.slice(0, data.m_numWeatherForecastSamples) : [];
+    if (data.m_sector2LapDistanceStart) {
+        state.session.sector2Distance = data.m_sector2LapDistanceStart;
+        state.session.sector3Distance = data.m_sector3LapDistanceStart;
+    }
 
     if (currentSessionUID !== null && currentSessionUID !== newSessionUID) {
         console.log('🔄 New Session Detected! Wiping old telemetry data...');
@@ -1170,9 +1226,10 @@ f1Client.on('carStatus', (data) => {
  */
 f1Client.on('carDamage', (data) => {
     setPlayerIndex(data.m_header);
-    const wear = data.m_carDamageData[state.playerIndex].m_tyresWear;
-    state.car.wear.rl = wear[0]; state.car.wear.rr = wear[1];
-    state.car.wear.fl = wear[2]; state.car.wear.fr = wear[3];
+    const dmg = data.m_carDamageData[state.playerIndex];
+    state.car.wear.rl = dmg.m_tyresWear[0]; state.car.wear.rr = dmg.m_tyresWear[1];
+    state.car.wear.fl = dmg.m_tyresWear[2]; state.car.wear.fr = dmg.m_tyresWear[3];
+    state.damage = dmg;
 });
 
 
