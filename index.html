@@ -1825,13 +1825,13 @@
         const gridHelper = new THREE.GridHelper(20000, 400, 0x0e0e18, 0x0e0e18);
         scene.add(gridHelper);
 
-        const trackMaterial = new THREE.LineBasicMaterial({
-            color: 0xffffff,
+        const trackMaterial = new THREE.MeshBasicMaterial({
+            color: 0xdddddd,
             transparent: true,
-            opacity: 0.35,
+            opacity: 0.7,
         });
-        const trackGeometry = new THREE.BufferGeometry();
-        const trackLine = new THREE.Line(trackGeometry, trackMaterial);
+        let trackGeometry = new THREE.BufferGeometry();
+        const trackLine = new THREE.Mesh(trackGeometry, trackMaterial);
         trackLine.renderOrder = 0;
         trackLine.frustumCulled = false;
         scene.add(trackLine);
@@ -3435,7 +3435,11 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         if (threePts.length > 2) {
                             threePts.push(threePts[0].clone());
                         }
-                        trackGeometry.setFromPoints(threePts);
+                        const trackPath = new THREE.CatmullRomCurve3(threePts, false, 'catmullrom', 0.5);
+                        if (trackLine.geometry) {
+                            trackLine.geometry.dispose();
+                        }
+                        trackLine.geometry = new THREE.TubeGeometry(trackPath, threePts.length * 2, 8, 8, false);
 
                         const centerX = (minX + maxX) / 2;
                         const centerZ = (minZ + maxZ) / 2;
