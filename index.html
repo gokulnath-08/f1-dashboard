@@ -1826,17 +1826,22 @@
         gridHelper.position.y = -20;
         scene.add(gridHelper);
 
-        const trackMaterial = new THREE.MeshBasicMaterial({
-            color: 0xdddddd,
-            transparent: true,
-            opacity: 0.7,
+        const trackMaterials = [
+            new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.9 }), // Sector 1: Red
+            new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.9 }), // Sector 2: Blue
+            new THREE.MeshBasicMaterial({ color: 0xeab308, transparent: true, opacity: 0.9 })  // Sector 3: Yellow
+        ];
+        const trackLines = [
+            new THREE.Mesh(new THREE.BufferGeometry(), trackMaterials[0]),
+            new THREE.Mesh(new THREE.BufferGeometry(), trackMaterials[1]),
+            new THREE.Mesh(new THREE.BufferGeometry(), trackMaterials[2])
+        ];
+        trackLines.forEach(line => {
+            line.position.y = -10;
+            line.renderOrder = -10;
+            line.frustumCulled = false;
+            scene.add(line);
         });
-        let trackGeometry = new THREE.BufferGeometry();
-        const trackLine = new THREE.Mesh(trackGeometry, trackMaterial);
-        trackLine.position.y = -10;
-        trackLine.renderOrder = -10;
-        trackLine.frustumCulled = false;
-        scene.add(trackLine);
 
         const gGraph = document.getElementById("g-graph");
         const gGraphCtx = gGraph.getContext("2d");
@@ -1871,11 +1876,12 @@
          * Creates a visual sector line overlay for the track map.
          */
         function createSectorLine(color) {
-            const geometry = new THREE.CircleGeometry(25, 32);
+            const geometry = new THREE.PlaneGeometry(60, 8);
             const material = new THREE.MeshBasicMaterial({
                 color: color,
                 transparent: true,
-                opacity: 0.8,
+                opacity: 0.9,
+                side: THREE.DoubleSide,
                 blending: THREE.AdditiveBlending,
             });
             const mesh = new THREE.Mesh(geometry, material);
@@ -3389,29 +3395,17 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         mapDataToUse.startLine.z,
                     );
                     startLineMesh.rotation.y = -mapDataToUse.startLine.yaw;
-                    startLineMesh.visible = true;
+                    startLineMesh.visible = false;
                 } else {
                     startLineMesh.visible = false;
                 }
                 if (mapDataToUse.sector1 && mapDataToUse.sector1.yaw !== undefined) {
-                    sector1LineMesh.position.set(
-                        mapDataToUse.sector1.x,
-                        0,
-                        mapDataToUse.sector1.z,
-                    );
-                    sector1LineMesh.rotation.y = -mapDataToUse.sector1.yaw;
-                    sector1LineMesh.visible = true;
+                    sector1LineMesh.visible = false;
                 } else {
                     sector1LineMesh.visible = false;
                 }
                 if (mapDataToUse.sector2 && mapDataToUse.sector2.yaw !== undefined) {
-                    sector2LineMesh.position.set(
-                        mapDataToUse.sector2.x,
-                        0,
-                        mapDataToUse.sector2.z,
-                    );
-                    sector2LineMesh.rotation.y = -mapDataToUse.sector2.yaw;
-                    sector2LineMesh.visible = true;
+                    sector2LineMesh.visible = false;
                 } else {
                     sector2LineMesh.visible = false;
                 }
@@ -3437,11 +3431,61 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         if (threePts.length > 2) {
                             threePts.push(threePts[0].clone());
                         }
-                        const trackPath = new THREE.CatmullRomCurve3(threePts, false, 'catmullrom', 0.5);
-                        if (trackLine.geometry) {
-                            trackLine.geometry.dispose();
+                        
+                        function getClosestIndex(pts, target, minIdx = 0, maxIdx = pts.length - 1) {
+                            if (!target) return Math.floor((minIdx + maxIdx) / 2);
+                            let minD = Infinity;
+                            let idx = minIdx;
+                            for (let i = minIdx; i <= maxIdx; i++) {
+                                const d = Math.hypot(pts[i].x - target.x, pts[i].z - target.z);
+                                if (d < minD) {
+                                    minD = d;
+                                    idx = i;
+                                }
+                            }
+                            return idx;
                         }
-                        trackLine.geometry = new THREE.TubeGeometry(trackPath, threePts.length * 2, 8, 8, false);
+                        
+                        // Remove the duplicate end point to reorder cleanly
+                        threePts.pop();
+                        const nPts = threePts.length;
+                        
+                        let startIdx = 0;
+                        if (mapDataToUse.startLine) {
+                            startIdx = getClosestIndex(threePts, mapDataToUse.startLine);
+                        }
+                        
+                        const orderedPts = threePts.slice(startIdx).concat(threePts.slice(0, startIdx));
+                        orderedPts.push(orderedPts[0].clone()); // Re-close the loop
+                        
+                        const len = orderedPts.length - 1;
+                        // Restrict search bounds to prevent opposite-straight crossovers
+                        const idx1 = mapDataToUse.sector1 ? getClosestIndex(orderedPts, mapDataToUse.sector1, Math.floor(len * 0.1), Math.floor(len * 0.6)) : Math.floor(len / 3);
+                        const idx2 = mapDataToUse.sector2 ? getClosestIndex(orderedPts, mapDataToUse.sector2, idx1, Math.floor(len * 0.95)) : Math.floor((len / 3) * 2);
+                        
+                        const ptsS1 = orderedPts.slice(0, idx1 + 1);
+                        const ptsS2 = orderedPts.slice(idx1, idx2 + 1);
+                        const ptsS3 = orderedPts.slice(idx2);
+                        
+                        const paths = [ptsS1, ptsS2, ptsS3];
+                        
+                        const hasSectors = mapDataToUse.sector1 && mapDataToUse.sector2;
+                        trackLines[0].material.color.setHex(hasSectors ? 0xef4444 : 0xdddddd);
+                        trackLines[1].material.color.setHex(hasSectors ? 0x3b82f6 : 0xdddddd);
+                        trackLines[2].material.color.setHex(hasSectors ? 0xeab308 : 0xdddddd);
+                        
+                        for (let i = 0; i < 3; i++) {
+                            if (trackLines[i].geometry) {
+                                trackLines[i].geometry.dispose();
+                            }
+                            if (paths[i].length > 1) {
+                                const curve = new THREE.CatmullRomCurve3(paths[i], false, 'catmullrom', 0.5);
+                                trackLines[i].geometry = new THREE.TubeGeometry(curve, paths[i].length * 2, 8, 8, false);
+                                trackLines[i].visible = true;
+                            } else {
+                                trackLines[i].visible = false;
+                            }
+                        }
 
                         const centerX = (minX + maxX) / 2;
                         const centerZ = (minZ + maxZ) / 2;
