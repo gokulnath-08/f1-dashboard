@@ -1823,6 +1823,7 @@
         mapContainer.appendChild(renderer.domElement);
 
         const gridHelper = new THREE.GridHelper(20000, 400, 0x0e0e18, 0x0e0e18);
+        gridHelper.position.y = -20;
         scene.add(gridHelper);
 
         const trackMaterial = new THREE.MeshBasicMaterial({
@@ -1832,7 +1833,8 @@
         });
         let trackGeometry = new THREE.BufferGeometry();
         const trackLine = new THREE.Mesh(trackGeometry, trackMaterial);
-        trackLine.renderOrder = 0;
+        trackLine.position.y = -10;
+        trackLine.renderOrder = -10;
         trackLine.frustumCulled = false;
         scene.add(trackLine);
 
@@ -3448,7 +3450,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
                         trackViewCenter.set(centerX, 0, centerZ);
                         trackBaseViewSize = Math.max(300, newViewSize);
-                        gridHelper.position.set(centerX, -1, centerZ);
+                        gridHelper.position.set(centerX, -20, centerZ);
                         updateTrackCameraBounds();
                     }
                 }
