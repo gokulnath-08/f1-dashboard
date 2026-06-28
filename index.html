@@ -999,6 +999,26 @@
                             <span class="val green" id="lap-best">--:--.---</span>
                         </div>
                     </div>
+                    <div class="data-row" style="align-items: flex-start;">
+                        <span class="label" style="margin-top: 4px;">Personal Best Sectors</span>
+                        <div style="text-align: right">
+                            <div class="sector-delta">
+                                <span>S1</span><span id="pb-s1">--:--.---</span>
+                            </div>
+                            <div class="sector-delta">
+                                <span>S2</span><span id="pb-s2">--:--.---</span>
+                            </div>
+                            <div class="sector-delta">
+                                <span>S3</span><span id="pb-s3">--:--.---</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Theoretical Best</span>
+                        <div style="text-align: right">
+                            <span class="val purple" id="lap-theoretical-best">--:--.---</span>
+                        </div>
+                    </div>
                     <div class="panel-header" style="margin-top: 8px">Sectors</div>
                     <div class="sector-grid">
                         <div class="sector-card" id="sector-row-s1">
@@ -3006,7 +3026,6 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
                 const prevDiff = currentMs > 0 && previousMs > 0 ? currentMs - previousMs : NaN;
                 setDeltaText(`lap-${key}-prev`, prevDiff, prevDiff <= 0 ? "var(--fia-green)" : "var(--fia-yellow)");
-
                 const bestDiff = currentMs > 0 && bestMs > 0 ? currentMs - bestMs : NaN;
                 let bestColor = "var(--text-muted)";
                 if (Number.isFinite(bestDiff)) {
@@ -3247,6 +3266,24 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const pb1 = playerLbData ? playerLbData.bestS1 : 0;
             const pb2 = playerLbData ? playerLbData.bestS2 : 0;
             const pb3 = playerLbData ? playerLbData.bestS3 : 0;
+
+            const pbS1El = document.getElementById("pb-s1");
+            if (pbS1El) setElementText(pbS1El, pb1 > 0 ? formatMs(pb1) : "--:--.---");
+            
+            const pbS2El = document.getElementById("pb-s2");
+            if (pbS2El) setElementText(pbS2El, pb2 > 0 ? formatMs(pb2) : "--:--.---");
+            
+            const pbS3El = document.getElementById("pb-s3");
+            if (pbS3El) setElementText(pbS3El, pb3 > 0 ? formatMs(pb3) : "--:--.---");
+
+            const theoreticalBestEl = document.getElementById("lap-theoretical-best");
+            if (theoreticalBestEl) {
+                if (pb1 > 0 && pb2 > 0 && pb3 > 0) {
+                    setElementText(theoreticalBestEl, formatMs(pb1 + pb2 + pb3));
+                } else {
+                    setElementText(theoreticalBestEl, "--:--.---");
+                }
+            }
 
             // history and isHoldingLap calculated above
             const originalLapData = { ...data.lap };
