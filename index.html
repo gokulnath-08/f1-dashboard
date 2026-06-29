@@ -605,6 +605,7 @@
             display: flex;
             justify-content: space-between;
             padding: 0 12px 8px 12px;
+            gap: 8px;
             color: var(--text-dim);
             font-weight: 700;
             font-size: 0.7rem;
@@ -3768,6 +3769,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                                     <span class="col-stat">STAT</span>`;
                 } else if (isRace) {
                     headersHtml += `<span class="col-tyre">TYRE</span>
+                                    <span class="col-gap">LEADER</span>
                                     <span class="col-int">INT</span>
                                     <span class="col-laps">LAPS</span>`;
                 } else {
@@ -3809,6 +3811,9 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         };
                     });
                 }
+
+                let runningLeaderGapMs = 0;
+                let leaderLapGap = 0;
 
                 leaderboardRows.forEach((driver, index) => {
                     const isFastest =
@@ -3868,9 +3873,34 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     } else if (isRace) {
                         let compound = (driver.tyre || "-").split(" ")[0];
                         let intStr = index === 0 ? "LEAD" : driver.gapText || "--";
+                        
+                        let gapToLeader = "LEAD";
+                        if (index > 0) {
+                            if (intStr.includes("LAP")) {
+                                let laps = parseInt(intStr.replace(/[^0-9]/g, '')) || 1;
+                                leaderLapGap += laps;
+                                gapToLeader = `+${leaderLapGap} LAP${leaderLapGap > 1 ? 'S' : ''}`;
+                            } else if (intStr.includes("PIT") || intStr === "Interval") {
+                                gapToLeader = leaderLapGap > 0 ? `+${leaderLapGap} LAP${leaderLapGap > 1 ? 'S' : ''}` : intStr;
+                            } else {
+                                let parsedInt = parseFloat(intStr.replace(/[^0-9.]/g, ''));
+                                if (!isNaN(parsedInt)) {
+                                    runningLeaderGapMs += parsedInt;
+                                    if (leaderLapGap > 0) {
+                                        gapToLeader = `+${leaderLapGap} LAP${leaderLapGap > 1 ? 'S' : ''}`;
+                                    } else {
+                                        gapToLeader = `+${runningLeaderGapMs.toFixed(3)}`;
+                                    }
+                                } else {
+                                    gapToLeader = intStr;
+                                }
+                            }
+                        }
+
                         let lapStr = `${driver.lapNum}/${data.session.lapsTotal}`;
 
                         rowHtml += `<span class="val col-tyre" style="color: ${driver.tyreClass || "#FFF"};">${compound}</span>
+                                    <span class="val col-gap">${gapToLeader}</span>
                                     <span class="val col-int">${intStr}</span>
                                     <span class="val col-laps">${lapStr}</span>`;
                     } else {
