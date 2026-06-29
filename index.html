@@ -388,6 +388,7 @@
         .sector-delta {
             display: flex;
             justify-content: space-between;
+            gap: 12px;
             font-family: "Roboto Mono", monospace;
             font-size: 0.7rem;
             color: var(--text-muted);
@@ -1003,13 +1004,13 @@
                         <span class="label" style="margin-top: 4px;">Personal Best Sectors</span>
                         <div style="text-align: right">
                             <div class="sector-delta">
-                                <span>S1</span><span id="pb-s1">--:--.---</span>
+                                <span style="padding-left: 4px;">S1 </span><span id="pb-s1">--:--.---</span>
                             </div>
                             <div class="sector-delta">
-                                <span>S2</span><span id="pb-s2">--:--.---</span>
+                                <span style="padding-left: 4px;">S2 </span><span id="pb-s2">--:--.---</span>
                             </div>
                             <div class="sector-delta">
-                                <span>S3</span><span id="pb-s3">--:--.---</span>
+                                <span style="padding-left: 4px;">S3 </span><span id="pb-s3">--:--.---</span>
                             </div>
                         </div>
                     </div>
@@ -1574,6 +1575,16 @@
                     <span class="label">Pit Limit</span>
                     <span class="val"><span id="pit-limit" style="color: var(--fia-yellow)">80</span>
                         km/h</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Full Race Distance</span>
+                    <span class="val" style="color: var(--fia-yellow)" id="full-race-distance">80</span>
+                    </span >
+                </div>
+                <div class="data-row">
+                    <span class="label">Total Race Laps</span>
+                    <span class="val" style="color: var(--fia-yellow)" id="total-race-laps">80</span>
+                    </span >
                 </div>
             </div>
 
@@ -3026,7 +3037,15 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
                 const prevDiff = currentMs > 0 && previousMs > 0 ? currentMs - previousMs : NaN;
                 setDeltaText(`lap-${key}-prev`, prevDiff, prevDiff <= 0 ? "var(--fia-green)" : "var(--fia-yellow)");
-                const bestDiff = currentMs > 0 && bestMs > 0 ? currentMs - bestMs : NaN;
+                let comparisonMs = bestMs;
+                if (currentMs > 0 && currentMs === bestMs) {
+                    const allTimes = history.map(h => lapHistoryMs(h, key)).filter(ms => ms > 0).sort((a, b) => a - b);
+                    const uniqueTimes = [...new Set(allTimes)];
+                    if (uniqueTimes.length > 1) {
+                        comparisonMs = uniqueTimes[1];
+                    }
+                }
+                const bestDiff = currentMs > 0 && comparisonMs > 0 ? currentMs - comparisonMs : NaN;
                 let bestColor = "var(--text-muted)";
                 if (Number.isFinite(bestDiff)) {
                     if (sessionBest > 0 && currentMs <= sessionBest) {
@@ -3052,6 +3071,22 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 document.getElementById("syncbttn").style.display = "block";
             }
         });
+
+        function getRaceDistance(trackLength) {
+            const output = document.getElementById("full-race-distance");
+
+            if (trackLength <= 0) {
+                output.textContent = "Invalid track length";
+                return;
+            }
+
+            let trackLengthKm = trackLength / 1000;
+            let laps = Math.ceil(305 / trackLengthKm);
+            let distanceKm = laps * trackLengthKm;
+
+            output.textContent = `${distanceKm.toFixed(3)} km`;
+            document.getElementById("total-race-laps").textContent = `${laps}`;
+        }
 
 
         /**
@@ -3154,6 +3189,9 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 "race-dist",
                 `${(data.session.raceDistance / 1000).toFixed(3)} km`,
             );
+
+            getRaceDistance(data.session.trackLength);
+
             setText("pos", "--");
 
             const flagBox = document.getElementById("fia-flag");
@@ -3233,7 +3271,15 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 setClass(lastMsEl, lastMsColor, ["purple", "green", "yellow"]);
 
                 const prevDiff = displayLastMs > 0 && displayLastPrevMs > 0 ? displayLastMs - displayLastPrevMs : NaN;
-                const bestDiff = displayLastMs > 0 && bestLapRef > 0 ? displayLastMs - bestLapRef : NaN;
+                let lapComparisonMs = bestLapRef;
+                if (displayLastMs > 0 && displayLastMs === bestLapRef) {
+                    const allLaps = history.map(h => lapHistoryMs(h, "lapTime")).filter(ms => ms > 0).sort((a, b) => a - b);
+                    const uniqueLaps = [...new Set(allLaps)];
+                    if (uniqueLaps.length > 1) {
+                        lapComparisonMs = uniqueLaps[1];
+                    }
+                }
+                const bestDiff = displayLastMs > 0 && lapComparisonMs > 0 ? displayLastMs - lapComparisonMs : NaN;
 
                 setDeltaText("lap-last-prev", prevDiff, prevDiff <= 0 ? "var(--fia-green)" : "var(--fia-yellow)");
 
@@ -3268,13 +3314,25 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const pb3 = playerLbData ? playerLbData.bestS3 : 0;
 
             const pbS1El = document.getElementById("pb-s1");
-            if (pbS1El) setElementText(pbS1El, pb1 > 0 ? formatMs(pb1) : "--:--.---");
+            if (pbS1El) {
+                setElementText(pbS1El, pb1 > 0 ? formatMs(pb1) : "--:--.---");
+                if (pb1 > 0) setClass(pbS1El, (sb1 > 0 && pb1 <= sb1) ? "purple" : "green", ["purple", "green"]);
+                else setClass(pbS1El, "", ["purple", "green"]);
+            }
             
             const pbS2El = document.getElementById("pb-s2");
-            if (pbS2El) setElementText(pbS2El, pb2 > 0 ? formatMs(pb2) : "--:--.---");
+            if (pbS2El) {
+                setElementText(pbS2El, pb2 > 0 ? formatMs(pb2) : "--:--.---");
+                if (pb2 > 0) setClass(pbS2El, (sb2 > 0 && pb2 <= sb2) ? "purple" : "green", ["purple", "green"]);
+                else setClass(pbS2El, "", ["purple", "green"]);
+            }
             
             const pbS3El = document.getElementById("pb-s3");
-            if (pbS3El) setElementText(pbS3El, pb3 > 0 ? formatMs(pb3) : "--:--.---");
+            if (pbS3El) {
+                setElementText(pbS3El, pb3 > 0 ? formatMs(pb3) : "--:--.---");
+                if (pb3 > 0) setClass(pbS3El, (sb3 > 0 && pb3 <= sb3) ? "purple" : "green", ["purple", "green"]);
+                else setClass(pbS3El, "", ["purple", "green"]);
+            }
 
             const theoreticalBestEl = document.getElementById("lap-theoretical-best");
             if (theoreticalBestEl) {
