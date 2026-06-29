@@ -225,11 +225,13 @@
             border-radius: var(--card-radius);
             padding: 10px 14px;
             margin-bottom: 6px;
-            transition: border-color 0.2s;
+            transition: all 0.2s ease;
         }
 
         .data-row:hover {
             border-color: var(--f1-border-strong);
+            background: rgba(255, 255, 255, 0.02);
+            transform: translateY(-2px);
         }
 
         .label {
@@ -262,9 +264,16 @@
             font-weight: 700;
         }
 
+        @keyframes purplePulse {
+            0% { text-shadow: 0 0 8px var(--fia-purple-glow); }
+            50% { text-shadow: 0 0 16px var(--fia-purple), 0 0 24px var(--fia-purple-glow); color: #e9c4ff !important; }
+            100% { text-shadow: 0 0 8px var(--fia-purple-glow); }
+        }
+
         .val.purple {
             color: var(--fia-purple) !important;
             text-shadow: 0 0 12px var(--fia-purple-glow);
+            animation: purplePulse 2s infinite ease-in-out;
         }
 
         .val.green {
@@ -622,11 +631,13 @@
             padding: 8px 12px;
             margin-bottom: 6px;
             gap: 8px;
-            transition: border-color 0.2s;
+            transition: all 0.2s ease;
         }
 
         .lb-row:hover {
             border-color: var(--f1-border-strong);
+            background: rgba(255, 255, 255, 0.03) !important;
+            transform: translateX(4px);
         }
 
         .col-pos {
@@ -1628,23 +1639,26 @@
         </div>
 
         <div id="tab-leaderboard" class="tab-content">
-            <div class="panel" style="flex-grow: 1">
+            <div class="panel" style="flex-grow: 1; overflow: hidden; display: flex; flex-direction: column;">
                 <div class="panel-header">Live Classification</div>
-                <div id="leaderboard-headers" class="lb-header"></div>
-                <div id="leaderboard-container" style="
-              display: flex;
-              flex-direction: column;
-              gap: 4px;
-              overflow-y: auto;
-              padding-right: 5px;
-              flex-grow: 1;
-            ">
-                    <div style="
-                text-align: center;
-                color: var(--text-muted);
-                padding: 20px;
-              ">
-                        Waiting for timing data...
+                <div style="overflow-x: auto; display: flex; flex-direction: column; flex-grow: 1;">
+                    <div id="leaderboard-headers" class="lb-header" style="min-width: max-content;"></div>
+                    <div id="leaderboard-container" style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 4px;
+                  overflow-y: auto;
+                  padding-right: 5px;
+                  flex-grow: 1;
+                  min-width: max-content;
+                ">
+                        <div style="
+                    text-align: center;
+                    color: var(--text-muted);
+                    padding: 20px;
+                  ">
+                            Waiting for timing data...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2844,6 +2858,9 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
          */
         function updateGForceDisplay(latG, longG, vertG, currentMs) {
             if (currentMs === lastCurrentMsForG) return; // Paused or no time change
+            // Hold the graph if there is absolutely no G-Force data (e.g. game paused / no telemetry)
+            if (latG === 0 && longG === 0 && vertG === 0) return;
+            
             lastCurrentMsForG = currentMs;
 
             const sensorG = Math.hypot(latG, longG, vertG);
@@ -3074,10 +3091,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         });
 
         function getRaceDistance(trackLength) {
-            const output = document.getElementById("full-race-distance");
-
             if (trackLength <= 0) {
-                output.textContent = "Invalid track length";
+                setText("full-race-distance", "Invalid track length");
                 return;
             }
 
@@ -3085,8 +3100,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             let laps = Math.ceil(305 / trackLengthKm);
             let distanceKm = laps * trackLengthKm;
 
-            output.textContent = `${distanceKm.toFixed(3)} km`;
-            document.getElementById("total-race-laps").textContent = `${laps}`;
+            setText("full-race-distance", `${distanceKm.toFixed(3)} km`);
+            setText("total-race-laps", `${laps}`);
         }
 
 
@@ -3771,6 +3786,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     headersHtml += `<span class="col-tyre">TYRE</span>
                                     <span class="col-gap">LEADER</span>
                                     <span class="col-int">INT</span>
+                                    <span class="col-best">BEST</span>
                                     <span class="col-laps">LAPS</span>`;
                 } else {
                     headersHtml += `<span class="col-laps">LAPS</span>`;
@@ -3866,7 +3882,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                                     ? "var(--fia-yellow)"
                                     : "var(--text-muted)";
 
-                        rowHtml += `<span class="val col-best" style="color: ${isFastest ? "var(--fia-purple)" : "#fff"};">${bestStr}</span>
+                        rowHtml += `<span class="val col-best ${isFastest ? 'purple' : ''}">${bestStr}</span>
                                     <span class="val col-gap">${gapStr}</span>
                                     <span class="val col-laps">${lapStr}</span>
                                     <span class="val col-stat" style="color: ${statCol};">${statStr}</span>`;
@@ -3898,10 +3914,13 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         }
 
                         let lapStr = `${driver.lapNum}/${data.session.lapsTotal}`;
+                        let bestStr = driver.bestLapMs > 0 ? formatMs(driver.bestLapMs) : "--:--.---";
+                        let bestClass = isFastest ? "purple" : (driver.bestLapMs > 0 ? "green" : "");
 
                         rowHtml += `<span class="val col-tyre" style="color: ${driver.tyreClass || "#FFF"};">${compound}</span>
                                     <span class="val col-gap">${gapToLeader}</span>
                                     <span class="val col-int">${intStr}</span>
+                                    <span class="val col-best ${bestClass}">${bestStr}</span>
                                     <span class="val col-laps">${lapStr}</span>`;
                     } else {
                         rowHtml += `<span class="val col-laps">${driver.lapNum}</span>`;
