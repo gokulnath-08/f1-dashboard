@@ -104,7 +104,7 @@
             border-color: var(--f1-border-strong);
         }
 
-         /* ══════════ PILL NAVIGATION ══════════ */
+        /* ══════════ PILL NAVIGATION ══════════ */
         .nav-bar {
             flex: 0 0 auto;
             display: flex;
@@ -265,9 +265,18 @@
         }
 
         @keyframes purplePulse {
-            0% { text-shadow: 0 0 8px var(--fia-purple-glow); }
-            50% { text-shadow: 0 0 16px var(--fia-purple), 0 0 24px var(--fia-purple-glow); color: #e9c4ff !important; }
-            100% { text-shadow: 0 0 8px var(--fia-purple-glow); }
+            0% {
+                text-shadow: 0 0 8px var(--fia-purple-glow);
+            }
+
+            50% {
+                text-shadow: 0 0 16px var(--fia-purple), 0 0 24px var(--fia-purple-glow);
+                color: #e9c4ff !important;
+            }
+
+            100% {
+                text-shadow: 0 0 8px var(--fia-purple-glow);
+            }
         }
 
         .val.purple {
@@ -822,6 +831,11 @@
                 display: none;
             }
 
+            .tyre-pos-fr {
+                grid-column: 2;
+                grid-row: 1;
+            }
+
             .tyre-pos-rl {
                 grid-column: 1;
                 grid-row: 2;
@@ -920,35 +934,56 @@
 
     <div class="nav-bar">
         <button class="nav-btn active" onclick="switchTab('tab-radar', this)">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45V7h1.5v7.5l3.5 2.05-.76 1.45z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path
+                    d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45V7h1.5v7.5l3.5 2.05-.76 1.45z" />
+            </svg>
             Timing & Radar
         </button>
         <button class="nav-btn" onclick="switchTab('tab-telemetry', this)">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3.5 18.5l6-6 4 4L22 6.92 20.59 5.5l-7.09 7.09-4-4L2 17.09l1.5 1.41z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M3.5 18.5l6-6 4 4L22 6.92 20.59 5.5l-7.09 7.09-4-4L2 17.09l1.5 1.41z" />
+            </svg>
             Telemetry
         </button>
         <button class="nav-btn" onclick="switchTab('tab-tyres', this)">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
+            </svg>
             Tyre Data
         </button>
         <button class="nav-btn" onclick="switchTab('tab-engineering', this)">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.73 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path
+                    d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.73 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+            </svg>
             Engineering
         </button>
         <button class="nav-btn" onclick="switchTab('tab-leaderboard', this)">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
+            </svg>
             Classification
         </button>
         <button class="nav-btn" onclick="switchTab('tab-history', this)">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path
+                    d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
+            </svg>
             Lap Analysis
         </button>
         <button class="nav-btn" onclick="switchTab('tab-damage', this)">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2L1 21h22L12 2zm1 16h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M12 2L1 21h22L12 2zm1 16h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+            </svg>
             Car Damage
         </button>
         <button class="nav-btn" onclick="switchTab('tab-weather', this)">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path
+                    d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z" />
+            </svg>
             Weather
         </button>
     </div>
@@ -1190,7 +1225,8 @@
                         title="Sync Track Lines from Telemetry">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20"
                             fill="currentColor">
-                            <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" />
+                            <path
+                                d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" />
                         </svg>
                     </button>
                 </div>
@@ -1257,9 +1293,15 @@
                     <span id="steer-val" style="float: right; color: var(--text-main)">0.00</span>
                 </div>
                 <div class="bar-bg" style="position: relative; display: flex; justify-content: center;">
-                    <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.4); z-index: 2; transform: translateX(-50%);"></div>
-                    <div class="fill-bar" id="steer-left" style="background: var(--fia-green); width: 0%; position: absolute; right: 50%; top: 0; bottom: 0; border-radius: 4px 0 0 4px;"></div>
-                    <div class="fill-bar" id="steer-right" style="background: var(--fia-green); width: 0%; position: absolute; left: 50%; top: 0; bottom: 0; border-radius: 0 4px 4px 0;"></div>
+                    <div
+                        style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.4); z-index: 2; transform: translateX(-50%);">
+                    </div>
+                    <div class="fill-bar" id="steer-left"
+                        style="background: var(--fia-green); width: 0%; position: absolute; right: 50%; top: 0; bottom: 0; border-radius: 4px 0 0 4px;">
+                    </div>
+                    <div class="fill-bar" id="steer-right"
+                        style="background: var(--fia-green); width: 0%; position: absolute; left: 50%; top: 0; bottom: 0; border-radius: 0 4px 4px 0;">
+                    </div>
                 </div>
                 <div class="data-row">
                     <span class="label">DRS</span>
@@ -1291,7 +1333,9 @@
                     <span class="val"><span id="pitch">0.00</span> | <span id="roll">0.00</span></span>
                 </div>
 
-                <canvas class="sparkline" id="g-graph"></canvas>
+                <div style="display: flex; justify-content: center;">
+                    <canvas id="g-graph" style="width: 100%; max-width: 320px; aspect-ratio: 1; margin: 15px 0; background: #06060e; border-radius: var(--card-radius); border: 1px solid var(--f1-border); box-shadow: inset 0 0 20px rgba(0,0,0,0.5);"></canvas>
+                </div>
 
                 <div style="display: flex; gap: 20px; margin-top: 20px">
                     <div style="flex: 1">
@@ -1325,7 +1369,8 @@
                     <!-- Front Left Data -->
                     <div class="tyre-box tyre-pos-fl" style="position: relative;">
                         <!-- Tyre Compound Circle -->
-                        <div id="tyre-compound-circle-fl" style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
+                        <div id="tyre-compound-circle-fl"
+                            style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
                             -
                         </div>
                         <div class="label">FRONT LEFT</div>
@@ -1346,7 +1391,8 @@
                     <!-- Front Right Data -->
                     <div class="tyre-box tyre-pos-fr" style="position: relative;">
                         <!-- Tyre Compound Circle -->
-                        <div id="tyre-compound-circle-fr" style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
+                        <div id="tyre-compound-circle-fr"
+                            style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
                             -
                         </div>
                         <div class="label">FRONT RIGHT</div>
@@ -1502,7 +1548,8 @@
                     <!-- Rear Left Data -->
                     <div class="tyre-box tyre-pos-rl" style="position: relative;">
                         <!-- Tyre Compound Circle -->
-                        <div id="tyre-compound-circle-rl" style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
+                        <div id="tyre-compound-circle-rl"
+                            style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
                             -
                         </div>
                         <div class="label">REAR LEFT</div>
@@ -1523,7 +1570,8 @@
                     <!-- Rear Right Data -->
                     <div class="tyre-box tyre-pos-rr" style="position: relative;">
                         <!-- Tyre Compound Circle -->
-                        <div id="tyre-compound-circle-rr" style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
+                        <div id="tyre-compound-circle-rr"
+                            style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
                             -
                         </div>
                         <div class="label">REAR RIGHT</div>
@@ -1591,17 +1639,23 @@
                 <div class="data-row">
                     <span class="label">Full Race Distance</span>
                     <span class="val" style="color: var(--fia-yellow)" id="full-race-distance">80</span>
-                    </span >
+                    </span>
                 </div>
                 <div class="data-row">
                     <span class="label">Total Race Laps</span>
                     <span class="val" style="color: var(--fia-yellow)" id="total-race-laps">80</span>
-                    </span >
+                    </span>
                 </div>
             </div>
 
             <div class="panel">
-                <div class="panel-header">Aero & Setup</div>
+                <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Aero & Setup</span>
+                    <select id="setup-lap-selector"
+                        style="background: var(--f1-dark); color: #fff; border: 1px solid var(--f1-border); border-radius: 4px; padding: 2px 4px; font-size: 12px; display: none;">
+                        <option value="live">Live Setup</option>
+                    </select>
+                </div>
                 <div class="data-row">
                     <span class="label">Front Wing</span>
                     <span class="val" id="wing-f">0</span>
@@ -1693,7 +1747,7 @@
         <div id="tab-damage" class="tab-content">
             <div class="panel">
                 <div class="panel-header">Car Damage & Wear</div>
-                
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div>
                         <div class="data-row">
@@ -1722,22 +1776,26 @@
                         </div>
                         <div class="data-row" style="margin-top: 15px;">
                             <span class="label">Brakes (FL / FR)</span>
-                            <span class="val highlight"><span id="dmg-brakes-fl">0%</span> / <span id="dmg-brakes-fr">0%</span></span>
+                            <span class="val highlight"><span id="dmg-brakes-fl">0%</span> / <span
+                                    id="dmg-brakes-fr">0%</span></span>
                         </div>
                         <div class="data-row">
                             <span class="label">Brakes (RL / RR)</span>
-                            <span class="val highlight"><span id="dmg-brakes-rl">0%</span> / <span id="dmg-brakes-rr">0%</span></span>
+                            <span class="val highlight"><span id="dmg-brakes-rl">0%</span> / <span
+                                    id="dmg-brakes-rr">0%</span></span>
                         </div>
                         <div class="data-row" style="margin-top: 15px;">
                             <span class="label">Tyres (FL / FR)</span>
-                            <span class="val highlight"><span id="dmg-tyres-fl">0%</span> / <span id="dmg-tyres-fr">0%</span></span>
+                            <span class="val highlight"><span id="dmg-tyres-fl">0%</span> / <span
+                                    id="dmg-tyres-fr">0%</span></span>
                         </div>
                         <div class="data-row">
                             <span class="label">Tyres (RL / RR)</span>
-                            <span class="val highlight"><span id="dmg-tyres-rl">0%</span> / <span id="dmg-tyres-rr">0%</span></span>
+                            <span class="val highlight"><span id="dmg-tyres-rl">0%</span> / <span
+                                    id="dmg-tyres-rr">0%</span></span>
                         </div>
                     </div>
-                    
+
                     <div>
                         <div class="data-row">
                             <span class="label">Gearbox</span>
@@ -1799,7 +1857,10 @@
                             </tr>
                         </thead>
                         <tbody id="weather-tbody">
-                            <tr><td colspan="5" style="padding: 16px; color: var(--text-muted); text-align: center;">Waiting for weather data...</td></tr>
+                            <tr>
+                                <td colspan="5" style="padding: 16px; color: var(--text-muted); text-align: center;">
+                                    Waiting for weather data...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -1829,11 +1890,14 @@
             document
                 .querySelectorAll(".nav-btn")
                 .forEach((btn) => setClass(btn, btn === btnElement ? "active" : null, ["active"]));
-            if (tabId === "tab-radar")
+            if (tabId === "tab-radar") {
                 setTimeout(() => {
                     resizeThreeJS();
                     updateMapOverlays();
                 }, 10);
+            } else if (tabId === "tab-telemetry") {
+                setTimeout(() => drawGGraph(), 10);
+            }
         }
 
         const mapContainer = document.getElementById("track-map-container");
@@ -1892,6 +1956,8 @@
         const gGraph = document.getElementById("g-graph");
         const gGraphCtx = gGraph.getContext("2d");
         const gHistory = [];
+        const gEnvelopeSet = new Set();
+        const gEnvelopeArray = [];
         let maxGSeen = 0;
         let lastCurrentMsForG = -1;
         const MAX_REASONABLE_SENSOR_G = 8;
@@ -2734,7 +2800,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         function drawGGraph() {
             const dpr = window.devicePixelRatio || 1;
             const width = gGraph.clientWidth || 300;
-            const height = gGraph.clientHeight || 90;
+            const height = gGraph.clientHeight || 300;
             if (
                 gGraph.width !== Math.floor(width * dpr) ||
                 gGraph.height !== Math.floor(height * dpr)
@@ -2745,88 +2811,113 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             gGraphCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
             gGraphCtx.clearRect(0, 0, width, height);
+            
+            // Draw dark background
             gGraphCtx.fillStyle = "#06060e";
             gGraphCtx.fillRect(0, 0, width, height);
 
-            const graphLeft = 36;
-            const graphRight = width - 6;
-            const graphTop = 6;
-            const graphBottom = height - 14;
-            const graphHeight = graphBottom - graphTop;
-            const graphWidth = graphRight - graphLeft;
-            const graphMax = Math.max(4, Math.ceil(maxGSeen));
+            const cx = width / 2;
+            const cy = height / 2;
+            const MAX_G = 5.5;
+            // Radius scaled to fit comfortably, leaving space for text
+            const radius = Math.min(width, height) / 2 - 35;
 
-            gGraphCtx.strokeStyle = "rgba(255,255,255,0.05)";
-            gGraphCtx.lineWidth = 1;
-            gGraphCtx.fillStyle = "#6e6e80";
-            gGraphCtx.font = "10px Roboto Mono, monospace";
-            gGraphCtx.textAlign = "right";
-            gGraphCtx.textBaseline = "middle";
-            for (let i = 0; i <= 4; i++) {
-                const value = (graphMax / 4) * i;
-                const y = graphBottom - (i / 4) * graphHeight;
-                gGraphCtx.beginPath();
-                gGraphCtx.moveTo(graphLeft, y);
-                gGraphCtx.lineTo(graphRight, y);
-                gGraphCtx.stroke();
-                gGraphCtx.fillText(`${value.toFixed(0)}G`, graphLeft - 6, y);
-            }
-
-            if (gHistory.length < 2) return;
-
-            // Draw gradient fill under line
-            gGraphCtx.beginPath();
-            gHistory.forEach((value, index) => {
-                const x = graphLeft + (index / (gHistory.length - 1)) * graphWidth;
-                const y =
-                    graphBottom - (Math.min(value, graphMax) / graphMax) * graphHeight;
-                if (index === 0) gGraphCtx.moveTo(x, y);
-                else gGraphCtx.lineTo(x, y);
-            });
-            gGraphCtx.lineTo(graphRight, graphBottom);
-            gGraphCtx.lineTo(graphLeft, graphBottom);
-            gGraphCtx.closePath();
-            const gradient = gGraphCtx.createLinearGradient(
-                0,
-                graphTop,
-                0,
-                graphBottom,
-            );
-            gradient.addColorStop(0, "rgba(255, 214, 10, 0.15)");
-            gradient.addColorStop(1, "rgba(255, 214, 10, 0)");
-            gGraphCtx.fillStyle = gradient;
-            gGraphCtx.fill();
-
-            // Draw the line
-            gGraphCtx.strokeStyle = "#ffd60a";
+            // 1. Draw Bounding Shield (Outline)
+            gGraphCtx.strokeStyle = "rgba(255, 255, 255, 0.7)";
             gGraphCtx.lineWidth = 2;
-            gGraphCtx.lineJoin = "round";
-            gGraphCtx.lineCap = "round";
             gGraphCtx.beginPath();
-            gHistory.forEach((value, index) => {
-                const x = graphLeft + (index / (gHistory.length - 1)) * graphWidth;
-                const y =
-                    graphBottom - (Math.min(value, graphMax) / graphMax) * graphHeight;
-                if (index === 0) gGraphCtx.moveTo(x, y);
-                else gGraphCtx.lineTo(x, y);
-            });
+            gGraphCtx.moveTo(cx - radius * 0.4, cy - radius * 0.9);
+            gGraphCtx.quadraticCurveTo(cx, cy - radius * 1.0, cx + radius * 0.4, cy - radius * 0.9);
+            gGraphCtx.bezierCurveTo(cx + radius * 1.1, cy - radius * 0.6, cx + radius * 1.1, cy + radius * 0.4, cx, cy + radius * 0.9);
+            gGraphCtx.bezierCurveTo(cx - radius * 1.1, cy + radius * 0.4, cx - radius * 1.1, cy - radius * 0.6, cx - radius * 0.4, cy - radius * 0.9);
             gGraphCtx.stroke();
 
-            // Glow dot at the latest point
-            if (gHistory.length > 0) {
-                const lastX = graphRight;
-                const lastVal = gHistory[gHistory.length - 1];
-                const lastY =
-                    graphBottom -
-                    (Math.min(lastVal, graphMax) / graphMax) * graphHeight;
-                gGraphCtx.fillStyle = "#ffd60a";
-                gGraphCtx.shadowColor = "rgba(255, 214, 10, 0.6)";
-                gGraphCtx.shadowBlur = 8;
-                gGraphCtx.beginPath();
-                gGraphCtx.arc(lastX, lastY, 3, 0, Math.PI * 2);
-                gGraphCtx.fill();
-                gGraphCtx.shadowBlur = 0;
+            // 2. Draw Crosshairs
+            gGraphCtx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            gGraphCtx.lineWidth = 1;
+            gGraphCtx.beginPath();
+            // Vertical line
+            gGraphCtx.moveTo(cx, cy - radius - 15);
+            gGraphCtx.lineTo(cx, cy + radius + 15);
+            // Horizontal line
+            gGraphCtx.moveTo(cx - radius - 15, cy);
+            gGraphCtx.lineTo(cx + radius + 15, cy);
+            gGraphCtx.stroke();
+            
+            // Draw arrows on crosshairs
+            gGraphCtx.fillStyle = "rgba(255, 255, 255, 0.8)";
+            gGraphCtx.beginPath();
+            // Top arrow
+            gGraphCtx.moveTo(cx, cy - radius - 15);
+            gGraphCtx.lineTo(cx - 4, cy - radius - 5);
+            gGraphCtx.lineTo(cx + 4, cy - radius - 5);
+            gGraphCtx.fill();
+            // Right arrow
+            gGraphCtx.beginPath();
+            gGraphCtx.moveTo(cx + radius + 15, cy);
+            gGraphCtx.lineTo(cx + radius + 5, cy - 4);
+            gGraphCtx.lineTo(cx + radius + 5, cy + 4);
+            gGraphCtx.fill();
+
+            if (gHistory.length === 0) return;
+
+            // 3. Draw Scatter points
+            // First pass: Blue glow / envelope using persistent quantized points
+            gGraphCtx.fillStyle = "rgba(10, 10, 200, 0.4)";
+            gGraphCtx.beginPath();
+            gEnvelopeArray.forEach(pt => {
+                const x = cx + (pt.lat / MAX_G) * radius;
+                const y = cy + (pt.long / MAX_G) * radius; // long < 0 is braking, negative Y offset is UP
+                gGraphCtx.moveTo(x + 6, y); // Prevent lines connecting arcs
+                gGraphCtx.arc(x, y, 6, 0, Math.PI * 2);
+            });
+            gGraphCtx.fill();
+
+            // Second pass: Yellow trail for recent history
+            gGraphCtx.fillStyle = "rgba(255, 214, 10, 0.5)"; // Fading yellow
+            gGraphCtx.beginPath();
+            for (let i = 0; i < gHistory.length - 1; i++) {
+                const pt = gHistory[i];
+                const x = cx + (pt.lat / MAX_G) * radius;
+                const y = cy + (pt.long / MAX_G) * radius;
+                gGraphCtx.moveTo(x + 1.5, y);
+                gGraphCtx.arc(x, y, 1.5, 0, Math.PI * 2);
             }
+            gGraphCtx.fill();
+
+            // Third pass: Draw current point brighter and larger with a halo
+            if (gHistory.length > 0) {
+                const pt = gHistory[gHistory.length - 1];
+                const x = cx + (pt.lat / MAX_G) * radius;
+                const y = cy + (pt.long / MAX_G) * radius;
+                
+                // Solid bright center
+                gGraphCtx.fillStyle = "#ffd60a"; 
+                gGraphCtx.beginPath();
+                gGraphCtx.arc(x, y, 4, 0, Math.PI * 2);
+                gGraphCtx.fill();
+                
+                // Glowing outer halo
+                gGraphCtx.fillStyle = "rgba(255, 214, 10, 0.4)";
+                gGraphCtx.beginPath();
+                gGraphCtx.arc(x, y, 8, 0, Math.PI * 2);
+                gGraphCtx.fill();
+            }
+
+            // 4. Draw Current G-force Text safely within bounds
+            const latest = gHistory[gHistory.length - 1];
+            gGraphCtx.font = "bold 24px Roboto Mono, monospace";
+            gGraphCtx.textBaseline = "bottom";
+            
+            // Lateral (Left side)
+            gGraphCtx.fillStyle = "#ffd60a"; // Yellow like image
+            gGraphCtx.textAlign = "left";
+            gGraphCtx.fillText(latest.lat.toFixed(1), 15, height - 10);
+            
+            // Longitudinal (Right side)
+            gGraphCtx.fillStyle = "rgba(255, 255, 255, 0.7)"; // Grey/White like image
+            gGraphCtx.textAlign = "right";
+            gGraphCtx.fillText(latest.long.toFixed(1), width - 15, height - 10);
         }
 
         /**
@@ -2860,7 +2951,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             if (currentMs === lastCurrentMsForG) return; // Paused or no time change
             // Hold the graph if there is absolutely no G-Force data (e.g. game paused / no telemetry)
             if (latG === 0 && longG === 0 && vertG === 0) return;
-            
+
             lastCurrentMsForG = currentMs;
 
             const sensorG = Math.hypot(latG, longG, vertG);
@@ -2871,8 +2962,18 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 : getGForceFeel(latG, longG, vertG, experiencedG);
 
             maxGSeen = Math.max(maxGSeen, experiencedG);
-            gHistory.push(experiencedG);
-            if (gHistory.length > 180) gHistory.shift();
+
+            // Quantize to 0.1G for the permanent envelope (reduces array size dramatically)
+            const qLat = Math.round(latG * 10) / 10;
+            const qLong = Math.round(longG * 10) / 10;
+            const key = `${qLat},${qLong}`;
+            if (!gEnvelopeSet.has(key)) {
+                gEnvelopeSet.add(key);
+                gEnvelopeArray.push({ lat: qLat, long: qLong });
+            }
+
+            gHistory.push({ lat: latG, long: longG, total: experiencedG });
+            if (gHistory.length > 60) gHistory.shift(); // Keep a short recent trail
 
             setText("g-total", `${experiencedG.toFixed(2)} G`);
             setText("g-max", `${maxGSeen.toFixed(2)} G`);
@@ -2911,8 +3012,26 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         function loadOfflineTrack(trackId) {
             if (trackId && ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ action: "getTrackData", trackId: trackId }));
+                ws.send(JSON.stringify({ action: "getTrackSetups", trackId: trackId }));
             }
         }
+
+        let offlineSetups = [];
+        let selectedOfflineSetup = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const selector = document.getElementById('setup-lap-selector');
+            if (selector) {
+                selector.addEventListener('change', function (e) {
+                    if (e.target.value === 'live') {
+                        selectedOfflineSetup = null;
+                    } else {
+                        const lapNum = parseInt(e.target.value);
+                        selectedOfflineSetup = offlineSetups.find(s => s.lapNum === lapNum) || null;
+                    }
+                });
+            }
+        });
 
         /**
          * Formats a raw millisecond integer into a standard M:SS.mmm timing string.
@@ -3115,7 +3234,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const data = JSON.parse(event.data);
 
 
-            if(document.getElementById("track-name").value !== "Unknown") {
+            if (document.getElementById("track-name").value !== "Unknown") {
                 document.getElementById("syncbttn").style.display = "block";
             }
 
@@ -3180,6 +3299,37 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         sector1: data.data.sector1,
                         sector2: data.data.sector2,
                     };
+                }
+                return;
+            }
+
+            if (data.type === "trackSetupsResponse") {
+                offlineSetups = data.data || [];
+                const selector = document.getElementById('setup-lap-selector');
+                if (selector && offlineSetups.length > 0) {
+                    selector.style.display = 'block';
+                    // Keep the current selection if possible
+                    const currentVal = selector.value;
+                    selector.innerHTML = '<option value="live">Live Setup</option>';
+
+                    // Sort by lap number descending
+                    offlineSetups.sort((a, b) => b.lapNum - a.lapNum).forEach(setup => {
+                        const opt = document.createElement('option');
+                        opt.value = setup.lapNum;
+                        opt.textContent = `Lap ${setup.lapNum} (${formatMs(setup.time)})`;
+                        selector.appendChild(opt);
+                    });
+
+                    if (Array.from(selector.options).some(opt => opt.value === currentVal)) {
+                        selector.value = currentVal;
+                    } else {
+                        selector.value = 'live';
+                        selectedOfflineSetup = null;
+                    }
+                } else if (selector) {
+                    selector.style.display = 'none';
+                    selector.innerHTML = '<option value="live">Live Setup</option>';
+                    selectedOfflineSetup = null;
                 }
                 return;
             }
@@ -3335,14 +3485,14 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 if (pb1 > 0) setClass(pbS1El, (sb1 > 0 && pb1 <= sb1) ? "purple" : "green", ["purple", "green"]);
                 else setClass(pbS1El, "", ["purple", "green"]);
             }
-            
+
             const pbS2El = document.getElementById("pb-s2");
             if (pbS2El) {
                 setElementText(pbS2El, pb2 > 0 ? formatMs(pb2) : "--:--.---");
                 if (pb2 > 0) setClass(pbS2El, (sb2 > 0 && pb2 <= sb2) ? "purple" : "green", ["purple", "green"]);
                 else setClass(pbS2El, "", ["purple", "green"]);
             }
-            
+
             const pbS3El = document.getElementById("pb-s3");
             if (pbS3El) {
                 setElementText(pbS3El, pb3 > 0 ? formatMs(pb3) : "--:--.---");
@@ -3403,7 +3553,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             updateSectorDeltas(data, playerLbData);
 
             data.lap = originalLapData;
-            
+
             if (data.damage) {
                 const setDmgText = (id, val) => {
                     const printVal = (val === undefined || val === null) ? 0 : val;
@@ -3434,7 +3584,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 setDmgText("dmg-engine-tc", data.damage.m_engineTCWear);
                 setDmgText("dmg-engine-es", data.damage.m_engineESWear);
                 setDmgText("dmg-engine-ce", data.damage.m_engineCEWear);
-                
+
                 const drsEl = document.getElementById("dmg-drs-fault");
                 if (drsEl) { drsEl.textContent = data.damage.m_drsFault ? "FAULT" : "OK"; drsEl.style.color = data.damage.m_drsFault ? "red" : "white"; }
                 const ersEl = document.getElementById("dmg-ers-fault");
@@ -3442,12 +3592,12 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 const engineEl = document.getElementById("dmg-engine-blown");
                 if (engineEl) { engineEl.textContent = data.damage.m_engineBlown ? "BLOWN" : "OK"; engineEl.style.color = data.damage.m_engineBlown ? "red" : "white"; }
             }
-            
+
             const tbody = document.getElementById("weather-tbody");
             if (tbody) {
                 if (data.weatherForecast && data.weatherForecast.length > 0) {
                     let html = "";
-                    const weatherMap = {0: "Clear", 1: "Light Cloud", 2: "Overcast", 3: "Light Rain", 4: "Heavy Rain", 5: "Storm", 6: "Unknown"};
+                    const weatherMap = { 0: "Clear", 1: "Light Cloud", 2: "Overcast", 3: "Light Rain", 4: "Heavy Rain", 5: "Storm", 6: "Unknown" };
                     data.weatherForecast.forEach(sample => {
                         html += `
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
@@ -3489,6 +3639,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             if (isLive && window.overrideTrackData) {
                 window.overrideTrackData = null;
                 window.lastTrackPointsLength = 0;
+                // Fetch live setups when switching back to live mode
+                if (ws && ws.readyState === WebSocket.OPEN && currentTrackId !== -1) {
+                    ws.send(JSON.stringify({ action: "getTrackSetups", trackId: currentTrackId }));
+                }
             }
 
             const mapDataToUse = isLive ? data : window.overrideTrackData || null;
@@ -3542,7 +3696,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         if (threePts.length > 2) {
                             threePts.push(threePts[0].clone());
                         }
-                        
+
                         function getClosestIndex(pts, target, minIdx = 0, maxIdx = pts.length - 1) {
                             if (!target) return Math.floor((minIdx + maxIdx) / 2);
                             let minD = Infinity;
@@ -3556,35 +3710,35 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                             }
                             return idx;
                         }
-                        
+
                         // Remove the duplicate end point to reorder cleanly
                         threePts.pop();
                         const nPts = threePts.length;
-                        
+
                         let startIdx = 0;
                         if (mapDataToUse.startLine) {
                             startIdx = getClosestIndex(threePts, mapDataToUse.startLine);
                         }
-                        
+
                         const orderedPts = threePts.slice(startIdx).concat(threePts.slice(0, startIdx));
                         orderedPts.push(orderedPts[0].clone()); // Re-close the loop
-                        
+
                         const len = orderedPts.length - 1;
                         // Restrict search bounds to prevent opposite-straight crossovers
                         const idx1 = mapDataToUse.sector1 ? getClosestIndex(orderedPts, mapDataToUse.sector1, Math.floor(len * 0.1), Math.floor(len * 0.6)) : Math.floor(len / 3);
                         const idx2 = mapDataToUse.sector2 ? getClosestIndex(orderedPts, mapDataToUse.sector2, idx1, Math.floor(len * 0.95)) : Math.floor((len / 3) * 2);
-                        
+
                         const ptsS1 = orderedPts.slice(0, idx1 + 1);
                         const ptsS2 = orderedPts.slice(idx1, idx2 + 1);
                         const ptsS3 = orderedPts.slice(idx2);
-                        
+
                         const paths = [ptsS1, ptsS2, ptsS3];
-                        
+
                         const hasSectors = mapDataToUse.sector1 && mapDataToUse.sector2;
                         trackLines[0].material.color.setHex(hasSectors ? 0xef4444 : 0xdddddd);
                         trackLines[1].material.color.setHex(hasSectors ? 0x3b82f6 : 0xdddddd);
                         trackLines[2].material.color.setHex(hasSectors ? 0xeab308 : 0xdddddd);
-                        
+
                         for (let i = 0; i < 3; i++) {
                             if (trackLines[i].geometry) {
                                 trackLines[i].geometry.dispose();
@@ -3749,8 +3903,13 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             setText("ers-val", `${Math.round(data.ers.battery)}%`);
             setText("fuel", `${data.setup.fuel.toFixed(2)} kg`);
             if (data.setup.fuelLaps !== undefined) {
-                setText("fuel-laps", data.setup.fuelLaps.toFixed(2));
-                setStyleById("fuel-laps", "color", data.setup.fuelLaps < 0 ? "var(--fia-red)" : "var(--text-main)");
+                var SymbolFuel = data.setup.fuelLaps < 0 ? "" : "+";
+                setText("fuel-laps", SymbolFuel + data.setup.fuelLaps.toFixed(2) + " Laps");
+                if (data.setup.fuelLaps < 0) {
+                    setStyleById("fuel-laps", "color", "var(--fia-red)");
+                } else {
+                    setStyleById("fuel-laps", "color", "var(--fia-green)");
+                }
             }
 
             setText("flag", data.car.flag);
@@ -3889,7 +4048,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     } else if (isRace) {
                         let compound = (driver.tyre || "-").split(" ")[0];
                         let intStr = index === 0 ? "LEAD" : driver.gapText || "--";
-                        
+
                         let gapToLeader = "LEAD";
                         if (index > 0) {
                             if (intStr.includes("LAP")) {

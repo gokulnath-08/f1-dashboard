@@ -1,0 +1,123 @@
+[
+  {
+    "lapNum": 18,
+    "time": 97856,
+    "setup": {
+      "wingF": 32,
+      "wingR": 29,
+      "diffOn": 45,
+      "diffOff": 50,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 10,
+      "fuelLaps": 5.21076774597168
+    },
+    "timestamp": 1782840262895
+  },
+  {
+    "lapNum": 2,
+    "time": 100595,
+    "setup": {
+      "wingF": 50,
+      "wingR": 40,
+      "diffOn": 100,
+      "diffOff": 40,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 10,
+      "fuelLaps": 7.279411315917969
+    },
+    "timestamp": 1782843633353
+  },
+  {
+    "lapNum": 1,
+    "time": 104193,
+    "setup": {
+      "wingF": 31,
+      "wingR": 31,
+      "diffOn": 55,
+      "diffOff": 50,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 10,
+      "fuelLaps": 7.279411315917969
+    },
+    "timestamp": 1782843325495
+  },
+  {
+    "lapNum": 3,
+    "time": 99588,
+    "setup": {
+      "wingF": 38,
+      "wingR": 30,
+      "diffOn": 55,
+      "diffOff": 45,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 10,
+      "fuelLaps": 7.279411315917969
+    },
+    "timestamp": 1782844020159
+  },
+  {
+    "lapNum": 4,
+    "time": 99855,
+    "setup": {
+      "wingF": 38,
+      "wingR": 30,
+      "diffOn": 45,
+      "diffOff": 45,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 10,
+      "fuelLaps": 7.279411315917969
+    },
+    "timestamp": 1782844181736
+  },
+  {
+    "lapNum": 5,
+    "time": 103167,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "suspF": 38,
+      "suspR": 12,
+      "arbF": 16,
+      "arbR": 11,
+      "rideHeightF": 18,
+      "rideHeightR": 40,
+      "brakePressure": 95,
+      "bBias": 56,
+      "engineBraking": 50,
+      "tyrePressRL": 21.299999237060547,
+      "tyrePressRR": 21.299999237060547,
+      "tyrePressFL": 24.200000762939453,
+      "tyrePressFR": 24.200000762939453,
+      "ballast": 6,
+      "fuel": 92.67188262939453,
+      "fuelLaps": -0.5984115600585938
+    },
+    "timestamp": 1782842487590
+  }
+]

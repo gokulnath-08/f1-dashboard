@@ -1,0 +1,884 @@
+[
+  {
+    "lapNum": 6,
+    "time": 102584,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 30,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 54,
+      "fuel": 90.83858489990234,
+      "fuelLaps": -0.5963058471679688
+    },
+    "timestamp": 1782895530754
+  },
+  {
+    "lapNum": 7,
+    "time": 103200,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 89.00938415527344,
+      "fuelLaps": -0.5924110412597656
+    },
+    "timestamp": 1782895698284
+  },
+  {
+    "lapNum": 8,
+    "time": 106131,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 87.17478942871094,
+      "fuelLaps": -0.5913810729980469
+    },
+    "timestamp": 1782895964302
+  },
+  {
+    "lapNum": 9,
+    "time": 109801,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 85.44255828857422,
+      "fuelLaps": -0.5342292785644531
+    },
+    "timestamp": 1782896188682
+  },
+  {
+    "lapNum": 10,
+    "time": 113109,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 83.7396240234375,
+      "fuelLaps": -0.46173095703125
+    },
+    "timestamp": 1782896521751
+  },
+  {
+    "lapNum": 11,
+    "time": 115077,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 82.10328674316406,
+      "fuelLaps": -0.35265350341796875
+    },
+    "timestamp": 1782896737035
+  },
+  {
+    "lapNum": 12,
+    "time": 119427,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 80.52777862548828,
+      "fuelLaps": -0.21001052856445312
+    },
+    "timestamp": 1782897107609
+  },
+  {
+    "lapNum": 13,
+    "time": 135261,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 78.78084564208984,
+      "fuelLaps": -0.1612548828125
+    },
+    "timestamp": 1782897373070
+  },
+  {
+    "lapNum": 14,
+    "time": 113489,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 77.03502655029297,
+      "fuelLaps": -0.11220169067382812
+    },
+    "timestamp": 1782897579679
+  },
+  {
+    "lapNum": 15,
+    "time": 111712,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 75.2637939453125,
+      "fuelLaps": -0.07634353637695312
+    },
+    "timestamp": 1782898082152
+  },
+  {
+    "lapNum": 16,
+    "time": 113448,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 73.53693389892578,
+      "fuelLaps": -0.016693115234375
+    },
+    "timestamp": 1782898435042
+  },
+  {
+    "lapNum": 17,
+    "time": 111613,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 71.75569915771484,
+      "fuelLaps": 0.013652801513671875
+    },
+    "timestamp": 1782898620360
+  },
+  {
+    "lapNum": 18,
+    "time": 112682,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 70.0039291381836,
+      "fuelLaps": 0.059803009033203125
+    },
+    "timestamp": 1782898917291
+  },
+  {
+    "lapNum": 19,
+    "time": 113450,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 68.26217651367188,
+      "fuelLaps": 0.11135101318359375
+    },
+    "timestamp": 1782899131986
+  },
+  {
+    "lapNum": 20,
+    "time": 116343,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 66.47179412841797,
+      "fuelLaps": 0.13633346557617188
+    },
+    "timestamp": 1782899375659
+  },
+  {
+    "lapNum": 21,
+    "time": 116474,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 64.71170806884766,
+      "fuelLaps": 0.1785888671875
+    },
+    "timestamp": 1782899554323
+  },
+  {
+    "lapNum": 22,
+    "time": 117507,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 62.944698333740234,
+      "fuelLaps": 0.216583251953125
+    },
+    "timestamp": 1782899830560
+  },
+  {
+    "lapNum": 23,
+    "time": 115092,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 61.107276916503906,
+      "fuelLaps": 0.21595001220703125
+    },
+    "timestamp": 1782899962114
+  },
+  {
+    "lapNum": 24,
+    "time": 116051,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 59.33430480957031,
+      "fuelLaps": 0.2508277893066406
+    },
+    "timestamp": 1782900310342
+  },
+  {
+    "lapNum": 25,
+    "time": 259913,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 60,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 5,
+      "fuelLaps": 0.23775482177734375
+    },
+    "timestamp": 1782900362939
+  },
+  {
+    "lapNum": 27,
+    "time": 106620,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 55,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 53.89138412475586,
+      "fuelLaps": 0.28742408752441406
+    },
+    "timestamp": 1782900743298
+  },
+  {
+    "lapNum": 28,
+    "time": 101241,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 55,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 52.077579498291016,
+      "fuelLaps": 0.2994346618652344
+    },
+    "timestamp": 1782901143375
+  },
+  {
+    "lapNum": 29,
+    "time": 100757,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 55,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 5,
+      "fuelLaps": 0.2945671081542969
+    },
+    "timestamp": 1782901421521
+  },
+  {
+    "lapNum": 30,
+    "time": 100318,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 55,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 48.38037872314453,
+      "fuelLaps": 0.28648948669433594
+    },
+    "timestamp": 1782905275148
+  },
+  {
+    "lapNum": 31,
+    "time": 100485,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 55,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 46.52216339111328,
+      "fuelLaps": 0.27490234375
+    },
+    "timestamp": 1782905476196
+  },
+  {
+    "lapNum": 32,
+    "time": 100285,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 44.6670036315918,
+      "fuelLaps": 0.2645130157470703
+    },
+    "timestamp": 1782905775397
+  },
+  {
+    "lapNum": 33,
+    "time": 104785,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 42.8667106628418,
+      "fuelLaps": 0.28466033935546875
+    },
+    "timestamp": 1782905961432
+  },
+  {
+    "lapNum": 34,
+    "time": 99590,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 41.057106018066406,
+      "fuelLaps": 0.2996654510498047
+    },
+    "timestamp": 1782906413629
+  },
+  {
+    "lapNum": 35,
+    "time": 101693,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 39.26059341430664,
+      "fuelLaps": 0.3209247589111328
+    },
+    "timestamp": 1782906836124
+  },
+  {
+    "lapNum": 36,
+    "time": 105689,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 37.5733528137207,
+      "fuelLaps": 0.4028644561767578
+    },
+    "timestamp": 1782907126076
+  },
+  {
+    "lapNum": 37,
+    "time": 102437,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 35.79832458496094,
+      "fuelLaps": 0.4362163543701172
+    },
+    "timestamp": 1782907334411
+  },
+  {
+    "lapNum": 38,
+    "time": 101443,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 34.057315826416016,
+      "fuelLaps": 0.4885234832763672
+    },
+    "timestamp": 1782907566564
+  },
+  {
+    "lapNum": 39,
+    "time": 102662,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 32.266876220703125,
+      "fuelLaps": 0.5130577087402344
+    },
+    "timestamp": 1782907696506
+  },
+  {
+    "lapNum": 40,
+    "time": 102032,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 30.508708953857422,
+      "fuelLaps": 0.5559921264648438
+    },
+    "timestamp": 1782907819165
+  },
+  {
+    "lapNum": 41,
+    "time": 101190,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 28.733076095581055,
+      "fuelLaps": 0.5894708633422852
+    },
+    "timestamp": 1782907994615
+  },
+  {
+    "lapNum": 42,
+    "time": 101144,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 26.96680450439453,
+      "fuelLaps": 0.6275358200073242
+    },
+    "timestamp": 1782908429660
+  },
+  {
+    "lapNum": 43,
+    "time": 101509,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 35,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 25.18674087524414,
+      "fuelLaps": 0.6582546234130859
+    },
+    "timestamp": 1782908726126
+  },
+  {
+    "lapNum": 44,
+    "time": 100619,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 35,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 23.401161193847656,
+      "fuelLaps": 0.6861801147460938
+    },
+    "timestamp": 1782908961931
+  },
+  {
+    "lapNum": 45,
+    "time": 102602,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 35,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 57,
+      "fuel": 21.586837768554688,
+      "fuelLaps": 0.6983375549316406
+    },
+    "timestamp": 1782909174769
+  },
+  {
+    "lapNum": 46,
+    "time": 100773,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 35,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 55,
+      "fuel": 5,
+      "fuelLaps": 0.7419061660766602
+    },
+    "timestamp": 1782909352824
+  },
+  {
+    "lapNum": 47,
+    "time": 100982,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 5,
+      "fuelLaps": 0.7648868560791016
+    },
+    "timestamp": 1782909527892
+  },
+  {
+    "lapNum": 48,
+    "time": 101639,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 54,
+      "fuel": 16.266294479370117,
+      "fuelLaps": 0.8017959594726562
+    },
+    "timestamp": 1782909775219
+  },
+  {
+    "lapNum": 49,
+    "time": 100642,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 54,
+      "fuel": 5,
+      "fuelLaps": 0.8364448547363281
+    },
+    "timestamp": 1782909950162
+  },
+  {
+    "lapNum": 50,
+    "time": 102129,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 40,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 12.728572845458984,
+      "fuelLaps": 0.8752231597900391
+    },
+    "timestamp": 1782910187662
+  },
+  {
+    "lapNum": 51,
+    "time": 103778,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 5,
+      "fuelLaps": 0.9145092964172363
+    },
+    "timestamp": 1782910392077
+  },
+  {
+    "lapNum": 52,
+    "time": 103671,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 45,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 9.189300537109375,
+      "fuelLaps": 0.948267936706543
+    },
+    "timestamp": 1782910524657
+  },
+  {
+    "lapNum": 53,
+    "time": 103915,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 40,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 5,
+      "fuelLaps": 1.0072689056396484
+    },
+    "timestamp": 1782910628557
+  },
+  {
+    "lapNum": 54,
+    "time": 106012,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 40,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 5.732524394989014,
+      "fuelLaps": 1.0662868022918701
+    },
+    "timestamp": 1782910804180
+  },
+  {
+    "lapNum": 55,
+    "time": 110133,
+    "setup": {
+      "wingF": 32,
+      "wingR": 28,
+      "diffOn": 40,
+      "diffOff": 55,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 56,
+      "fuel": 4.046853065490723,
+      "fuelLaps": 1.1485402584075928
+    },
+    "timestamp": 1782911025957
+  }
+]

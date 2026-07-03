@@ -37,6 +37,12 @@ if (!fs.existsSync(telemetryDir)) {
     console.log('📁 Created telemetry directory for full lap data.');
 }
 
+const setupsDir = path.join(__dirname, 'setups');
+if (!fs.existsSync(setupsDir)) {
+    fs.mkdirSync(setupsDir);
+    console.log('📁 Created setups directory for car setups.');
+}
+
 let allTimeFastest = {};
 const fastestJsonPath = path.join(lapTimeDir, 'fastest.json');
 
@@ -78,7 +84,7 @@ const server = http.createServer((req, res) => {
                     htmlContent = htmlContent.replace('<footer', '<footer hidden ');
                     responseData = Buffer.from(htmlContent, "utf8");
                 }
-            } catch(e) {}
+            } catch (e) { }
         }
 
         res.writeHead(200, {
@@ -105,13 +111,13 @@ function handleWsConnection(ws) {
     ws.on('message', (msg) => {
         try {
             const data = JSON.parse(msg);
-            
+
             if (data.action === 'getAvailableTracks') {
                 fs.readdir(trackMapsDir, (err, files) => {
                     if (!err) {
                         const tracks = files.filter(f => f.startsWith('track_') && f.endsWith('.json'))
-                                            .map(f => parseInt(f.match(/\d+/)[0]))
-                                            .filter(id => !isNaN(id));
+                            .map(f => parseInt(f.match(/\d+/)[0]))
+                            .filter(id => !isNaN(id));
                         ws.send(JSON.stringify({ type: 'availableTracks', tracks }));
                     }
                 });
@@ -126,7 +132,23 @@ function handleWsConnection(ws) {
                         try {
                             const tData = JSON.parse(fs.readFileSync(tPath, 'utf8'));
                             ws.send(JSON.stringify({ type: 'trackDataResponse', trackId, data: tData }));
-                        } catch(e) {}
+                        } catch (e) { }
+                    }
+                }
+                return;
+            }
+
+            if (data.action === 'getTrackSetups') {
+                const trackId = data.trackId !== undefined ? parseInt(data.trackId) : currentTrackId;
+                if (!isNaN(trackId) && trackId !== -1) {
+                    const sPath = path.join(setupsDir, `setups_y${currentGameYear}_t${trackId}.json`);
+                    if (fs.existsSync(sPath)) {
+                        try {
+                            const sData = JSON.parse(fs.readFileSync(sPath, 'utf8'));
+                            ws.send(JSON.stringify({ type: 'trackSetupsResponse', trackId, data: sData }));
+                        } catch (e) { }
+                    } else {
+                        ws.send(JSON.stringify({ type: 'trackSetupsResponse', trackId, data: [] }));
                     }
                 }
                 return;
@@ -141,32 +163,32 @@ function handleWsConnection(ws) {
                 const tId = data.trackId !== undefined ? data.trackId : currentTrackId;
                 const telPath = path.join(telemetryDir, `telemetry_${tId}.json`);
                 if (!fs.existsSync(telPath)) return;
-                
+
                 try {
                     const telData = JSON.parse(fs.readFileSync(telPath, 'utf8'));
                     if (telData.length === 0) return;
-                    
+
                     let newStart = null, newS1 = null, newS2 = null;
-                    
+
                     // Start line is the point closest to d = 0
                     const startLinePt = telData.reduce((prev, curr) => Math.abs(curr.d) < Math.abs(prev.d) ? curr : prev);
                     newStart = { x: startLinePt.x, z: startLinePt.z, yaw: startLinePt.yaw || 0, d: startLinePt.d };
-                    
+
                     // If we have sector distances from session, use them
                     if (state.session.sector2Distance > 0 && state.session.sector3Distance > 0) {
                         const s1Pt = telData.reduce((prev, curr) => Math.abs(curr.d - state.session.sector2Distance) < Math.abs(prev.d - state.session.sector2Distance) ? curr : prev);
                         newS1 = { x: s1Pt.x, z: s1Pt.z, yaw: s1Pt.yaw || 0, d: s1Pt.d };
-                        
+
                         const s2Pt = telData.reduce((prev, curr) => Math.abs(curr.d - state.session.sector3Distance) < Math.abs(prev.d - state.session.sector3Distance) ? curr : prev);
                         newS2 = { x: s2Pt.x, z: s2Pt.z, yaw: s2Pt.yaw || 0, d: s2Pt.d };
                     }
-                    
+
                     if (tId === currentTrackId) {
                         state.startLine = newStart || state.startLine;
                         state.sector1 = newS1 || state.sector1;
                         state.sector2 = newS2 || state.sector2;
                     }
-                    
+
                     const mapPath = path.join(trackMapsDir, `track_${tId}.json`);
                     if (fs.existsSync(mapPath)) {
                         const mapData = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
@@ -180,7 +202,7 @@ function handleWsConnection(ws) {
                         fs.writeFileSync(mapPath, JSON.stringify(updatedData));
                         console.log(`✅ Synced track lines for Map ${tId}`);
                     }
-                } catch(e) {
+                } catch (e) {
                     console.error("Error syncing track lines:", e);
                 }
                 return;
@@ -333,7 +355,7 @@ function getParticipantTeamId(participant) {
     if (tid !== undefined && !teamMap[tid]) {
         console.log(`UNKNOWN TEAM ID DETECTED: ${tid} for driver ${participant.m_name || 'unknown'}`);
     }
-    return tid;
+    return tid; 
 }
 
 let currentSessionUID = null;
@@ -427,12 +449,12 @@ function getSectorTime(obj, sectorNum) {
     const msKey4 = `sector${sectorNum}TimeMsPart`;
     const msKey5 = `m_sector${sectorNum}TimeInMS`;
     const msKey6 = `sector${sectorNum}TimeInMS`;
-    
+
     const minKey1 = `m_sector${sectorNum}TimeMinutesPart`;
     const minKey2 = `sector${sectorNum}TimeMinutesPart`;
     const minKey3 = `m_sector${sectorNum}TimeMinutes`;
     const minKey4 = `sector${sectorNum}TimeMinutes`;
-    
+
     const fallbackKey1 = `m_sector${sectorNum}Time`;
 
     let ms = 0;
@@ -494,9 +516,16 @@ function getLiveSectorTiming(currentMs, sector, s1, s2, s3) {
     return live;
 }
 
+let currentGameYear = 26; // Default to 26 if not set
+
 function setPlayerIndex(header) {
-    if (header && header.m_playerCarIndex !== undefined) {
-        state.playerIndex = header.m_playerCarIndex;
+    if (header) {
+        if (header.m_playerCarIndex !== undefined) {
+            state.playerIndex = header.m_playerCarIndex;
+        }
+        if (header.m_gameYear !== undefined) {
+            currentGameYear = header.m_gameYear;
+        }
     }
 }
 
@@ -988,17 +1017,55 @@ f1Client.on('lapData', (data) => {
                 }
 
                 lockOfficialSectorLinesFromTelemetry(i, carDataTracker[i].s1, carDataTracker[i].s2, lastLapTelemetry[i]);
+
+                // Save setup at the end of the lap for the player
+                if (i === pIdx && currentTrackId !== -1) {
+                    try {
+                        const sPath = path.join(setupsDir, `setups_y${currentGameYear}_t${currentTrackId}.json`);
+                        let setupsData = [];
+                        if (fs.existsSync(sPath)) {
+                            setupsData = JSON.parse(fs.readFileSync(sPath, 'utf8'));
+                        }
+
+                        // Check if lap already exists to avoid duplicates
+                        const existingLapIndex = setupsData.findIndex(s => s.lapNum === carPhysics[i].lapNum);
+                        const setupEntry = {
+                            lapNum: carPhysics[i].lapNum,
+                            time: lastTime,
+                            setup: { ...state.setup },
+                            timestamp: Date.now()
+                        };
+
+                        if (existingLapIndex >= 0) {
+                            setupsData[existingLapIndex] = setupEntry;
+                        } else {
+                            setupsData.push(setupEntry);
+                        }
+
+                        fs.writeFileSync(sPath, JSON.stringify(setupsData, null, 2), 'utf8');
+
+                        // Broadcast updated setups to all clients
+                        const setupMsg = JSON.stringify({ type: 'trackSetupsResponse', trackId: currentTrackId, data: setupsData });
+                        clients.forEach(c => {
+                            if (c.readyState === WebSocket.OPEN) {
+                                c.send(setupMsg);
+                            }
+                        });
+                    } catch (e) {
+                        console.error('⚠️ Error saving setup for lap:', e);
+                    }
+                }
             }
         }
 
         carPhysics[i].lapDistance = lap.m_lapDistance;
         carPhysics[i].lapNum = lap.m_currentLapNum;
-        
+
         const dtcMsPart = lap.m_deltaToCarInFrontMSPart !== undefined ? lap.m_deltaToCarInFrontMSPart : 0;
         const dtcMinPart = lap.m_deltaToCarInFrontMinutesPart !== undefined ? lap.m_deltaToCarInFrontMinutesPart : 0;
         const dtcMs = (dtcMinPart * 60000) + dtcMsPart;
         carPhysics[i].officialDelta = (dtcMs || lap.m_deltaToCarInFrontInMS || 0) / 1000;
-        
+
         carPhysics[i].sector = lap.m_sector !== undefined ? lap.m_sector : (lap.sector || 0);
 
         // Record Live Telemetry for Delta and Track Mapping
@@ -1096,7 +1163,7 @@ f1Client.on('lapData', (data) => {
             const dtlMinPart = lap.m_deltaToRaceLeaderMinutesPart !== undefined ? lap.m_deltaToRaceLeaderMinutesPart : 0;
             const dtlMs = (dtlMinPart * 60000) + dtlMsPart;
             state.lap.deltaToLeader = dtlMs || lap.m_deltaToRaceLeaderInMS || 0;
-            
+
             state.lap.penalties = lap.m_penalties || 0;
             state.lap.warnings = lap.m_totalWarnings || 0;
             state.lap.cornerCutting = lap.m_cornerCuttingWarnings || 0;
