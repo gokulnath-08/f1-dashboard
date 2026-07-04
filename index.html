@@ -2862,16 +2862,22 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             if (gHistory.length === 0) return;
 
             // 3. Draw Scatter points
-            // First pass: Blue glow / envelope using persistent quantized points
-            gGraphCtx.fillStyle = "rgba(10, 10, 200, 0.4)";
-            gGraphCtx.beginPath();
+            // First pass: Envelope using persistent quantized points, colored by intensity
             gEnvelopeArray.forEach(pt => {
+                const mag = Math.hypot(pt.lat, pt.long);
+                const max = maxGSeen > 0 ? maxGSeen : MAX_G;
+                const intensity = Math.min(mag / max, 1.0);
+                // Map intensity (0.0 - 1.0) to hue (120 - 0)
+                const hue = (1 - intensity) * 120; 
+                gGraphCtx.fillStyle = `hsla(${hue}, 100%, 50%, 0.6)`;
+                
                 const x = cx + (pt.lat / MAX_G) * radius;
-                const y = cy + (pt.long / MAX_G) * radius; // long < 0 is braking, negative Y offset is UP
-                gGraphCtx.moveTo(x + 6, y); // Prevent lines connecting arcs
+                const y = cy + (pt.long / MAX_G) * radius;
+                
+                gGraphCtx.beginPath();
                 gGraphCtx.arc(x, y, 6, 0, Math.PI * 2);
+                gGraphCtx.fill();
             });
-            gGraphCtx.fill();
 
             // Second pass: Yellow trail for recent history
             gGraphCtx.fillStyle = "rgba(255, 214, 10, 0.5)"; // Fading yellow

@@ -571,9 +571,13 @@ f1Client.on('motion', (data) => {
 
     const pMotion = data.m_carMotionData[pIdx];
     if (pMotion) {
-        state.motion.gLat = pMotion.m_gForceLateral !== undefined ? pMotion.m_gForceLateral / 1000 : 0;
-        state.motion.gLong = pMotion.m_gForceLongitudinal !== undefined ? pMotion.m_gForceLongitudinal / 1000 : 0;
-        state.motion.gVert = pMotion.m_gForceVertical !== undefined ? pMotion.m_gForceVertical / 1000 : 0;
+        const rawLat = pMotion.m_gForceLateral !== undefined ? pMotion.m_gForceLateral : 0;
+        const rawLong = pMotion.m_gForceLongitudinal !== undefined ? pMotion.m_gForceLongitudinal : 0;
+        const rawVert = pMotion.m_gForceVertical !== undefined ? pMotion.m_gForceVertical : 0;
+
+        state.motion.gLat = Math.abs(rawLat) > 20 ? rawLat / 1000 : rawLat;
+        state.motion.gLong = Math.abs(rawLong) > 20 ? rawLong / 1000 : rawLong;
+        state.motion.gVert = Math.abs(rawVert) > 20 ? rawVert / 1000 : rawVert;
         state.motion.pitch = pMotion.m_pitch || 0;
         state.motion.roll = pMotion.m_roll || 0;
 
