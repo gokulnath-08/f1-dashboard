@@ -87,7 +87,6 @@ function processServerGForce(gLat, gLong, gVert) {
     }
 }
 
-
 // --- HTTP Server ---
 // Serves static files for the dashboard and training UI
 const server = http.createServer((req, res) => {
