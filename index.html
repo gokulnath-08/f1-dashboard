@@ -523,6 +523,21 @@
             transform: translate(-50%, calc(-100% - 12px));
         }
 
+        .sc-callout {
+            background: rgba(255, 176, 0, 0.95) !important;
+            color: #000 !important;
+            border: 2px solid #FFFFFF !important;
+            box-shadow: 0 0 14px rgba(255, 176, 0, 0.9) !important;
+            animation: scPulse 1s infinite alternate;
+            z-index: 100 !important;
+            font-weight: 900 !important;
+        }
+
+        @keyframes scPulse {
+            0% { box-shadow: 0 0 8px rgba(255, 176, 0, 0.7); transform: translate(-50%, calc(-100% - 12px)) scale(1); }
+            100% { box-shadow: 0 0 20px rgba(255, 215, 0, 1); transform: translate(-50%, calc(-100% - 12px)) scale(1.15); }
+        }
+
         .track-popup {
             position: absolute;
             padding: 14px;
@@ -896,6 +911,261 @@
                 overflow: visible;
             }
         }
+
+        /* ══════════ GAMEPAD MODAL & TESTING UI ══════════ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            animation: fadeInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .gamepad-card {
+            background: var(--f1-panel);
+            border: 1px solid var(--f1-border-strong);
+            border-radius: var(--bento-radius);
+            width: 100%;
+            max-width: 680px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(34, 197, 94, 0.05);
+            overflow: hidden;
+        }
+
+        .gamepad-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--f1-border);
+            background: var(--f1-dark-alt);
+        }
+
+        .gamepad-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-main);
+        }
+
+        .gamepad-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .gamepad-close-btn:hover {
+            color: #fff;
+            background: var(--f1-border);
+        }
+
+        .gamepad-body {
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .gamepad-status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--f1-dark-alt);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--card-radius);
+            padding: 10px 14px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .gp-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .gp-badge.connected {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--fia-green);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .gp-badge.disconnected {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--f1-red);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .vibe-section {
+            background: var(--f1-dark-alt);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--card-radius);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .vibe-btn-primary {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-family: "Titillium Web", sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .vibe-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+            filter: brightness(1.1);
+        }
+
+        .vibe-btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .vibe-status-msg {
+            font-family: "Roboto Mono", monospace;
+            font-size: 0.82rem;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: var(--f1-dark);
+            border: 1px solid var(--f1-border);
+            color: var(--text-muted);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .vibe-status-msg.vibrating {
+            border-color: var(--f1-red);
+            color: #fff;
+            background: rgba(239, 68, 68, 0.15);
+            animation: pulseGlow 0.5s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            from { box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
+            to { box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+        }
+
+        .gp-visualizer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .gp-visualizer {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .gp-box {
+            background: var(--f1-dark-alt);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--card-radius);
+            padding: 14px;
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .gp-btn-node {
+            background: var(--f1-dark);
+            border: 1px solid var(--f1-border);
+            border-radius: 6px;
+            padding: 6px;
+            text-align: center;
+            font-family: "Roboto Mono", monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            transition: all 0.1s ease;
+            user-select: none;
+        }
+
+        .gp-btn-node.active {
+            background: var(--fia-green);
+            color: #000;
+            font-weight: 700;
+            border-color: var(--fia-green);
+            box-shadow: 0 0 10px var(--fia-green-glow);
+            transform: scale(1.05);
+        }
+
+        .stick-pad {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--f1-dark);
+            border: 2px solid var(--f1-border);
+            position: relative;
+            margin: 10px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stick-pad::before, .stick-pad::after {
+            content: '';
+            position: absolute;
+            background: var(--f1-border);
+        }
+
+        .stick-pad::before { width: 100%; height: 1px; }
+        .stick-pad::after { width: 1px; height: 100%; }
+
+        .stick-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--fia-blue);
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+            position: absolute;
+            top: calc(50% - 8px);
+            left: calc(50% - 8px);
+            transition: transform 0.05s ease-out;
+            z-index: 2;
+        }
     </style>
 </head>
 
@@ -985,6 +1255,12 @@
                     d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z" />
             </svg>
             Weather
+        </button>
+        <button class="nav-btn" id="gamepad-nav-btn" onclick="openGamepadModal()" title="Test Gamepad &amp; Vibration">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 1c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 8 18.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+            </svg>
+            Gamepad Test
         </button>
     </div>
 
@@ -1843,26 +2119,20 @@
         </div>
 
         <div id="tab-weather" class="tab-content">
-            <div class="panel">
-                <div class="panel-header">Weather Forecast</div>
-                <div style="overflow-x: auto; padding: 15px;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid var(--f1-border); color: var(--text-muted);">
-                                <th style="padding: 8px 16px;">Offset (min)</th>
-                                <th style="padding: 8px 16px;">Condition</th>
-                                <th style="padding: 8px 16px;">Rain Chance</th>
-                                <th style="padding: 8px 16px;">Air Temp</th>
-                                <th style="padding: 8px 16px;">Track Temp</th>
-                            </tr>
-                        </thead>
-                        <tbody id="weather-tbody">
-                            <tr>
-                                <td colspan="5" style="padding: 16px; color: var(--text-muted); text-align: center;">
-                                    Waiting for weather data...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div class="panel" style="padding: 24px;">
+                <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--f1-border); padding-bottom: 12px; margin-bottom: 20px;">
+                    <span style="font-size: 1.1rem; font-weight: 700; color: #fff; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--f1-red)" stroke-width="2"><path d="M12 2v2M4.93 4.93l1.41 1.41M20 12h2M17.07 4.93l-1.41 1.41"/><circle cx="12" cy="9" r="4"/><path d="M17 18a4 4 0 0 0-4-4 4.5 4.5 0 0 0-4.3 3A3.5 3.5 0 0 0 6 20h11a3 3 0 0 0 0-6z"/></svg>
+                        1-HOUR HORIZONTAL WEATHER FORECAST
+                    </span>
+                    <span style="font-size: 0.8rem; font-family: 'Roboto Mono', monospace; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                        Session Horizon: 60 Mins
+                    </span>
+                </div>
+                <div id="weather-cards-container" style="display: flex; gap: 16px; overflow-x: auto; padding: 10px 4px 16px 4px; scrollbar-width: thin; scrollbar-color: var(--f1-red) rgba(255,255,255,0.05);">
+                    <div style="width: 100%; text-align: center; color: var(--text-muted); padding: 40px; font-family: 'Roboto Mono', monospace;">
+                        Waiting for weather telemetry data...
+                    </div>
                 </div>
             </div>
         </div>
@@ -1879,6 +2149,62 @@
 
 
     <script>
+        /**
+         * Returns custom SVG vector icons for weather condition codes
+         */
+        function getWeatherIconSVG(code, size = 48) {
+            const s = size;
+            switch (code) {
+                case 0: // Clear / Sun
+                    return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5" fill="#FFD54F" fill-opacity="0.35"/>
+                        <line x1="12" y1="1" x2="12" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="23"/>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                        <line x1="1" y1="12" x2="3" y2="12"/>
+                        <line x1="21" y1="12" x2="23" y2="12"/>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                    </svg>`;
+                case 1: // Light Cloud
+                    return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v2M4.93 4.93l1.41 1.41M20 12h2M17.07 4.93l-1.41 1.41" stroke="#FFC107" stroke-width="2"/>
+                        <circle cx="12" cy="9" r="4" fill="#FFD54F" fill-opacity="0.35" stroke="#FFC107" stroke-width="2"/>
+                        <path d="M17 18a4 4 0 0 0-4-4 4.5 4.5 0 0 0-4.3 3A3.5 3.5 0 0 0 6 20h11a3 3 0 0 0 0-6z" fill="#90A4AE" fill-opacity="0.45" stroke="#ECEFF1" stroke-width="2"/>
+                    </svg>`;
+                case 2: // Overcast
+                    return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="#B0BEC5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" fill="#78909C" fill-opacity="0.5"/>
+                    </svg>`;
+                case 3: // Light Rain
+                    return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 13v-2a4 4 0 0 0-7.8-1A3.5 3.5 0 0 0 4 13.5 3.5 3.5 0 0 0 7.5 17H16a3 3 0 0 0 0-6z" fill="#607D8B" fill-opacity="0.5" stroke="#90A4AE" stroke-width="2"/>
+                        <line x1="8" y1="19" x2="7" y2="22" stroke="#60A5FA" stroke-width="2.5"/>
+                        <line x1="12" y1="19" x2="11" y2="22" stroke="#60A5FA" stroke-width="2.5"/>
+                        <line x1="16" y1="19" x2="15" y2="22" stroke="#60A5FA" stroke-width="2.5"/>
+                    </svg>`;
+                case 4: // Heavy Rain
+                    return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 12a4 4 0 0 0-7.8-1A3.5 3.5 0 0 0 4 12.5 3.5 3.5 0 0 0 7.5 16H16a3 3 0 0 0 0-6z" fill="#455A64" fill-opacity="0.7" stroke="#78909C" stroke-width="2"/>
+                        <line x1="7" y1="18" x2="5" y2="23" stroke="#2563EB" stroke-width="3"/>
+                        <line x1="11" y1="18" x2="9" y2="23" stroke="#2563EB" stroke-width="3"/>
+                        <line x1="15" y1="18" x2="13" y2="23" stroke="#2563EB" stroke-width="3"/>
+                    </svg>`;
+                case 5: // Storm
+                    return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 11a4 4 0 0 0-7.8-1A3.5 3.5 0 0 0 4 11.5 3.5 3.5 0 0 0 7.5 15H16a3 3 0 0 0 0-6z" fill="#37474F" fill-opacity="0.8" stroke="#546E7A" stroke-width="2"/>
+                        <polygon points="13 13 9 19 12 19 10 23 16 16 13 16 13 13" fill="#F59E0B" stroke="#F59E0B" stroke-width="1.5"/>
+                    </svg>`;
+                default: // Unknown
+                    return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>`;
+            }
+        }
+
         /**
          * Switches the active UI tab and hides the others.
          * Resizes the WebGL map rendering canvas if the radar tab is selected.
@@ -2486,10 +2812,13 @@
         /**
          * Generates a 3-letter abbreviation from a driver's name (typically the first 3 letters of the surname).
          */
-        function getDriverAbbr(name, carIndex) {
-            const clean = String(name || "")
-                .replace(/[^a-z0-9 ]/gi, "")
-                .trim();
+        function getDriverAbbr(name, carIndex, isSafetyCar = false) {
+            const strName = String(name || "").trim();
+            const lower = strName.toLowerCase();
+            if (isSafetyCar || lower.includes("safety") || lower.includes("medical") || lower === "sc" || lower.includes("safety car")) {
+                return lower.includes("medical") ? "MC" : "SC";
+            }
+            const clean = strName.replace(/[^a-z0-9 ]/gi, "").trim();
             if (!clean) return `C${carIndex}`;
             const parts = clean.split(/\s+/);
             const source = parts.length > 1 ? parts[parts.length - 1] : clean;
@@ -2583,17 +2912,22 @@
             carMeshes.forEach((mesh) => {
                 if (!mesh.visible) return;
                 const carIndex = mesh.userData.carIndex;
+                const carData = latestMapData?.allCars?.[carIndex];
                 const driver = getLeaderboardDriver(latestMapData, carIndex) || {
                     carIndex,
                 };
                 const name = getDriverName(latestMapData, carIndex);
-                const abbr = getDriverAbbr(name, carIndex);
-                const teamColor = getTeamColorCss(driver, latestMapData);
+                const isSC = Boolean(carData?.isSafetyCar || driver?.isSafetyCar || mesh.userData.isSafetyCar || name.toLowerCase().includes("safety") || name.toLowerCase().includes("medical") || name.toLowerCase() === "sc");
+
+                const abbr = getDriverAbbr(name, carIndex, isSC);
+                const teamColor = isSC ? "#FFB000" : getTeamColorCss(driver, latestMapData);
                 const point = worldToMapScreen(mesh.position);
 
                 carScreenData.push({ carIndex, x: point.x, y: point.y });
-                labelsHtml += `<div class="driver-callout" style="left:${point.x}px; top:${point.y}px; 
-color:${teamColor};">${escapeHtml(abbr)}</div>`;
+                const scClass = isSC ? " sc-callout" : "";
+                const displayColor = isSC ? "#000" : teamColor;
+                labelsHtml += `<div class="driver-callout${scClass}" style="left:${point.x}px; top:${point.y}px; 
+color:${displayColor};">${escapeHtml(abbr)}</div>`;
             });
 
             if (selectedCarIndex !== null) {
@@ -2953,10 +3287,39 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
          * Receives raw G-Force telemetry, filters noise/spikes, updates the max peak,
          * pushes the new value into the history array, and triggers the graph redraw.
          */
-        function updateGForceDisplay(latG, longG, vertG, currentMs) {
-            if (currentMs === lastCurrentMsForG) return; // Paused or no time change
-            // Hold the graph if there is absolutely no G-Force data (e.g. game paused / no telemetry)
-            if (latG === 0 && longG === 0 && vertG === 0) return;
+        function updateGForceDisplay(latG, longG, vertG, currentMs, serverMotion) {
+            // Synchronize server-persisted G-Force envelope and peak records
+            if (serverMotion) {
+                if (serverMotion.gEnvelopeArray && Array.isArray(serverMotion.gEnvelopeArray)) {
+                    serverMotion.gEnvelopeArray.forEach(pt => {
+                        const qLat = Math.round(pt.lat * 10) / 10;
+                        const qLong = Math.round(pt.long * 10) / 10;
+                        const key = `${qLat},${qLong}`;
+                        if (!gEnvelopeSet.has(key)) {
+                            gEnvelopeSet.add(key);
+                            gEnvelopeArray.push({ lat: qLat, long: qLong });
+                        }
+                    });
+                }
+                if (serverMotion.maxGSeen && serverMotion.maxGSeen > maxGSeen) {
+                    maxGSeen = serverMotion.maxGSeen;
+                }
+                if (gHistory.length === 0 && serverMotion.gHistory && Array.isArray(serverMotion.gHistory) && serverMotion.gHistory.length > 0) {
+                    serverMotion.gHistory.forEach(pt => gHistory.push(pt));
+                }
+            }
+
+            if (latG === 0 && longG === 0 && vertG === 0) {
+                setText("g-max", `${maxGSeen.toFixed(2)} G`);
+                drawGGraph();
+                return;
+            }
+
+            if (currentMs === lastCurrentMsForG) {
+                setText("g-max", `${maxGSeen.toFixed(2)} G`);
+                drawGGraph();
+                return;
+            }
 
             lastCurrentMsForG = currentMs;
 
@@ -3346,7 +3709,13 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             setText("track-name", data.session.trackName.toUpperCase());
             setText("session-type", data.session.type.toUpperCase());
-            setText("weather", data.session.weather.toUpperCase());
+            const weatherEl = document.getElementById("weather");
+            if (weatherEl && data.session && data.session.weather) {
+                const weatherStr = String(data.session.weather).toUpperCase();
+                const weatherCodeMap = { "CLEAR": 0, "LIGHT CLOUD": 1, "OVERCAST": 2, "LIGHT RAIN": 3, "HEAVY RAIN": 4, "STORM": 5 };
+                const code = weatherCodeMap[weatherStr] !== undefined ? weatherCodeMap[weatherStr] : 6;
+                weatherEl.innerHTML = `<span style="display: inline-flex; align-items: center; gap: 6px;">${getWeatherIconSVG(code, 18)} <span>${weatherStr}</span></span>`;
+            }
             setText("track-temp", `${data.session.trackTemp} °C`);
 
             // New Distance & Laps metrics mapping
@@ -3599,25 +3968,60 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 if (engineEl) { engineEl.textContent = data.damage.m_engineBlown ? "BLOWN" : "OK"; engineEl.style.color = data.damage.m_engineBlown ? "red" : "white"; }
             }
 
-            const tbody = document.getElementById("weather-tbody");
-            if (tbody) {
+            const weatherContainer = document.getElementById("weather-cards-container");
+            if (weatherContainer) {
                 if (data.weatherForecast && data.weatherForecast.length > 0) {
-                    let html = "";
-                    const weatherMap = { 0: "Clear", 1: "Light Cloud", 2: "Overcast", 3: "Light Rain", 4: "Heavy Rain", 5: "Storm", 6: "Unknown" };
-                    data.weatherForecast.forEach(sample => {
-                        html += `
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <td style="padding: 8px 16px;">${sample.m_timeOffset}</td>
-                                <td style="padding: 8px 16px;">${weatherMap[sample.m_weather] || 'Unknown'}</td>
-                                <td style="padding: 8px 16px;">${sample.m_rainPercentage}%</td>
-                                <td style="padding: 8px 16px;">${sample.m_airTemperature}°C</td>
-                                <td style="padding: 8px 16px;">${sample.m_trackTemperature}°C</td>
-                            </tr>
-                        `;
-                    });
-                    tbody.innerHTML = html;
+                    const hourlyForecast = data.weatherForecast.filter(sample => sample.m_timeOffset !== undefined && sample.m_timeOffset <= 60);
+                    if (hourlyForecast.length > 0) {
+                        const weatherNames = { 0: "Clear", 1: "Light Cloud", 2: "Overcast", 3: "Light Rain", 4: "Heavy Rain", 5: "Storm", 6: "Unknown" };
+                        let html = "";
+                        hourlyForecast.forEach(sample => {
+                            const offsetStr = sample.m_timeOffset === 0 ? "NOW" : `+${sample.m_timeOffset} MIN`;
+                            const condName = weatherNames[sample.m_weather] || "Unknown";
+                            const iconSvg = getWeatherIconSVG(sample.m_weather, 44);
+                            const rainPct = sample.m_rainPercentage !== undefined ? sample.m_rainPercentage : 0;
+                            const airTemp = sample.m_airTemperature !== undefined ? sample.m_airTemperature : "--";
+                            const trackTemp = sample.m_trackTemperature !== undefined ? sample.m_trackTemperature : "--";
+                            const airTrend = sample.m_airTemperatureChange === 0 ? " ↑" : (sample.m_airTemperatureChange === 1 ? " ↓" : "");
+                            const trackTrend = sample.m_trackTemperatureChange === 0 ? " ↑" : (sample.m_trackTemperatureChange === 1 ? " ↓" : "");
+                            
+                            let rainBarColor = "#3B82F6";
+                            if (rainPct > 50) rainBarColor = "#EF4444";
+                            else if (rainPct > 20) rainBarColor = "#F59E0B";
+
+                            html += `
+                                <div style="min-width: 160px; flex: 0 0 160px; background: linear-gradient(145deg, rgba(20, 20, 32, 0.8), rgba(30, 30, 48, 0.6)); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; backdrop-filter: blur(12px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); transition: transform 0.2s ease, border-color 0.2s ease;">
+                                    <div style="font-size: 0.75rem; font-weight: 700; color: #E10600; font-family: 'Roboto Mono', monospace; letter-spacing: 1px; margin-bottom: 10px; background: rgba(225, 6, 0, 0.12); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(225, 6, 0, 0.25);">
+                                        ${offsetStr}
+                                    </div>
+                                    <div style="width: 50px; height: 50px; margin: 4px 0 10px 0; display: flex; align-items: center; justify-content: center;">
+                                        ${iconSvg}
+                                    </div>
+                                    <div style="font-weight: 700; font-size: 0.95rem; color: #fff; margin-bottom: 8px;">
+                                        ${condName}
+                                    </div>
+                                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px; display: flex; flex-direction: column; gap: 3px; font-family: 'Roboto Mono', monospace; width: 100%; background: rgba(0,0,0,0.2); padding: 6px 8px; border-radius: 6px;">
+                                        <div style="display: flex; justify-content: space-between;"><span>Air:</span><strong style="color: #fff;">${airTemp}°C${airTrend}</strong></div>
+                                        <div style="display: flex; justify-content: space-between;"><span>Track:</span><strong style="color: #fff;">${trackTemp}°C${trackTrend}</strong></div>
+                                    </div>
+                                    <div style="width: 100%; text-align: left; margin-top: auto;">
+                                        <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">
+                                            <span>RAIN PROB</span>
+                                            <span style="color: ${rainBarColor}; font-weight: 700;">${rainPct}%</span>
+                                        </div>
+                                        <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                                            <div style="width: ${rainPct}%; height: 100%; background: ${rainBarColor}; border-radius: 3px; transition: width 0.4s ease;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        weatherContainer.innerHTML = html;
+                    } else {
+                        weatherContainer.innerHTML = '<div style="width: 100%; text-align: center; color: var(--text-muted); padding: 30px; font-family: \'Roboto Mono\', monospace;">No weather forecast samples within 1 hour horizon.</div>';
+                    }
                 } else if (data.session && data.session.type !== 'Unknown') {
-                    tbody.innerHTML = '<tr><td colspan="5" style="padding: 16px; color: var(--text-muted); text-align: center;">No weather data for this session type.</td></tr>';
+                    weatherContainer.innerHTML = '<div style="width: 100%; text-align: center; color: var(--text-muted); padding: 30px; font-family: \'Roboto Mono\', monospace;">No weather forecast available for this session type.</div>';
                 }
             }
 
@@ -3815,13 +4219,19 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     } else {
                         mesh.visible = true;
                         mesh.position.set(carData.x, 0, carData.z);
-                        const teamHex = getTeamColorHex(carData.teamColor);
-                        mesh.material.color.setHex(teamHex);
+                        const isSC = Boolean(carData.isSafetyCar || (carData.teamName && carData.teamName.toLowerCase().includes("safety")));
+                        mesh.userData.isSafetyCar = isSC;
 
-                        if (i === mapDataToUse.playerIndex) {
+                        if (isSC) {
+                            mesh.material.color.setHex(0xFFB000);
+                            mesh.scale.set(2.2, 2.2, 2.2);
+                            mesh.renderOrder = 1000;
+                        } else if (i === mapDataToUse.playerIndex) {
+                            mesh.material.color.setHex(getTeamColorHex(carData.teamColor));
                             mesh.scale.set(1.5, 1.5, 1.5);
                             mesh.renderOrder = 999;
                         } else {
+                            mesh.material.color.setHex(getTeamColorHex(carData.teamColor));
                             mesh.scale.set(1, 1, 1);
                             mesh.renderOrder = 1;
                         }
@@ -3866,6 +4276,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 data.motion.gLong,
                 data.motion.gVert || 0,
                 data.lap.currentMs,
+                data.motion
             );
             setText("pitch", `${data.motion.pitch.toFixed(2)}`);
             setText("roll", `${data.motion.roll.toFixed(2)}`);
@@ -4264,6 +4675,273 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         }
 
         connectWebSocket();
+
+        /* ══════════ GAMEPAD MODAL & VIBRATION LOGIC ══════════ */
+        let gamepadAnimFrame = null;
+        let selectedGamepadIndex = null;
+
+        function openGamepadModal() {
+            const modal = document.getElementById("gamepad-modal");
+            if (modal) {
+                modal.style.display = "flex";
+                refreshGamepadList();
+                startGamepadLoop();
+            }
+        }
+
+        function closeGamepadModal() {
+            const modal = document.getElementById("gamepad-modal");
+            if (modal) {
+                modal.style.display = "none";
+            }
+            if (gamepadAnimFrame) {
+                cancelAnimationFrame(gamepadAnimFrame);
+                gamepadAnimFrame = null;
+            }
+        }
+
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                closeGamepadModal();
+            }
+        });
+
+        function refreshGamepadList() {
+            const select = document.getElementById("gamepad-select");
+            const badge = document.getElementById("gamepad-status-badge");
+            if (!select) return;
+
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            select.innerHTML = "";
+            let connectedCount = 0;
+            let firstIndex = null;
+
+            for (let i = 0; i < gamepads.length; i++) {
+                const gp = gamepads[i];
+                if (gp) {
+                    connectedCount++;
+                    if (firstIndex === null) firstIndex = i;
+                    const opt = document.createElement("option");
+                    opt.value = i;
+                    opt.textContent = `[#${i}] ${gp.id.substring(0, 32)}`;
+                    select.appendChild(opt);
+                }
+            }
+
+            if (connectedCount === 0) {
+                const opt = document.createElement("option");
+                opt.value = "";
+                opt.textContent = "No gamepad connected (press any button)";
+                select.appendChild(opt);
+                if (badge) {
+                    badge.className = "gp-badge disconnected";
+                    badge.innerText = "No Gamepad";
+                }
+                selectedGamepadIndex = null;
+            } else {
+                if (badge) {
+                    badge.className = "gp-badge connected";
+                    badge.innerText = `${connectedCount} Connected`;
+                }
+                if (selectedGamepadIndex === null || !gamepads[selectedGamepadIndex]) {
+                    selectedGamepadIndex = firstIndex;
+                }
+                select.value = selectedGamepadIndex;
+            }
+        }
+
+        function onGamepadSelectChange() {
+            const select = document.getElementById("gamepad-select");
+            if (select && select.value !== "") {
+                selectedGamepadIndex = parseInt(select.value, 10);
+            } else {
+                selectedGamepadIndex = null;
+            }
+        }
+
+        window.addEventListener("gamepadconnected", (e) => {
+            console.log("Gamepad connected at index %d: %s", e.gamepad.index, e.gamepad.id);
+            refreshGamepadList();
+        });
+
+        window.addEventListener("gamepaddisconnected", (e) => {
+            console.log("Gamepad disconnected from index %d: %s", e.gamepad.index, e.gamepad.id);
+            refreshGamepadList();
+        });
+
+        function startGamepadLoop() {
+            if (gamepadAnimFrame) cancelAnimationFrame(gamepadAnimFrame);
+
+            function loop() {
+                updateGamepadState();
+                gamepadAnimFrame = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        function updateGamepadState() {
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            refreshGamepadList();
+
+            let gp = null;
+            if (selectedGamepadIndex !== null && gamepads[selectedGamepadIndex]) {
+                gp = gamepads[selectedGamepadIndex];
+            } else {
+                for (let i = 0; i < gamepads.length; i++) {
+                    if (gamepads[i]) {
+                        gp = gamepads[i];
+                        selectedGamepadIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (!gp) {
+                for (let i = 0; i < 16; i++) {
+                    const btnEl = document.getElementById(`gp-btn-${i}`);
+                    if (btnEl) btnEl.classList.remove("active");
+                }
+                const leftDot = document.getElementById("stick-left-dot");
+                const rightDot = document.getElementById("stick-right-dot");
+                if (leftDot) leftDot.style.transform = "translate(0px, 0px)";
+                if (rightDot) rightDot.style.transform = "translate(0px, 0px)";
+                const ltBar = document.getElementById("lt-bar");
+                const rtBar = document.getElementById("rt-bar");
+                if (ltBar) ltBar.style.width = "0%";
+                if (rtBar) rtBar.style.width = "0%";
+                return;
+            }
+
+            // Update buttons
+            for (let i = 0; i < 16; i++) {
+                const btnEl = document.getElementById(`gp-btn-${i}`);
+                if (btnEl) {
+                    if (gp.buttons[i] && gp.buttons[i].pressed) {
+                        btnEl.classList.add("active");
+                    } else {
+                        btnEl.classList.remove("active");
+                    }
+                }
+            }
+
+            // Analog Sticks
+            const lx = gp.axes[0] || 0;
+            const ly = gp.axes[1] || 0;
+            const leftDot = document.getElementById("stick-left-dot");
+            const leftVal = document.getElementById("stick-left-val");
+            if (leftDot) {
+                leftDot.style.transform = `translate(${lx * 35}px, ${ly * 35}px)`;
+            }
+            if (leftVal) {
+                leftVal.innerText = `X: ${lx.toFixed(2)} | Y: ${ly.toFixed(2)}`;
+            }
+
+            const rx = gp.axes[2] || 0;
+            const ry = gp.axes[3] || 0;
+            const rightDot = document.getElementById("stick-right-dot");
+            const rightVal = document.getElementById("stick-right-val");
+            if (rightDot) {
+                rightDot.style.transform = `translate(${rx * 35}px, ${ry * 35}px)`;
+            }
+            if (rightVal) {
+                rightVal.innerText = `X: ${rx.toFixed(2)} | Y: ${ry.toFixed(2)}`;
+            }
+
+            // Analog Triggers (Button 6 LT, Button 7 RT)
+            const ltVal = gp.buttons[6] ? gp.buttons[6].value : 0;
+            const rtVal = gp.buttons[7] ? gp.buttons[7].value : 0;
+            const ltBar = document.getElementById("lt-bar");
+            const rtBar = document.getElementById("rt-bar");
+            const ltText = document.getElementById("lt-val");
+            const rtText = document.getElementById("rt-val");
+            if (ltBar) ltBar.style.width = `${Math.round(ltVal * 100)}%`;
+            if (rtBar) rtBar.style.width = `${Math.round(rtVal * 100)}%`;
+            if (ltText) ltText.innerText = `${Math.round(ltVal * 100)}%`;
+            if (rtText) rtText.innerText = `${Math.round(rtVal * 100)}%`;
+        }
+
+        function testGamepadVibration(durationMs = 1000) {
+            const statusEl = document.getElementById("gamepad-vibe-status");
+            const weakMag = parseFloat(document.getElementById("weak-mag")?.value || 1);
+            const strongMag = parseFloat(document.getElementById("strong-mag")?.value || 1);
+
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            let gp = null;
+
+            if (selectedGamepadIndex !== null && gamepads[selectedGamepadIndex]) {
+                gp = gamepads[selectedGamepadIndex];
+            } else {
+                for (let i = 0; i < gamepads.length; i++) {
+                    if (gamepads[i]) {
+                        gp = gamepads[i];
+                        break;
+                    }
+                }
+            }
+
+            if (!gp) {
+                if (statusEl) {
+                    statusEl.className = "vibe-status-msg";
+                    statusEl.innerHTML = "<span style='color: var(--f1-red);'>⚠️ No gamepad connected to test vibration!</span>";
+                }
+                return;
+            }
+
+            if (statusEl) {
+                statusEl.className = "vibe-status-msg vibrating";
+                statusEl.innerHTML = `⚡ Vibrating controller (${(durationMs/1000).toFixed(1)}s)...`;
+            }
+
+            // 1. Standard Web Gamepad Vibration Actuator API (Dual-Rumble)
+            if (gp.vibrationActuator && typeof gp.vibrationActuator.playEffect === "function") {
+                gp.vibrationActuator.playEffect("dual-rumble", {
+                    startDelay: 0,
+                    duration: durationMs,
+                    weakMagnitude: weakMag,
+                    strongMagnitude: strongMag
+                }).then(() => {
+                    if (statusEl) {
+                        statusEl.className = "vibe-status-msg";
+                        statusEl.innerHTML = "<span style='color: var(--fia-green);'>✓ Vibration test completed successfully (1s)!</span>";
+                    }
+                }).catch((err) => {
+                    if (statusEl) {
+                        statusEl.className = "vibe-status-msg";
+                        statusEl.innerHTML = `<span style='color: var(--fia-yellow);'>Vibration effect warning: ${err.message || err}</span>`;
+                    }
+                });
+            } else if (gp.hapticActuators && gp.hapticActuators.length > 0) {
+                // 2. Legacy HapticActuators API
+                try {
+                    gp.hapticActuators[0].pulse(strongMag, durationMs);
+                    setTimeout(() => {
+                        if (statusEl) {
+                            statusEl.className = "vibe-status-msg";
+                            statusEl.innerHTML = "<span style='color: var(--fia-green);'>✓ Haptic vibration completed!</span>";
+                        }
+                    }, durationMs);
+                } catch (e) {
+                    if (statusEl) {
+                        statusEl.className = "vibe-status-msg";
+                        statusEl.innerHTML = `<span style='color: var(--f1-red);'>Haptic error: ${e.message}</span>`;
+                    }
+                }
+            } else if (navigator.vibrate) {
+                // 3. Fallback to Device Haptics
+                navigator.vibrate(durationMs);
+                setTimeout(() => {
+                    if (statusEl) {
+                        statusEl.className = "vibe-status-msg";
+                        statusEl.innerHTML = "<span style='color: var(--fia-green);'>✓ Device vibration fallback triggered! (Controller lacks direct haptic API)</span>";
+                    }
+                }, durationMs);
+            } else {
+                if (statusEl) {
+                    statusEl.className = "vibe-status-msg";
+                    statusEl.innerHTML = "<span style='color: var(--f1-red);'>⚠️ Vibration actuator not supported by this browser or gamepad.</span>";
+                }
+            }
+        }
     </script>
     <div id="sector-modal" style="
         display: none;
@@ -4348,6 +5026,128 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             ">
                     Apply Sectors
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════ GAMEPAD TEST MODAL ══════════ -->
+    <div id="gamepad-modal" class="modal-overlay" onclick="if(event.target === this) closeGamepadModal()">
+        <div class="gamepad-card">
+            <div class="gamepad-header">
+                <div class="gamepad-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="var(--fia-green)">
+                        <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 1c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 8 18.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                    </svg>
+                    Gamepad &amp; Vibration Diagnostic
+                </div>
+                <button class="gamepad-close-btn" onclick="closeGamepadModal()" aria-label="Close modal">&times;</button>
+            </div>
+
+            <div class="gamepad-body">
+                <!-- Status & Controller Selection -->
+                <div class="gamepad-status-bar">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="label">Controller:</span>
+                        <select id="gamepad-select" onchange="onGamepadSelectChange()" style="max-width: 250px; background: var(--f1-dark); color: #fff; border: 1px solid var(--f1-border); border-radius: 6px; padding: 4px 8px; font-family: 'Roboto Mono', monospace; font-size: 0.85rem;">
+                            <option value="">Searching for controllers...</option>
+                        </select>
+                    </div>
+                    <span id="gamepad-status-badge" class="gp-badge disconnected">No Gamepad</span>
+                </div>
+
+                <!-- Vibration Test Panel -->
+                <div class="vibe-section">
+                    <div class="panel-header" style="margin-bottom: 4px;">Vibration Actuator Test</div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                        <button class="vibe-btn-primary" onclick="testGamepadVibration(1000)" style="flex: 1; min-width: 200px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                            </svg>
+                            Vibrate 1 Second
+                        </button>
+                        <button class="nav-btn" onclick="testGamepadVibration(300)" style="border: 1px solid var(--f1-border);">
+                            0.3s Pulse
+                        </button>
+                        <button class="nav-btn" onclick="testGamepadVibration(2000)" style="border: 1px solid var(--f1-border);">
+                            2.0s Long Test
+                        </button>
+                    </div>
+                    
+                    <!-- Motor Magnitudes Control -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px;">
+                        <div>
+                            <div class="label" style="margin-bottom: 4px; font-size: 0.75rem;">Weak Motor (High Freq): <span id="weak-mag-val">100%</span></div>
+                            <input type="range" id="weak-mag" min="0" max="1" step="0.1" value="1" style="width: 100%; accent-color: var(--fia-green);" oninput="document.getElementById('weak-mag-val').innerText = Math.round(this.value*100)+'%'">
+                        </div>
+                        <div>
+                            <div class="label" style="margin-bottom: 4px; font-size: 0.75rem;">Strong Motor (Low Freq): <span id="strong-mag-val">100%</span></div>
+                            <input type="range" id="strong-mag" min="0" max="1" step="0.1" value="1" style="width: 100%; accent-color: var(--f1-red);" oninput="document.getElementById('strong-mag-val').innerText = Math.round(this.value*100)+'%'">
+                        </div>
+                    </div>
+
+                    <div id="gamepad-vibe-status" class="vibe-status-msg">
+                        Press "Vibrate 1 Second" to test controller rumble motors.
+                    </div>
+                </div>
+
+                <!-- Input Visualizer -->
+                <div class="gp-visualizer">
+                    <!-- Buttons Node Grid -->
+                    <div class="gp-box">
+                        <div class="panel-header" style="margin-bottom: 8px;">Digital Buttons &amp; Triggers</div>
+                        <div class="buttons-grid">
+                            <div class="gp-btn-node" id="gp-btn-0">A / ✕</div>
+                            <div class="gp-btn-node" id="gp-btn-1">B / ○</div>
+                            <div class="gp-btn-node" id="gp-btn-2">X / □</div>
+                            <div class="gp-btn-node" id="gp-btn-3">Y / △</div>
+                            <div class="gp-btn-node" id="gp-btn-4">LB / L1</div>
+                            <div class="gp-btn-node" id="gp-btn-5">RB / R1</div>
+                            <div class="gp-btn-node" id="gp-btn-6">LT / L2</div>
+                            <div class="gp-btn-node" id="gp-btn-7">RT / R2</div>
+                            <div class="gp-btn-node" id="gp-btn-8">SELECT</div>
+                            <div class="gp-btn-node" id="gp-btn-9">START</div>
+                            <div class="gp-btn-node" id="gp-btn-10">L3</div>
+                            <div class="gp-btn-node" id="gp-btn-11">R3</div>
+                            <div class="gp-btn-node" id="gp-btn-12">D-UP</div>
+                            <div class="gp-btn-node" id="gp-btn-13">D-DOWN</div>
+                            <div class="gp-btn-node" id="gp-btn-14">D-LEFT</div>
+                            <div class="gp-btn-node" id="gp-btn-15">D-RIGHT</div>
+                        </div>
+                    </div>
+
+                    <!-- Analog Joysticks Visualizer -->
+                    <div class="gp-box">
+                        <div class="panel-header" style="margin-bottom: 8px;">Analog Axes</div>
+                        <div style="display: flex; justify-content: space-around;">
+                            <div style="text-align: center;">
+                                <div class="label" style="font-size: 0.7rem;">LEFT STICK</div>
+                                <div class="stick-pad">
+                                    <div id="stick-left-dot" class="stick-dot"></div>
+                                </div>
+                                <div id="stick-left-val" class="val" style="font-size: 0.75rem; text-align: center; color: var(--text-muted);">X: 0.00 | Y: 0.00</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div class="label" style="font-size: 0.7rem;">RIGHT STICK</div>
+                                <div class="stick-pad">
+                                    <div id="stick-right-dot" class="stick-dot"></div>
+                                </div>
+                                <div id="stick-right-val" class="val" style="font-size: 0.75rem; text-align: center; color: var(--text-muted);">X: 0.00 | Y: 0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- LT / RT Analog Triggers -->
+                        <div style="margin-top: 10px;">
+                            <div class="label" style="font-size: 0.7rem;">LT Trigger: <span id="lt-val" style="color: var(--text-main);">0%</span></div>
+                            <div class="bar-bg" style="height: 4px; margin: 2px 0 6px 0;">
+                                <div id="lt-bar" class="fill-bar" style="background: var(--fia-green); width: 0%;"></div>
+                            </div>
+                            <div class="label" style="font-size: 0.7rem;">RT Trigger: <span id="rt-val" style="color: var(--text-main);">0%</span></div>
+                            <div class="bar-bg" style="height: 4px; margin: 2px 0;">
+                                <div id="rt-bar" class="fill-bar" style="background: var(--f1-red); width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

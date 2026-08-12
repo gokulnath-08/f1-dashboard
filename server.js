@@ -54,6 +54,39 @@ if (fs.existsSync(fastestJsonPath)) {
     }
 }
 
+// --- G-Force Processing (In-Memory Only) ---
+let gForceData = {
+    maxGSeen: 0,
+    envelopeArray: [],
+    history: []
+};
+const gEnvelopeSetServer = new Set();
+const MAX_REASONABLE_SENSOR_G_SERVER = 8;
+
+function processServerGForce(gLat, gLong, gVert) {
+    if (gLat === 0 && gLong === 0 && gVert === 0) return;
+    const sensorG = Math.hypot(gLat, gLong, gVert);
+    if (sensorG > MAX_REASONABLE_SENSOR_G_SERVER) return;
+
+    if (sensorG > gForceData.maxGSeen) {
+        gForceData.maxGSeen = sensorG;
+    }
+
+    const qLat = Math.round(gLat * 10) / 10;
+    const qLong = Math.round(gLong * 10) / 10;
+    const key = `${qLat},${qLong}`;
+
+    if (!gEnvelopeSetServer.has(key)) {
+        gEnvelopeSetServer.add(key);
+        gForceData.envelopeArray.push({ lat: qLat, long: qLong });
+    }
+
+    gForceData.history.push({ lat: gLat, long: gLong, total: sensorG });
+    if (gForceData.history.length > 60) {
+        gForceData.history.shift();
+    }
+}
+
 
 // --- HTTP Server ---
 // Serves static files for the dashboard and training UI
@@ -156,6 +189,11 @@ function handleWsConnection(ws) {
 
             if (data.action === 'resetSectors') {
                 state.customSectorLines = [0];
+                return;
+            }
+
+            if (data.action === 'clearSession' || data.action === 'resetSession') {
+                resetSessionData();
                 return;
             }
 
@@ -359,6 +397,8 @@ function getParticipantTeamId(participant) {
 }
 
 let currentSessionUID = null;
+let currentSessionType = null;
+let lastSessionTime = 0;
 let currentTrackId = -1;
 let isTrackMapped = false;
 
@@ -368,7 +408,7 @@ let carDataTracker = Array.from({ length: 22 }, () => ({
 }));
 
 let carPhysics = Array.from({ length: 22 }, () => ({
-    speed: 0, lapDistance: 0, lapNum: 0, officialDelta: 0
+    speed: 0, lapDistance: 0, lapNum: 0, officialDelta: 0, sector: 0
 }));
 
 let allLapHistories = {};
@@ -387,12 +427,54 @@ let state = {
     weatherForecast: [],
     damage: null,
     lap: { currentMs: 0, lastMs: 0, bestMs: 0, s1: 0, s2: 0, s3: 0, liveS1: 0, liveS2: 0, liveS3: 0, s1State: 'pending', s2State: 'pending', s3State: 'pending', pos: 0, lapNum: 0, gapFront: 0, pitStatus: 'ON TRACK', currentSector: 0, pendingS1: false, pendingS2: false, liveDeltaToRecord: 0, deltaToLeader: 0, ghostLapTimeMs: 0 },
-    motion: { pitch: 0, roll: 0, gLat: 0, gLong: 0, gVert: 0, susp: { fl: 0, fr: 0, rl: 0, rr: 0 } },
+    motion: { pitch: 0, roll: 0, gLat: 0, gLong: 0, gVert: 0, susp: { fl: 0, fr: 0, rl: 0, rr: 0 }, gEnvelopeArray: gForceData.envelopeArray, gHistory: gForceData.history, maxGSeen: gForceData.maxGSeen },
     inputs: { speed: 0, gear: 'N', rpm: 0, throttle: 0, brake: 0, clutch: 0, steer: 0, drs: 'CLOSED' },
     ers: { mode: 'None', battery: 0 },
     setup: { wingF: 0, wingR: 0, diffOn: 0, diffOff: 0, camberF: 0, camberR: 0, toeF: 0, toeR: 0, bBias: 50, fuel: 0, fuelLaps: 0 },
     car: { tyreAge: 0, flag: 'GREEN', compound: 'Unknown', engineTemp: 0, wear: { fl: 0, fr: 0, rl: 0, rr: 0 }, surfTemp: { fl: 0, fr: 0, rl: 0, rr: 0 }, inTemp: { fl: 0, fr: 0, rl: 0, rr: 0 }, press: { fl: 0, fr: 0, rl: 0, rr: 0 }, brakeTemp: { fl: 0, fr: 0, rl: 0, rr: 0 } }
 };
+
+/**
+ * Wipes all old session telemetry data, lap histories, leaderboards, and car tracking
+ * when a new session is detected, session type changes, session is restarted, or track changes.
+ */
+function resetSessionData() {
+    console.log('🔄 Wiping old session telemetry data and resetting state...');
+    carDataTracker = Array.from({ length: 22 }, () => ({
+        pos: 0, lapNum: 0, pitStatus: 0, driverStatus: 0, bestLapMs: 0, gapText: '', maxSpeed: 0, tyre: 'UNK', tyreClass: '#FFFFFF', teamColor: '#FFFFFF', teamName: 'Unknown',
+        s1: 0, s2: 0, s3: 0, bestS1: 0, bestS2: 0, bestS3: 0
+    }));
+    carPhysics = Array.from({ length: 22 }, () => ({ speed: 0, lapDistance: 0, lapNum: 0, officialDelta: 0, sector: 0 }));
+    allLapHistories = {};
+    currentLapTelemetry = Array.from({ length: 22 }, () => []);
+    lastLapTelemetry = Array.from({ length: 22 }, () => []);
+    gForceData.maxGSeen = 0;
+    gForceData.envelopeArray.length = 0;
+    gForceData.history.length = 0;
+    gEnvelopeSetServer.clear();
+    state.motion.maxGSeen = 0;
+    state.leaderboard = [];
+    state.participants = [];
+    state.allCars = Array.from({ length: 22 }, () => ({ x: 0, z: 0, yaw: 0, teamColor: '#FFFFFF', teamName: 'Unknown', lapDistance: 0, speed: 0 }));
+    state.pitLanePoints = [];
+    state.customSectorLines = [0];
+    state.weatherForecast = [];
+    state.damage = null;
+    state.lap = { currentMs: 0, lastMs: 0, bestMs: 0, s1: 0, s2: 0, s3: 0, liveS1: 0, liveS2: 0, liveS3: 0, s1State: 'pending', s2State: 'pending', s3State: 'pending', pos: 0, lapNum: 0, gapFront: 0, pitStatus: 'ON TRACK', currentSector: 0, pendingS1: false, pendingS2: false, liveDeltaToRecord: 0, deltaToLeader: 0, ghostLapTimeMs: 0, penalties: 0, warnings: 0, cornerCutting: 0, unservedDT: 0, unservedSG: 0, scDelta: 0, invalid: false };
+
+    state.session.fastestLapCarIndex = -1;
+    state.session.sessionFastestLapMs = Infinity;
+    state.session.sessionBestS1 = Infinity;
+    state.session.sessionBestS2 = Infinity;
+    state.session.sessionBestS3 = Infinity;
+
+    // Immediately push reset state to all WebSocket clients
+    clients = clients.filter(ws => ws.readyState === WebSocket.OPEN);
+    const payload = JSON.stringify(state);
+    clients.forEach((ws) => {
+        try { ws.send(payload); } catch (e) { }
+    });
+}
 
 /**
  * Mathematically approximates the shape of the pit lane based on the main track coordinates.
@@ -556,12 +638,19 @@ f1Client.on('motion', (data) => {
 
     for (let i = 0; i < 22; i++) {
         if (data.m_carMotionData[i]) {
+            const pName = state.participants[i] || '';
+            const lowerName = String(pName).toLowerCase();
+            const isSCByName = lowerName.includes('safety') || lowerName.includes('medical') || lowerName === 'sc' || lowerName.startsWith('sc ');
+            const isSCByTracker = carDataTracker[i] ? Boolean(carDataTracker[i].isSafetyCar) : false;
+            const isSC = isSCByName || isSCByTracker;
+
             newCars.push({
                 x: data.m_carMotionData[i].m_worldPositionX,
                 z: data.m_carMotionData[i].m_worldPositionZ,
                 yaw: data.m_carMotionData[i].m_yaw,
-                teamColor: carDataTracker[i].teamColor,
-                teamName: carDataTracker[i].teamName,
+                teamColor: isSC ? '#FFB000' : carDataTracker[i].teamColor,
+                teamName: isSC ? 'Safety Car' : carDataTracker[i].teamName,
+                isSafetyCar: isSC,
                 lapDistance: carPhysics[i].lapDistance,
                 speed: carPhysics[i].speed
             });
@@ -580,6 +669,9 @@ f1Client.on('motion', (data) => {
         state.motion.gVert = Math.abs(rawVert) > 20 ? rawVert / 1000 : rawVert;
         state.motion.pitch = pMotion.m_pitch || 0;
         state.motion.roll = pMotion.m_roll || 0;
+
+        processServerGForce(state.motion.gLat, state.motion.gLong, state.motion.gVert);
+        state.motion.maxGSeen = gForceData.maxGSeen;
 
         const lapDist = carPhysics[pIdx].lapDistance;
         const speed = carPhysics[pIdx].speed;
@@ -682,8 +774,11 @@ function loadTrackDeltaReference(trackId) {
  * and updates session environment details (weather, temp, safety car status).
  */
 f1Client.on('session', (data) => {
-    const uid = data.m_header.m_sessionUID;
-    const newSessionUID = typeof uid === 'bigint' ? uid.toString() : String(uid);
+    const uid = data.m_header ? data.m_header.m_sessionUID : data.m_sessionUID;
+    const newSessionUID = typeof uid === 'bigint' ? uid.toString() : String(uid || '');
+    const sessionTime = (data.m_header && data.m_header.m_sessionTime !== undefined) ? data.m_header.m_sessionTime : (data.m_sessionTime || 0);
+    const sessionTypeRaw = data.m_sessionType;
+    const tId = data.m_trackId;
 
     state.weatherForecast = data.m_weatherForecastSamples ? data.m_weatherForecastSamples.slice(0, data.m_numWeatherForecastSamples) : [];
     if (data.m_sector2LapDistanceStart) {
@@ -691,50 +786,47 @@ f1Client.on('session', (data) => {
         state.session.sector3Distance = data.m_sector3LapDistanceStart;
     }
 
-    if (currentSessionUID !== null && currentSessionUID !== newSessionUID) {
-        console.log('🔄 New Session Detected! Wiping old telemetry data...');
-        carDataTracker = Array.from({ length: 22 }, () => ({
-            pos: 0, lapNum: 0, pitStatus: 0, driverStatus: 0, bestLapMs: 0, gapText: '', maxSpeed: 0, tyre: 'UNK', tyreClass: '#FFFFFF', teamColor: '#FFFFFF', teamName: 'Unknown',
-            s1: 0, s2: 0, s3: 0, bestS1: 0, bestS2: 0, bestS3: 0
-        }));
-        carPhysics = Array.from({ length: 22 }, () => ({ speed: 0, lapDistance: 0, lapNum: 0, officialDelta: 0 }));
-        allLapHistories = {};
-        currentLapTelemetry = Array.from({ length: 22 }, () => []);
-        lastLapTelemetry = Array.from({ length: 22 }, () => []);
-        state.leaderboard = [];
-        state.pitLanePoints = [];
-        state.customSectorLines = [0];
-        state.lap = { currentMs: 0, lastMs: 0, bestMs: 0, s1: 0, s2: 0, s3: 0, liveS1: 0, liveS2: 0, liveS3: 0, s1State: 'pending', s2State: 'pending', s3State: 'pending', pos: 0, lapNum: 0, gapFront: 0, pitStatus: 'ON TRACK', currentSector: 0, pendingS1: false, pendingS2: false, liveDeltaToRecord: 0, deltaToLeader: 0, ghostLapTimeMs: 0 };
+    const isNewSession = currentSessionUID !== null && currentSessionUID !== newSessionUID;
+    const isSessionRestarted = currentSessionUID === newSessionUID && lastSessionTime > 10 && sessionTime < lastSessionTime - 5;
+    const isSessionTypeChanged = currentSessionType !== null && currentSessionType !== sessionTypeRaw;
+    const isTrackChanged = currentTrackId !== -1 && tId !== undefined && tId !== -1 && currentTrackId !== tId;
 
-        state.session.fastestLapCarIndex = -1;
-        state.session.sessionFastestLapMs = Infinity;
-        state.session.sessionBestS1 = Infinity;
-        state.session.sessionBestS2 = Infinity;
-        state.session.sessionBestS3 = Infinity;
-    }
     currentSessionUID = newSessionUID;
+    currentSessionType = sessionTypeRaw;
+    lastSessionTime = sessionTime;
 
-    const tId = data.m_trackId;
-    if (tId !== currentTrackId) {
+    if (isNewSession || isSessionRestarted || isSessionTypeChanged || isTrackChanged) {
+        console.log(`🔄 Session Change Detected! (New UID: ${isNewSession}, Restarted: ${isSessionRestarted}, TypeChanged: ${isSessionTypeChanged}, TrackChanged: ${isTrackChanged}) - Wiping old telemetry data...`);
+        resetSessionData();
+    }
+
+    if (tId !== undefined && tId !== currentTrackId && tId !== -1) {
         currentTrackId = tId;
         state.customSectorLines = [0];
+        isTrackMapped = false;
         const filePath = path.join(trackMapsDir, `track_${tId}.json`);
 
         if (fs.existsSync(filePath)) {
-            const parsedData = JSON.parse(fs.readFileSync(filePath));
-            if (Array.isArray(parsedData)) {
-                state.trackPoints = parsedData;
-                state.startLine = null;
-                state.sector1 = null;
-                state.sector2 = null;
-            } else {
-                state.trackPoints = parsedData.trackPoints || [];
-                state.startLine = parsedData.startLine || null;
-                state.sector1 = (parsedData.sector1 && typeof parsedData.sector1 === 'object') ? parsedData.sector1 : ((parsedData.sector1Line && typeof parsedData.sector1Line === 'object') ? parsedData.sector1Line : null);
-                state.sector2 = (parsedData.sector2 && typeof parsedData.sector2 === 'object') ? parsedData.sector2 : ((parsedData.sector2Line && typeof parsedData.sector2Line === 'object') ? parsedData.sector2Line : null);
+            try {
+                const parsedData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                if (Array.isArray(parsedData)) {
+                    state.trackPoints = parsedData;
+                    state.startLine = null;
+                    state.sector1 = null;
+                    state.sector2 = null;
+                    isTrackMapped = true;
+                } else {
+                    state.trackPoints = parsedData.trackPoints || [];
+                    state.startLine = parsedData.startLine || null;
+                    state.sector1 = (parsedData.sector1 && typeof parsedData.sector1 === 'object') ? parsedData.sector1 : ((parsedData.sector1Line && typeof parsedData.sector1Line === 'object') ? parsedData.sector1Line : null);
+                    state.sector2 = (parsedData.sector2 && typeof parsedData.sector2 === 'object') ? parsedData.sector2 : ((parsedData.sector2Line && typeof parsedData.sector2Line === 'object') ? parsedData.sector2Line : null);
+                    if (state.trackPoints.length > 0) isTrackMapped = true;
+                }
+                state.pitLanePoints = buildApproxPitLane(state.trackPoints);
+                console.log(`🗺️ Loaded Track ${currentTrackId} map (${state.trackPoints.length} points)`);
+            } catch (e) {
+                console.error('Error parsing track map JSON:', e);
             }
-            state.pitLanePoints = buildApproxPitLane(state.trackPoints);
-            isTrackMapped = true;
         } else {
             state.trackPoints = [];
             state.pitLanePoints = [];
@@ -753,7 +845,6 @@ f1Client.on('session', (data) => {
     const trackTemp = data.m_trackTemperature !== undefined ? data.m_trackTemperature : (data.trackTemperature || 0);
     const airTemp = data.m_airTemperature !== undefined ? data.m_airTemperature : (data.airTemperature || 0);
     const lapsTotal = data.m_totalLaps;
-    const sessionTypeRaw = data.m_sessionType;
     const formulaRaw = data.m_formula || 0;
 
     state.session.weather = weatherMap[data.m_weather] || 'Unknown';
@@ -762,9 +853,7 @@ f1Client.on('session', (data) => {
     state.session.trackLength = data.m_trackLength !== undefined ? data.m_trackLength : (data.trackLength || 5000);
     state.session.lapsTotal = lapsTotal;
 
-
     state.session.type = getAccurateSessionName(sessionTypeRaw, formulaRaw);
-
 
     const timeAttackIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 13, 17, 18, 19];
     state.session.sessionCategory = timeAttackIds.includes(sessionTypeRaw) ? 'TimeAttack' : 'Race';
@@ -772,63 +861,27 @@ f1Client.on('session', (data) => {
     state.session.trackName = trackMap[data.m_trackId] || `TRACK NOT FOUND`;
     state.session.pitLimit = data.m_pitSpeedLimit;
     state.session.sc = scMap[data.m_safetyCarStatus] || 'Clear';
+});
 
-    const newTrackId = data.m_trackId;
-    if (currentTrackId !== newTrackId && newTrackId !== -1) {
-        console.log(`🏁 Track Changed to ID: ${newTrackId}. Loading mapped circuit and telemetry data...`);
-        currentTrackId = newTrackId;
-        isTrackMapped = false;
-
-        const filePath = path.join(trackMapsDir, `track_${currentTrackId}.json`);
-        if (fs.existsSync(filePath)) {
-            try {
-                const saved = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-                if (saved.trackPoints && saved.trackPoints.length > 0) {
-                    state.trackPoints = saved.trackPoints;
-                    state.startLine = saved.startLine || null;
-                    state.sector1 = (saved.sector1 && typeof saved.sector1 === 'object') ? saved.sector1 : ((saved.sector1Line && typeof saved.sector1Line === 'object') ? saved.sector1Line : null);
-                    state.sector2 = (saved.sector2 && typeof saved.sector2 === 'object') ? saved.sector2 : ((saved.sector2Line && typeof saved.sector2Line === 'object') ? saved.sector2Line : null);
-                    isTrackMapped = true;
-                    state.pitLanePoints = buildApproxPitLane(state.trackPoints);
-                    console.log(`🗺️ Loaded Track ${currentTrackId} map (${state.trackPoints.length} points)`);
-                }
-            } catch (e) {
-                console.error('Error parsing track map JSON:', e);
-            }
-        } else {
-            state.trackPoints = [];
-            state.startLine = null;
-            state.sector1 = null;
-            state.sector2 = null;
+/**
+ * Event Packet Handler
+ * Listens for game events like 'SSTA' (Session Started) to wipe old telemetry.
+ */
+f1Client.on('event', (data) => {
+    let eventCode = '';
+    if (data.m_eventStringCode) {
+        if (typeof data.m_eventStringCode === 'string') {
+            eventCode = data.m_eventStringCode;
+        } else if (Array.isArray(data.m_eventStringCode) || Buffer.isBuffer(data.m_eventStringCode)) {
+            eventCode = Buffer.from(data.m_eventStringCode).toString('utf8').replace(/\0/g, '');
         }
+    } else if (data.eventStringCode) {
+        eventCode = String(data.eventStringCode);
+    }
 
-        const record = allTimeFastest[currentTrackId];
-        if (record) {
-            state.session.allTimeFastestLapMs = record.time;
-            state.session.allTimeFastestDriver = record.driver;
-
-            fastestLapGhostData = [];
-            const trackFastestPath = path.join(lapTimeDir, `fastest_${currentTrackId}.json`);
-            if (fs.existsSync(trackFastestPath)) {
-                try {
-                    const parsedData = JSON.parse(fs.readFileSync(trackFastestPath, 'utf8'));
-                    fastestLapGhostData = Array.isArray(parsedData) ? parsedData : (parsedData.telemetry || []);
-
-                    // Inject 0,0 starting point to fix the initial interpolation gap
-                    if (fastestLapGhostData.length > 0 && fastestLapGhostData[0].d > 0) {
-                        fastestLapGhostData.unshift({ d: 0, t: 0 });
-                    }
-
-                    console.log(`📊 Loaded delta reference for Track ${currentTrackId} (${fastestLapGhostData.length} points) from fastest_${currentTrackId}.json`);
-                } catch (e) {
-                    console.error(`⚠️ Error reading delta reference for Track ${currentTrackId}:`, e);
-                }
-            }
-        } else {
-            state.session.allTimeFastestLapMs = Infinity;
-            state.session.allTimeFastestDriver = 'Unknown';
-            fastestLapGhostData = [];
-        }
+    if (eventCode === 'SSTA') {
+        console.log('🚩 Event SSTA (Session Started) received! Wiping old telemetry data...');
+        resetSessionData();
     }
 });
 
@@ -975,8 +1028,10 @@ f1Client.on('lapData', (data) => {
 
         // Lap Transition Logic
         if (lap.m_currentLapNum > carPhysics[i].lapNum) {
-            // Crossed the line
-            lastLapTelemetry[i] = currentLapTelemetry[i];
+            // Crossed the line - copy lightweight primitive properties
+            lastLapTelemetry[i] = (currentLapTelemetry[i] || []).map(pt => ({
+                d: pt.d, t: pt.t, x: pt.x, z: pt.z, yaw: pt.yaw
+            }));
             currentLapTelemetry[i] = [];
 
             // Capture ghost telemetry upon lap completion
@@ -1072,26 +1127,38 @@ f1Client.on('lapData', (data) => {
 
         carPhysics[i].sector = lap.m_sector !== undefined ? lap.m_sector : (lap.sector || 0);
 
-        // Record Live Telemetry for Delta and Track Mapping
-        const curMs = lap.m_currentLapTimeInMS || (lap.m_currentLapTime * 1000) || 0;
+        // Record Live Telemetry for Delta and Track Mapping with Subsampling and Capping
+        const curMs = lap.m_currentLapTimeInMS || (lap.m_lastLapTime * 1000) || (lap.m_currentLapTime * 1000) || 0;
         if (curMs >= 0 && lap.m_lapDistance >= 0 && lap.m_resultStatus !== 0) {
             const carObj = state.allCars && state.allCars[i] ? state.allCars[i] : {};
-            let pt = {
-                d: lap.m_lapDistance,
-                t: curMs,
-                x: carObj.x || 0,
-                z: carObj.z || 0,
-                yaw: carObj.yaw || 0,
-                throttle: 0, brake: 0, speed: carObj.speed || 0, steer: 0, gear: 0
-            };
-            if (i === state.playerIndex) {
-                pt.throttle = state.inputs.throttle;
-                pt.brake = state.inputs.brake;
-                pt.speed = state.inputs.speed;
-                pt.steer = state.inputs.steer;
-                pt.gear = state.inputs.gear;
+            const arr = currentLapTelemetry[i] || (currentLapTelemetry[i] = []);
+            const lastPt = arr.length > 0 ? arr[arr.length - 1] : null;
+
+            const distDiff = lastPt ? Math.abs(lap.m_lapDistance - lastPt.d) : 999;
+            const timeDiff = lastPt ? Math.abs(curMs - lastPt.t) : 999;
+
+            // Subsample: only push if distance difference >= 1.5m or time delta >= 100ms
+            if (!lastPt || distDiff >= 1.5 || timeDiff >= 100) {
+                let pt = {
+                    d: Math.round(lap.m_lapDistance * 10) / 10,
+                    t: curMs,
+                    x: Math.round((carObj.x || 0) * 100) / 100,
+                    z: Math.round((carObj.z || 0) * 100) / 100,
+                    yaw: Math.round((carObj.yaw || 0) * 1000) / 1000,
+                    throttle: 0, brake: 0, speed: Math.round(carObj.speed || 0), steer: 0, gear: 0
+                };
+                if (i === state.playerIndex) {
+                    pt.throttle = Math.round(state.inputs.throttle);
+                    pt.brake = Math.round(state.inputs.brake);
+                    pt.speed = Math.round(state.inputs.speed);
+                    pt.steer = Math.round(state.inputs.steer * 100) / 100;
+                    pt.gear = state.inputs.gear;
+                }
+                arr.push(pt);
+                if (arr.length > 3000) {
+                    arr.shift();
+                }
             }
-            currentLapTelemetry[i].push(pt);
         }
 
         const liveS1 = getSectorTime(lap, 1);
@@ -1196,10 +1263,23 @@ f1Client.on('participants', (data) => {
     let newNames = [];
     for (let i = 0; i < 22; i++) {
         if (data.m_participants[i]) {
-            const teamId = getParticipantTeamId(data.m_participants[i]);
-            newNames.push(data.m_participants[i].m_name ? data.m_participants[i].m_name.replace(/\0/g, '').trim() : `CAR ${i}`);
-            carDataTracker[i].teamColor = teamMap[teamId] || '#FFFFFF';
-            carDataTracker[i].teamName = teamNameMap[teamId] || 'Unknown';
+            const p = data.m_participants[i];
+            const name = p.m_name ? p.m_name.replace(/\0/g, '').trim() : `CAR ${i}`;
+            const teamId = getParticipantTeamId(p);
+            const lowerName = name.toLowerCase();
+
+            const isSC = lowerName.includes('safety') || lowerName.includes('medical') || lowerName === 'sc' || lowerName.startsWith('sc ') || (p.m_driverId === 255 && teamId === 255);
+
+            newNames.push(name);
+            if (isSC) {
+                carDataTracker[i].teamColor = '#FFB000';
+                carDataTracker[i].teamName = 'Safety Car';
+                carDataTracker[i].isSafetyCar = true;
+            } else {
+                carDataTracker[i].teamColor = teamMap[teamId] || '#FFFFFF';
+                carDataTracker[i].teamName = teamNameMap[teamId] || 'Unknown';
+                carDataTracker[i].isSafetyCar = false;
+            }
         }
     }
     state.participants = newNames;
@@ -1445,9 +1525,10 @@ setInterval(() => {
         }
     }
 
+    clients = clients.filter(ws => ws.readyState === WebSocket.OPEN);
     const payload = JSON.stringify(state);
     clients.forEach((ws) => {
-        if (ws.readyState === WebSocket.OPEN) ws.send(payload);
+        try { ws.send(payload); } catch (e) { }
     });
 }, intervalMs);
 
