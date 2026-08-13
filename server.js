@@ -438,7 +438,7 @@ let state = {
  * when a new session is detected, session type changes, session is restarted, or track changes.
  */
 function resetSessionData() {
-    console.log('🔄 Wiping old session telemetry data and resetting state...');
+    //console.log('🔄 Wiping old session telemetry data and resetting state...');
     carDataTracker = Array.from({ length: 22 }, () => ({
         pos: 0, lapNum: 0, pitStatus: 0, driverStatus: 0, bestLapMs: 0, gapText: '', maxSpeed: 0, tyre: 'UNK', tyreClass: '#FFFFFF', teamColor: '#FFFFFF', teamName: 'Unknown',
         s1: 0, s2: 0, s3: 0, bestS1: 0, bestS2: 0, bestS3: 0
@@ -795,7 +795,7 @@ f1Client.on('session', (data) => {
     lastSessionTime = sessionTime;
 
     if (isNewSession || isSessionRestarted || isSessionTypeChanged || isTrackChanged) {
-        console.log(`🔄 Session Change Detected! (New UID: ${isNewSession}, Restarted: ${isSessionRestarted}, TypeChanged: ${isSessionTypeChanged}, TrackChanged: ${isTrackChanged}) - Wiping old telemetry data...`);
+        //console.log(`🔄 Session Change Detected! (New UID: ${isNewSession}, Restarted: ${isSessionRestarted}, TypeChanged: ${isSessionTypeChanged}, TrackChanged: ${isTrackChanged}) - Wiping old telemetry data...`);
         resetSessionData();
     }
 
@@ -879,7 +879,7 @@ f1Client.on('event', (data) => {
     }
 
     if (eventCode === 'SSTA') {
-        console.log('🚩 Event SSTA (Session Started) received! Wiping old telemetry data...');
+        //console.log('🚩 Event SSTA (Session Started) received! Wiping old telemetry data...');
         resetSessionData();
     }
 });
@@ -1005,7 +1005,7 @@ function lockOfficialSectorLinesFromTelemetry(carIndex, sector1Ms, sector2Ms, te
             const filePath = path.join(trackMapsDir, `track_${currentTrackId}.json`);
             fs.writeFileSync(filePath, JSON.stringify({ trackPoints: state.trackPoints, startLine: state.startLine, sector1: state.sector1, sector2: state.sector2 }));
         }
-        console.log(`Official sector lines updated from car ${carIndex} split telemetry.`);
+        //console.log(`Official sector lines updated from car ${carIndex} split telemetry.`);
     }
 
     return trackUpdated;
