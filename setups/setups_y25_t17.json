@@ -1,0 +1,110 @@
+[
+  {
+    "lapNum": 1,
+    "time": 70828,
+    "setup": {
+      "wingF": 12,
+      "wingR": 12,
+      "diffOn": 60,
+      "diffOff": 50,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0.04000000283122063,
+      "toeR": 0.15000000596046448,
+      "bBias": 57,
+      "fuel": 10,
+      "fuelLaps": 9.873736381530762
+    },
+    "timestamp": 1786596371040
+  },
+  {
+    "lapNum": 2,
+    "time": 70074,
+    "setup": {
+      "wingF": 12,
+      "wingR": 12,
+      "diffOn": 60,
+      "diffOff": 50,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0.04000000283122063,
+      "toeR": 0.15000000596046448,
+      "bBias": 57,
+      "fuel": 10,
+      "fuelLaps": 9.873736381530762
+    },
+    "timestamp": 1786596441098
+  },
+  {
+    "lapNum": 3,
+    "time": 72196,
+    "setup": {
+      "wingF": 12,
+      "wingR": 12,
+      "diffOn": 60,
+      "diffOff": 50,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0.04000000283122063,
+      "toeR": 0.15000000596046448,
+      "bBias": 57,
+      "fuel": 10,
+      "fuelLaps": 9.873736381530762
+    },
+    "timestamp": 1786596513302
+  },
+  {
+    "lapNum": 4,
+    "time": 74991,
+    "setup": {
+      "wingF": 12,
+      "wingR": 12,
+      "diffOn": 60,
+      "diffOff": 50,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0.04000000283122063,
+      "toeR": 0.15000000596046448,
+      "bBias": 57,
+      "fuel": 10,
+      "fuelLaps": 9.873736381530762
+    },
+    "timestamp": 1786596648227
+  },
+  {
+    "lapNum": 5,
+    "time": 73240,
+    "setup": {
+      "wingF": 12,
+      "wingR": 12,
+      "diffOn": 60,
+      "diffOff": 50,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0.04000000283122063,
+      "toeR": 0.15000000596046448,
+      "bBias": 57,
+      "fuel": 10,
+      "fuelLaps": 9.873736381530762
+    },
+    "timestamp": 1786596724576
+  },
+  {
+    "lapNum": 6,
+    "time": 73617,
+    "setup": {
+      "wingF": 12,
+      "wingR": 12,
+      "diffOn": 60,
+      "diffOff": 50,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0.04000000283122063,
+      "toeR": 0.15000000596046448,
+      "bBias": 57,
+      "fuel": 10,
+      "fuelLaps": 9.873736381530762
+    },
+    "timestamp": 1786596845552
+  }
+]
