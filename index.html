@@ -11,33 +11,43 @@
         rel="stylesheet" />
     <style>
         :root {
-            /* ── 2026 Linear/Bento UI Dark Mode Palette ── */
-            --f1-dark: #000000;
-            --f1-dark-alt: #0a0a0a;
-            --f1-panel: #111111;
-            --f1-panel-solid: #111111;
-            --f1-border: #222222;
-            --f1-border-strong: #333333;
+            /* ── Oracle Red Bull Racing Theme Palette ── */
+            --f1-dark: #030814;
+            --f1-dark-alt: #071224;
+            --f1-panel: rgba(10, 22, 44, 0.85);
+            --f1-panel-solid: #0A162C;
+            --f1-border: rgba(255, 209, 0, 0.18);
+            --f1-border-strong: rgba(255, 209, 0, 0.42);
 
-            --text-main: #f4f4f5;
-            --text-muted: #a1a1aa;
-            --text-dim: #52525b;
+            /* Red Bull Racing Official Colors */
+            --rbr-navy: #0A162C;
+            --rbr-navy-dark: #030814;
+            --rbr-yellow: #FFD100;
+            --rbr-yellow-glow: rgba(255, 209, 0, 0.35);
+            --rbr-red: #FF1E00;
+            --rbr-red-glow: rgba(255, 30, 0, 0.45);
+            --rbr-blue: #0066FF;
+            --rbr-blue-glow: rgba(0, 102, 255, 0.35);
 
-            /* Telemetry Colors (Restored for High Contrast) */
-            --f1-red: #ef4444;
-            --f1-red-glow: rgba(239, 68, 68, 0.2);
-            --fia-green: #22c55e;
-            --fia-green-glow: rgba(34, 197, 94, 0.3);
-            --fia-purple: #c084fc;
-            --fia-purple-glow: rgba(192, 132, 252, 0.3);
-            --fia-yellow: #eab308;
-            --fia-yellow-glow: rgba(234, 179, 8, 0.3);
-            --fia-blue: #3b82f6;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --text-dim: #64748B;
+
+            /* Telemetry Colors */
+            --f1-red: #FF1E00;
+            --f1-red-glow: rgba(255, 30, 0, 0.35);
+            --fia-green: #00E676;
+            --fia-green-glow: rgba(0, 230, 118, 0.35);
+            --fia-purple: #D8B4FE;
+            --fia-purple-glow: rgba(216, 180, 254, 0.4);
+            --fia-yellow: #FFD100;
+            --fia-yellow-glow: rgba(255, 209, 0, 0.4);
+            --fia-blue: #0066FF;
 
             /* Bento Grid Variables */
             --bento-radius: 16px;
             --bento-gap: 12px;
-            --card-radius: 8px;
+            --card-radius: 10px;
         }
 
         * {
@@ -62,6 +72,11 @@
             margin: 0;
             padding: 12px;
             background-color: var(--f1-dark);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(0, 102, 255, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(255, 30, 0, 0.1) 0%, transparent 45%),
+                radial-gradient(circle at 50% 0%, rgba(255, 209, 0, 0.06) 0%, transparent 50%),
+                linear-gradient(180deg, #030814 0%, #061122 100%);
             color: var(--text-main);
             font-family:
                 "Titillium Web",
@@ -76,13 +91,104 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #FF1E00 0%, #FFD100 35%, #0066FF 70%, #FF1E00 100%);
+            box-shadow: 0 0 12px rgba(255, 209, 0, 0.8), 0 0 20px rgba(255, 30, 0, 0.6);
+            z-index: 9999;
+        }
+
+        /* ══════════ ORACLE RED BULL RACING BRANDING BAR ══════════ */
+        .rbr-branding-bar {
+            flex: 0 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(7, 18, 36, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--f1-border);
+            border-left: 4px solid var(--rbr-yellow);
+            border-radius: var(--bento-radius);
+            padding: 8px 18px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            animation: fadeInUp 0.3s ease both;
+        }
+
+        .rbr-brand-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .rbr-team-name {
+            font-family: "Titillium Web", sans-serif;
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: 1.5px;
+            color: #FFFFFF;
+            text-transform: uppercase;
+        }
+
+        .rbr-highlight-yellow {
+            color: var(--rbr-yellow);
+            text-shadow: 0 0 10px var(--rbr-yellow-glow);
+        }
+
+        .rbr-telemetry-tag {
+            background: rgba(0, 102, 255, 0.2);
+            border: 1px solid rgba(0, 102, 255, 0.4);
+            color: #60A5FA;
+            font-family: "Roboto Mono", monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .rbr-live-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 30, 0, 0.15);
+            border: 1px solid rgba(255, 30, 0, 0.4);
+            color: #FF4D36;
+            font-family: "Roboto Mono", monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(255, 30, 0, 0.2);
+        }
+
+        .rbr-pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--rbr-red);
+            box-shadow: 0 0 10px var(--rbr-red);
+            animation: rbrPulse 1.2s infinite ease-in-out;
+        }
+
+        @keyframes rbrPulse {
+            0% { transform: scale(0.9); opacity: 0.7; box-shadow: 0 0 4px var(--rbr-red); }
+            50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 14px var(--rbr-red), 0 0 20px var(--rbr-yellow); }
+            100% { transform: scale(0.9); opacity: 0.7; box-shadow: 0 0 4px var(--rbr-red); }
+        }
+
         /* ══════════ BENTO HEADER ROW ══════════ */
         .header-bar {
             flex: 0 0 auto;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: var(--bento-gap);
-            animation: fadeInUp 0.3s ease both;
+            animation: fadeInUp 0.3s 0.02s ease both;
             border: none;
             background: transparent;
             padding: 0;
@@ -90,6 +196,7 @@
 
         .header-item {
             background: var(--f1-panel);
+            backdrop-filter: blur(16px);
             border: 1px solid var(--f1-border);
             border-radius: var(--bento-radius);
             padding: 12px 16px;
@@ -97,11 +204,31 @@
             flex-direction: column;
             justify-content: center;
             gap: 2px;
-            transition: border-color 0.2s;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: transparent;
+            transition: background 0.25s;
         }
 
         .header-item:hover {
-            border-color: var(--f1-border-strong);
+            border-color: var(--rbr-yellow);
+            background: rgba(14, 28, 54, 0.95);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 12px var(--rbr-yellow-glow);
+        }
+
+        .header-item:hover::before {
+            background: var(--rbr-yellow);
         }
 
         /* ══════════ PILL NAVIGATION ══════════ */
@@ -110,14 +237,15 @@
             display: flex;
             gap: 6px;
             padding: 6px;
-            background: var(--f1-panel);
+            background: rgba(7, 18, 36, 0.85);
+            backdrop-filter: blur(16px);
             border: 1px solid var(--f1-border);
             border-radius: var(--bento-radius);
             width: fit-content;
             overflow-x: auto;
             animation: fadeInUp 0.3s 0.05s ease both;
             scrollbar-width: none;
-            /* Firefox */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
 
         .nav-bar::-webkit-scrollbar {
@@ -127,14 +255,14 @@
         .nav-btn {
             background: transparent;
             color: var(--text-muted);
-            border: none;
+            border: 1px solid transparent;
             padding: 8px 16px;
             border-radius: 10px;
             font-family: "Titillium Web", sans-serif;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
             cursor: pointer;
             transition: all 0.2s ease;
             white-space: nowrap;
@@ -145,14 +273,17 @@
         }
 
         .nav-btn:hover {
-            color: var(--text-main);
-            background: var(--f1-dark-alt);
+            color: var(--rbr-yellow);
+            background: rgba(255, 209, 0, 0.08);
+            border-color: rgba(255, 209, 0, 0.25);
         }
 
         .nav-btn.active {
-            background: var(--f1-border-strong);
-            color: var(--text-main);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(135deg, rgba(15, 30, 58, 0.95), rgba(7, 18, 36, 0.95));
+            border: 1px solid var(--rbr-yellow);
+            color: var(--rbr-yellow);
+            box-shadow: 0 0 14px var(--rbr-yellow-glow), inset 0 0 10px rgba(255, 30, 0, 0.2);
+            text-shadow: 0 0 8px var(--rbr-yellow-glow);
         }
 
         /* ══════════ MAIN CONTENT & LAYOUTS ══════════ */
@@ -195,6 +326,7 @@
         /* ══════════ PANELS ══════════ */
         .panel {
             background: var(--f1-panel);
+            backdrop-filter: blur(16px);
             border: 1px solid var(--f1-border);
             border-radius: var(--bento-radius);
             padding: 20px;
@@ -202,17 +334,27 @@
             flex-direction: column;
             min-width: 0;
             overflow-y: auto;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+
+        .panel:hover {
+            border-color: rgba(255, 209, 0, 0.3);
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6), 0 0 15px rgba(255, 209, 0, 0.05);
         }
 
         .panel-header {
-            font-size: 0.75rem;
-            color: var(--text-muted);
+            font-size: 0.78rem;
+            color: var(--rbr-yellow);
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 1.8px;
             font-weight: 700;
             margin-bottom: 12px;
             padding-bottom: 8px;
             border-bottom: 1px solid var(--f1-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         /* ══════════ NESTED BENTO CARDS (DATA ROWS) ══════════ */
@@ -225,13 +367,14 @@
             border-radius: var(--card-radius);
             padding: 10px 14px;
             margin-bottom: 6px;
-            transition: all 0.2s ease;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .data-row:hover {
-            border-color: var(--f1-border-strong);
-            background: rgba(255, 255, 255, 0.02);
+            border-color: var(--rbr-yellow);
+            background: rgba(255, 209, 0, 0.04);
             transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
         .label {
@@ -659,9 +802,10 @@
         }
 
         .lb-row:hover {
-            border-color: var(--f1-border-strong);
-            background: rgba(255, 255, 255, 0.03) !important;
+            border-color: var(--rbr-yellow);
+            background: rgba(255, 209, 0, 0.05) !important;
             transform: translateX(4px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
         }
 
         .col-pos {
@@ -1170,6 +1314,30 @@
 </head>
 
 <body>
+    <!-- ══════════ ORACLE RED BULL RACING COMMAND HEADER ══════════ -->
+    <div class="rbr-branding-bar">
+        <div class="rbr-brand-title">
+            <svg class="rbr-bull-logo" viewBox="0 0 100 60" width="32" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 30 C 25 10, 45 10, 50 30 C 55 10, 75 10, 90 30 C 75 50, 55 50, 50 30 C 45 50, 25 50, 10 30 Z" fill="url(#rbrGrad)" />
+                <circle cx="50" cy="30" r="14" fill="#FFD100" />
+                <path d="M35 30 L 45 22 L 45 38 Z M 65 30 L 55 22 L 55 38 Z" fill="#FF1E00" />
+                <defs>
+                    <linearGradient id="rbrGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#FF1E00" />
+                        <stop offset="50%" stop-color="#FFD100" />
+                        <stop offset="100%" stop-color="#0066FF" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <span class="rbr-team-name">ORACLE <span class="rbr-highlight-yellow">RED BULL</span> RACING</span>
+            <span class="rbr-telemetry-tag">RB20 • COMMAND CENTER</span>
+        </div>
+        <div class="rbr-live-badge">
+            <span class="rbr-pulse-dot"></span>
+            LIVE TELEMETRY 20Hz
+        </div>
+    </div>
+
     <div class="header-bar">
         <div class="header-item">
             <div class="label">TRACK</div>
