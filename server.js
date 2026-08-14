@@ -445,8 +445,11 @@ function resetSessionData() {
     }));
     carPhysics = Array.from({ length: 22 }, () => ({ speed: 0, lapDistance: 0, lapNum: 0, officialDelta: 0, sector: 0 }));
     allLapHistories = {};
-    currentLapTelemetry = Array.from({ length: 22 }, () => []);
-    lastLapTelemetry = Array.from({ length: 22 }, () => []);
+    for (let i = 0; i < 22; i++) {
+        currentLapTelemetry[i] = [];
+        lastLapTelemetry[i] = [];
+    }
+    fastestLapGhostData = [];
     gForceData.maxGSeen = 0;
     gForceData.envelopeArray.length = 0;
     gForceData.history.length = 0;
@@ -701,6 +704,9 @@ f1Client.on('motion', (data) => {
                     pts.length = 0;
                 } else {
                     pts.push({ x, z });
+                    if (pts.length > 3000) {
+                        pts.shift();
+                    }
                     if (pts.length > 150) {
                         const firstPt = pts[0];
                         if (Math.hypot(firstPt.x - x, firstPt.z - z) < 30) {
@@ -1399,7 +1405,7 @@ setInterval(() => {
                 ...carDataTracker[i],
                 lapDistance: carPhysics[i].lapDistance,
                 speed: carPhysics[i].speed,
-                lapHistory: allLapHistories[i] || []
+                lapHistory: (allLapHistories[i] || []).slice(-15)
             });
         }
     }
@@ -1527,6 +1533,14 @@ setInterval(() => {
     clients = clients.filter(ws => ws.readyState === WebSocket.OPEN);
     const payload = JSON.stringify(state);
     clients.forEach((ws) => {
+        // Protect against Node.js heap exhaustion caused by backpressured sockets (e.g., background browser tabs)
+        if (ws.bufferedAmount > 1024 * 1024) { // >1MB buffered in TCP send queue
+            if (ws.bufferedAmount > 5 * 1024 * 1024) { // >5MB unconsumed
+                console.warn('⚠️ Terminating unresponsive/backpressured WebSocket client to prevent memory leak.');
+                try { ws.terminate(); } catch (e) { }
+            }
+            return;
+        }
         try { ws.send(payload); } catch (e) { }
     });
 }, intervalMs);
