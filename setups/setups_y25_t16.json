@@ -610,5 +610,59 @@
       "fuelLaps": 6.8753180503845215
     },
     "timestamp": 1786690965150
+  },
+  {
+    "lapNum": 37,
+    "time": 93225,
+    "setup": {
+      "wingF": 30,
+      "wingR": 22,
+      "diffOn": 100,
+      "diffOff": 30,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 52,
+      "fuel": 10.000458717346191,
+      "fuelLaps": 6.8753180503845215
+    },
+    "timestamp": 1786691732688
+  },
+  {
+    "lapNum": 38,
+    "time": 81803,
+    "setup": {
+      "wingF": 30,
+      "wingR": 22,
+      "diffOn": 95,
+      "diffOff": 30,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 53,
+      "fuel": 10.000458717346191,
+      "fuelLaps": 6.8753180503845215
+    },
+    "timestamp": 1786691832569
+  },
+  {
+    "lapNum": 39,
+    "time": 73829,
+    "setup": {
+      "wingF": 30,
+      "wingR": 22,
+      "diffOn": 100,
+      "diffOff": 30,
+      "camberF": -3.5,
+      "camberR": -2,
+      "toeF": 0,
+      "toeR": 0.10000000149011612,
+      "bBias": 52,
+      "fuel": 10.000458717346191,
+      "fuelLaps": 6.8753180503845215
+    },
+    "timestamp": 1786691906425
   }
 ]

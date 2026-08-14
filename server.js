@@ -392,7 +392,7 @@ function getParticipantTeamId(participant) {
     if (tid !== undefined && !teamMap[tid]) {
         console.log(`UNKNOWN TEAM ID DETECTED: ${tid} for driver ${participant.m_name || 'unknown'}`);
     }
-    return tid; 
+    return tid;
 }
 
 let currentSessionUID = null;
