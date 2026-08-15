@@ -543,6 +543,8 @@
 
         #tab-tyres.active,
         #tab-leaderboard.active,
+        #tab-laptimes.active,
+        #tab-session-history.active,
         #tab-history.active,
         #tab-damage.active,
         #tab-weather.active {
@@ -797,27 +799,34 @@
         .tyre-compound-hero {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 20px;
-            padding: 16px 20px;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 20px;
             background: linear-gradient(135deg, rgba(10,22,44,0.9) 0%, rgba(5,12,28,0.95) 100%);
             border: 1px solid var(--f1-border-strong);
             border-radius: var(--bento-radius);
-            flex-wrap: wrap;
+            flex-shrink: 0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+
+        .compound-hero-main {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
         .compound-badge-hero {
-            width: 72px;
-            height: 72px;
+            width: 58px;
+            height: 58px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: 'Roboto Mono', monospace;
             font-weight: 900;
-            font-size: 2rem;
-            border: 4px solid currentColor;
-            box-shadow: 0 0 24px currentColor, inset 0 0 12px rgba(0,0,0,0.6);
+            font-size: 1.75rem;
+            border: 3.5px solid currentColor;
+            box-shadow: 0 0 20px currentColor, inset 0 0 10px rgba(0,0,0,0.6);
             transition: all 0.4s ease;
             flex-shrink: 0;
         }
@@ -825,12 +834,12 @@
         .compound-hero-info {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
         }
 
         .compound-hero-name {
             font-family: 'Titillium Web', sans-serif;
-            font-size: 1.5rem;
+            font-size: 1.35rem;
             font-weight: 700;
             letter-spacing: 2px;
             text-transform: uppercase;
@@ -838,16 +847,15 @@
 
         .compound-hero-sub {
             font-family: 'Roboto Mono', monospace;
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
             letter-spacing: 1px;
         }
 
         .compound-hero-stats {
             display: flex;
-            gap: 16px;
-            margin-left: auto;
-            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
         }
 
         .hero-stat {
@@ -855,22 +863,22 @@
             flex-direction: column;
             align-items: center;
             gap: 2px;
-            padding: 8px 14px;
+            padding: 6px 14px;
             background: rgba(255,255,255,0.04);
             border: 1px solid var(--f1-border);
             border-radius: 10px;
-            min-width: 70px;
+            min-width: 75px;
         }
 
         .hero-stat-val {
             font-family: 'Roboto Mono', monospace;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 700;
             color: var(--text-main);
         }
 
         .hero-stat-lbl {
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -880,7 +888,7 @@
         .tyre-grid-4 {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 12px;
             flex: 1;
             min-height: 0;
         }
@@ -889,13 +897,15 @@
             background: linear-gradient(145deg, rgba(10,22,44,0.95), rgba(5,12,26,0.98));
             border: 1px solid var(--f1-border);
             border-radius: 14px;
-            padding: 14px;
+            padding: 16px 18px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            justify-content: space-between;
+            gap: 12px;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
         }
 
         .tyre-card::before {
@@ -1517,6 +1527,96 @@
             .hero-stat-val {
                 font-size: 0.95rem;
             }
+        }
+
+        /* ══════════ CLASSIC CAR TYRE SCHEMATIC LAYOUT ══════════ */
+        .car-tyre-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px 1fr;
+            grid-template-rows: auto auto;
+            gap: 16px;
+            align-items: center;
+            justify-items: center;
+            flex-grow: 1;
+            position: relative;
+            padding: 10px 0;
+            width: 100%;
+        }
+        .tyre-pos-fl { grid-column: 1; grid-row: 1; width: 100%; }
+        .tyre-pos-fr { grid-column: 3; grid-row: 1; width: 100%; }
+        .car-visual-center {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 280px;
+            height: 100%;
+            max-height: 480px;
+        }
+        .tyre-pos-rl { grid-column: 1; grid-row: 2; width: 100%; }
+        .tyre-pos-rr { grid-column: 3; grid-row: 2; width: 100%; }
+        .tyre-box {
+            background: rgba(10, 20, 40, 0.6);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--card-radius);
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .tyre-wear-bar-container {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 4px 0;
+        }
+        .tyre-wear-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--fia-green);
+            transition: width 0.2s, background-color 0.2s;
+        }
+        .tyre-wear-val {
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        @media (max-width: 900px) {
+            .car-tyre-layout {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto auto;
+            }
+            .car-visual-center {
+                grid-column: 1 / span 2;
+                grid-row: 1;
+                max-height: 320px;
+                width: 220px;
+                margin: 0 auto;
+            }
+            .tyre-pos-fl { grid-column: 1; grid-row: 2; }
+            .tyre-pos-fr { grid-column: 2; grid-row: 2; }
+            .tyre-pos-rl { grid-column: 1; grid-row: 3; }
+            .tyre-pos-rr { grid-column: 2; grid-row: 3; }
+        }
+
+        @media (max-width: 540px) {
+            .car-tyre-layout {
+                grid-template-columns: 1fr;
+            }
+            .car-visual-center {
+                grid-column: 1;
+                grid-row: 1;
+            }
+            .tyre-pos-fl { grid-column: 1; grid-row: 2; }
+            .tyre-pos-fr { grid-column: 1; grid-row: 3; }
+            .tyre-pos-rl { grid-column: 1; grid-row: 4; }
+            .tyre-pos-rr { grid-column: 1; grid-row: 5; }
         }
 
         /* ══════════ MINI TYRE HEADER WIDGET ══════════ */
@@ -2243,11 +2343,17 @@
             </svg>
             <span class="nav-label">Classification</span>
         </button>
-        <button class="nav-btn" onclick="switchTab('tab-history', this)">
+        <button class="nav-btn" onclick="switchTab('tab-laptimes', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
             </svg>
-            <span class="nav-label">Lap Analysis</span>
+            <span class="nav-label">Laptime History</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('tab-session-history', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+            </svg>
+            <span class="nav-label">Session History</span>
         </button>
         <button class="nav-btn" onclick="switchTab('tab-damage', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -2696,14 +2802,16 @@
         </div>
 
         <div id="tab-tyres" class="tab-content">
-            <div class="panel" style="flex-grow:1;overflow:auto;display:flex;flex-direction:column;">
+            <div class="panel" style="flex-grow:1;overflow:auto;display:flex;flex-direction:column;gap:12px;">
 
                 <!-- Compound Hero Banner -->
                 <div class="tyre-compound-hero">
-                    <div id="compound-badge-hero" class="compound-badge-hero" style="color:#888;">-</div>
-                    <div class="compound-hero-info">
-                        <div class="compound-hero-name" id="tyre-compound-display">--</div>
-                        <div class="compound-hero-sub">TYRE CARCASS &amp; THERMAL STATUS</div>
+                    <div class="compound-hero-main">
+                        <div id="compound-badge-hero" class="compound-badge-hero" style="color:#888;">-</div>
+                        <div class="compound-hero-info">
+                            <div class="compound-hero-name" id="tyre-compound-display">--</div>
+                            <div class="compound-hero-sub">TYRE CARCASS &amp; THERMAL STATUS</div>
+                        </div>
                     </div>
                     <div class="compound-hero-stats">
                         <div class="hero-stat">
@@ -2721,7 +2829,7 @@
                     </div>
                 </div>
 
-                <!-- 4-Corner Tyre Cards -->
+                <!-- 4-Corner Tyre Cards (No Car Model) -->
                 <div class="tyre-grid-4" style="margin-top:10px;flex:1;">
 
                     <!-- FRONT LEFT -->
@@ -2767,8 +2875,7 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- hidden legacy compat -->
-                        <div class="tyre-wear-bar-container"><div class="tyre-wear-bar" id="wear-bar-fl"></div></div>
+                        <div class="tyre-wear-bar-container" style="display:none;"><div class="tyre-wear-bar" id="wear-bar-fl"></div></div>
                         <span style="display:none" id="wear-text-fl">0% Wear</span>
                     </div>
 
@@ -2815,7 +2922,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="tyre-wear-bar-container"><div class="tyre-wear-bar" id="wear-bar-fr"></div></div>
+                        <div class="tyre-wear-bar-container" style="display:none;"><div class="tyre-wear-bar" id="wear-bar-fr"></div></div>
                         <span style="display:none" id="wear-text-fr">0% Wear</span>
                     </div>
 
@@ -2862,7 +2969,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="tyre-wear-bar-container"><div class="tyre-wear-bar" id="wear-bar-rl"></div></div>
+                        <div class="tyre-wear-bar-container" style="display:none;"><div class="tyre-wear-bar" id="wear-bar-rl"></div></div>
                         <span style="display:none" id="wear-text-rl">0% Wear</span>
                     </div>
 
@@ -2909,14 +3016,14 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="tyre-wear-bar-container"><div class="tyre-wear-bar" id="wear-bar-rr"></div></div>
+                        <div class="tyre-wear-bar-container" style="display:none;"><div class="tyre-wear-bar" id="wear-bar-rr"></div></div>
                         <span style="display:none" id="wear-text-rr">0% Wear</span>
                     </div>
 
                 </div><!-- end tyre-grid-4 -->
 
                 <!-- Tyre Life & Strategy Predictor Card -->
-                <div class="tyre-predict-card">
+                <div class="tyre-predict-card" style="margin-top: 10px;">
                     <div class="tyre-predict-header">🛞 Tyre Wear &amp; Strategy Predictor</div>
                     <div class="tyre-predict-grid">
                         <div class="tyre-predict-stat">
@@ -2943,6 +3050,7 @@
 
             </div>
         </div>
+
 
 
 
@@ -3072,20 +3180,48 @@
             </div>
         </div>
 
-        <div id="tab-history" class="tab-content">
+        <!-- 1. Laptime History Tab (as old) -->
+        <div id="tab-laptimes" class="tab-content">
             <div class="panel" style="flex-grow: 1; padding: 0">
                 <div class="panel-header" style="margin: 15px 15px 0 15px; display: flex; justify-content: space-between; align-items: center;">
-                    <span>Session History</span>
+                    <span>Laptime History</span>
                     <button class="action-btn" onclick="downloadSessionJson()" style="padding: 4px 12px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.2); border: 1px solid var(--fia-blue); color: #93C5FD; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                             <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
                         </svg>
-                        Export Session JSON
+                        Export JSON
+                    </button>
+                </div>
+                <div style="overflow-x: auto; overflow-y: auto; padding: 0 15px 15px 15px; flex-grow: 1; margin-top: 5px;">
+                    <table class="history-table" id="history-table">
+                        <thead id="history-head"></thead>
+                        <tbody id="history-body">
+                            <tr>
+                                <td colspan="2" style="color: var(--text-muted)">
+                                    Waiting for session history...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Session History Tab (Pace Analysis + Rival + Export) -->
+        <div id="tab-session-history" class="tab-content">
+            <div class="panel" style="flex-grow: 1; padding: 20px; overflow-y: auto;">
+                <div class="panel-header" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Session History &amp; Pace Analysis</span>
+                    <button class="action-btn" onclick="downloadSessionJson()" style="padding: 4px 12px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.2); border: 1px solid var(--fia-blue); color: #93C5FD; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+                        </svg>
+                        Download Full Session JSON
                     </button>
                 </div>
 
                 <!-- Pace Chart Canvas Section -->
-                <div style="padding: 12px 15px 0 15px;">
+                <div style="margin-bottom: 16px;">
                     <div class="pace-chart-legend">
                         <div><span class="pace-legend-dot" style="background:#FFF;"></span>Your Pace</div>
                         <div><span class="pace-legend-dot" style="background:var(--fia-purple);"></span>Session Best</div>
@@ -3097,7 +3233,7 @@
                 </div>
 
                 <!-- Rival Head-to-Head Comparison Panel -->
-                <div class="rival-panel" style="margin: 0 15px 10px 15px;">
+                <div class="rival-panel">
                     <div class="rival-header">
                         <span class="rival-title">🏎️ Rival Head-to-Head Comparison</span>
                         <select id="rival-selector" class="rival-select" onchange="onRivalSelected(this.value)">
@@ -3120,24 +3256,6 @@
                         <div class="rival-lap-chip"><div class="rival-lap-chip-label">Pace Delta</div><div id="rival-pace-delta">--</div></div>
                         <div class="rival-lap-chip"><div class="rival-lap-chip-label">Rival Tyre</div><div id="rival-tyre-val">--</div></div>
                     </div>
-                </div>
-                <div style="
-              overflow-x: auto;
-              overflow-y: auto;
-              padding: 0 15px 15px 15px;
-              flex-grow: 1;
-              margin-top: 5px;
-            ">
-                    <table class="history-table" id="history-table">
-                        <thead id="history-head"></thead>
-                        <tbody id="history-body">
-                            <tr>
-                                <td colspan="2" style="color: var(--text-muted)">
-                                    Waiting for session history...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
@@ -3448,6 +3566,13 @@
                 }, 10);
             } else if (tabId === "tab-telemetry") {
                 setTimeout(() => drawGGraph(), 10);
+            } else if (tabId === "tab-session-history") {
+                setTimeout(() => {
+                    if (window.lastTelemetryData) {
+                        drawPaceChart(window.lastTelemetryData);
+                        updateRivalComparison(window.lastTelemetryData);
+                    }
+                }, 10);
             }
         }
 
@@ -4648,7 +4773,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             ctx.clearRect(0, 0, w, h);
 
             const pIdx = data.playerIndex || 0;
-            const playerLaps = (data.allLapHistories && data.allLapHistories[pIdx]) ? data.allLapHistories[pIdx] : [];
+            const pDriver = (data.leaderboard || []).find(d => d.carIndex === pIdx);
+            const playerLaps = (data.allLapHistories && data.allLapHistories[pIdx] && data.allLapHistories[pIdx].length > 0)
+                ? data.allLapHistories[pIdx]
+                : (pDriver?.lapHistory || []);
             
             const playerTimes = playerLaps
                 .map(l => (typeof l === 'object' ? l.lapTime : l) || 0)
@@ -4663,8 +4791,12 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             }
 
             let rivalTimes = [];
-            if (selectedRivalCarIndex >= 0 && data.allLapHistories && data.allLapHistories[selectedRivalCarIndex]) {
-                rivalTimes = data.allLapHistories[selectedRivalCarIndex]
+            if (selectedRivalCarIndex >= 0) {
+                const rDriver = (data.leaderboard || []).find(d => d.carIndex === selectedRivalCarIndex);
+                const rLaps = (data.allLapHistories && data.allLapHistories[selectedRivalCarIndex] && data.allLapHistories[selectedRivalCarIndex].length > 0)
+                    ? data.allLapHistories[selectedRivalCarIndex]
+                    : (rDriver?.lapHistory || []);
+                rivalTimes = rLaps
                     .map(l => (typeof l === 'object' ? l.lapTime : l) || 0)
                     .filter(t => t > 30000 && t < 240000);
             }
@@ -4858,7 +4990,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const dy = touchEndY - touchStartY;
 
             if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-                const tabs = ['tab-radar', 'tab-telemetry', 'tab-tyres', 'tab-engineering', 'tab-leaderboard', 'tab-history', 'tab-damage', 'tab-weather'];
+                const tabs = ['tab-radar', 'tab-telemetry', 'tab-tyres', 'tab-engineering', 'tab-leaderboard', 'tab-laptimes', 'tab-session-history', 'tab-damage', 'tab-weather'];
                 const activeTabEl = document.querySelector('.tab-content.active');
                 if (!activeTabEl) return;
                 const currentIdx = tabs.indexOf(activeTabEl.id);
@@ -5353,6 +5485,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
          */
         function handleTelemetryMessage(event) {
             const data = JSON.parse(event.data);
+            window.lastTelemetryData = data;
 
 
             if (document.getElementById("track-name").value !== "Unknown") {

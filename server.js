@@ -1816,6 +1816,7 @@ setInterval(() => {
 
 
     state.leaderboard = newLeaderboard;
+    state.allLapHistories = allLapHistories;
     const pIdx = state.playerIndex;
     const playerLbIndex = state.leaderboard.findIndex(d => d.carIndex === pIdx);
     const playerLbInfo = playerLbIndex >= 0 ? state.leaderboard[playerLbIndex] : null;
