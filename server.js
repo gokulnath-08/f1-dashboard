@@ -88,8 +88,25 @@ function processServerGForce(gLat, gLong, gVert) {
 }
 
 // --- HTTP Server ---
-// Serves static files for the dashboard and training UI
+// Serves static files for the dashboard and training UI, plus JSON session export endpoints
 const server = http.createServer((req, res) => {
+    const reqUrl = req.url.split('?')[0];
+
+    // Export complete session data in JSON format
+    if (reqUrl === "/api/session/export" || reqUrl === "/api/session-data" || reqUrl === "/download-session-json") {
+        const exportData = generateSessionExportJson();
+        const cleanTrack = (state.session.trackName || "track").replace(/[^a-zA-Z0-9_-]/g, "_");
+        const cleanSession = (state.session.type || "session").replace(/[^a-zA-Z0-9_-]/g, "_");
+        const filename = `f1_session_${cleanTrack}_${cleanSession}_${Date.now()}.json`;
+
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Content-Disposition": `attachment; filename="${filename}"`,
+            "Access-Control-Allow-Origin": "*"
+        });
+        res.end(JSON.stringify(exportData, null, 2));
+        return;
+    }
 
     let filePath = path.join(__dirname, req.url === "/" ? "index.html" : req.url);
 
@@ -98,7 +115,8 @@ const server = http.createServer((req, res) => {
     const contentTypes = {
         ".html": "text/html",
         ".css": "text/css",
-        ".js": "application/javascript"
+        ".js": "application/javascript",
+        ".json": "application/json"
     };
 
     fs.readFile(filePath, (err, data) => {
@@ -126,6 +144,231 @@ const server = http.createServer((req, res) => {
         res.end(responseData);
     });
 });
+
+function formatMsExport(ms) {
+    if (!ms || ms <= 0 || ms === Infinity) return '--:--.---';
+    const mins = Math.floor(ms / 60000);
+    const secs = Math.floor((ms % 60000) / 1000);
+    const millis = ms % 1000;
+    return `${mins}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}`;
+}
+
+function formatSectorMs(ms) {
+    if (!ms || ms <= 0 || ms === Infinity) return '--.---';
+    return (ms / 1000).toFixed(3);
+}
+
+/**
+ * Builds a structured, complete, exhaustive JSON snapshot of all session data:
+ * - Every lap with sector 1, sector 2, sector 3 times and validation flags for all 22 cars
+ * - Flat lap-by-lap table for easy data science / CSV export
+ * - Tyre stint strategies
+ * - Full 20Hz telemetry traces (speed, throttle, brake, gears, RPM, DRS, distance, G-forces)
+ * - Complete setup, damage, steward offenses, track geometry, and weather forecasts.
+ */
+function generateSessionExportJson() {
+    const pIdx = state.playerIndex || 0;
+    const cleanSessionName = state.session.type || 'Unknown';
+    const cleanTrackName = state.session.trackName || 'Unknown';
+
+    // Detailed Lap History with Sector Breakdown per Driver
+    const detailedLapsByDriver = {};
+    const allLapsFlatTable = [];
+
+    for (let carIdx = 0; carIdx < 22; carIdx++) {
+        const driverName = (state.participants && state.participants[carIdx]) ? state.participants[carIdx] : `Car ${carIdx}`;
+        const tracker = carDataTracker[carIdx] || {};
+        const rawLaps = allLapHistories[carIdx] || [];
+        const stints = allTyreStints[carIdx] || [];
+
+        const processedLaps = rawLaps.map((lap, index) => {
+            const lapNum = index + 1;
+            const validFlags = lap.validFlags !== undefined ? lap.validFlags : 0x0F;
+            const isValid = (validFlags & 0x01) !== 0;
+            const isValidS1 = (validFlags & 0x02) !== 0;
+            const isValidS2 = (validFlags & 0x04) !== 0;
+            const isValidS3 = (validFlags & 0x08) !== 0;
+
+            const lapObj = {
+                lapNumber: lapNum,
+                lapTimeMs: lap.lapTime || 0,
+                lapTimeFormatted: formatMsExport(lap.lapTime),
+                sector1Ms: lap.s1 || 0,
+                sector1Formatted: formatSectorMs(lap.s1),
+                sector2Ms: lap.s2 || 0,
+                sector2Formatted: formatSectorMs(lap.s2),
+                sector3Ms: lap.s3 || 0,
+                sector3Formatted: formatSectorMs(lap.s3),
+                isValidLap: isValid,
+                isValidSector1: isValidS1,
+                isValidSector2: isValidS2,
+                isValidSector3: isValidS3,
+                isPersonalBest: tracker.bestLapMs > 0 && lap.lapTime === tracker.bestLapMs,
+                isSessionBest: state.session.sessionFastestLapMs > 0 && lap.lapTime === state.session.sessionFastestLapMs
+            };
+
+            // Add to flat table for analytics
+            if (lap.lapTime > 0 || lap.s1 > 0 || lap.s2 > 0 || lap.s3 > 0) {
+                allLapsFlatTable.push({
+                    carIndex: carIdx,
+                    driverName: driverName,
+                    teamName: tracker.teamName || 'Unknown',
+                    ...lapObj
+                });
+            }
+
+            return lapObj;
+        });
+
+        detailedLapsByDriver[carIdx] = {
+            carIndex: carIdx,
+            driverName: driverName,
+            teamName: tracker.teamName || 'Unknown',
+            teamColor: tracker.teamColor || '#FFF',
+            currentPosition: tracker.pos || 0,
+            totalLapsCompleted: rawLaps.length,
+            bestLapMs: tracker.bestLapMs || 0,
+            bestLapFormatted: formatMsExport(tracker.bestLapMs),
+            bestS1Ms: tracker.bestS1 || 0,
+            bestS1Formatted: formatSectorMs(tracker.bestS1),
+            bestS2Ms: tracker.bestS2 || 0,
+            bestS2Formatted: formatSectorMs(tracker.bestS2),
+            bestS3Ms: tracker.bestS3 || 0,
+            bestS3Formatted: formatSectorMs(tracker.bestS3),
+            // Current car state snapshot for this driver
+            currentCarState: {
+                tyreCompound: tracker.tyre || 'UNK',
+                tyreCompoundColor: tracker.tyreClass || '#808080',
+                tyreAge: carIdx === state.playerIndex ? state.car.tyreAge : null,
+                penalties: tracker.penalties || 0,
+                warnings: tracker.warnings || 0,
+                pitStatus: tracker.pitStatus || 0,
+                driverStatus: tracker.driverStatus || 0,
+                maxSpeedKmh: tracker.maxSpeed || 0,
+                // Full tyre wear, temps, pressures only available for player car from UDP
+                ...(carIdx === state.playerIndex ? {
+                    tyreWear: { fl: state.car.wear.fl, fr: state.car.wear.fr, rl: state.car.wear.rl, rr: state.car.wear.rr },
+                    tyreSurfaceTempC: { fl: state.car.surfTemp.fl, fr: state.car.surfTemp.fr, rl: state.car.surfTemp.rl, rr: state.car.surfTemp.rr },
+                    tyreInnerTempC: { fl: state.car.inTemp.fl, fr: state.car.inTemp.fr, rl: state.car.inTemp.rl, rr: state.car.inTemp.rr },
+                    tyrePressurePsi: { fl: state.car.press.fl, fr: state.car.press.fr, rl: state.car.press.rl, rr: state.car.press.rr },
+                    brakeTempC: { fl: state.car.brakeTemp.fl, fr: state.car.brakeTemp.fr, rl: state.car.brakeTemp.rl, rr: state.car.brakeTemp.rr },
+                    engineTempC: state.car.engineTemp,
+                    ersMode: state.ers.mode,
+                    ersBatteryPct: state.ers.battery,
+                    fuelMassKg: state.setup.fuel,
+                    fuelRemainingLaps: state.setup.fuelLaps,
+                    damage: state.damage ? {
+                        frontWingDamage: state.damage.m_frontLeftWingDamage ?? state.damage.m_frontWingDamage ?? null,
+                        rearWingDamage: state.damage.m_rearWingDamage ?? null,
+                        floorDamage: state.damage.m_floorDamage ?? null,
+                        diffuserDamage: state.damage.m_diffuserDamage ?? null,
+                        sidepodDamage: state.damage.m_sidepodDamage ?? null,
+                        drsFault: state.damage.m_drsFault ?? null,
+                        ersFault: state.damage.m_ersFault ?? null,
+                        gearboxDamage: state.damage.m_gearBoxDamage ?? null,
+                        engineDamage: state.damage.m_engineDamage ?? null,
+                        engineMGUHWear: state.damage.m_engineMGUHWear ?? null,
+                        engineESWear: state.damage.m_engineESWear ?? null,
+                        engineCEWear: state.damage.m_engineCEWear ?? null,
+                        engineICEWear: state.damage.m_engineICEWear ?? null,
+                        engineMGUKWear: state.damage.m_engineMGUKWear ?? null,
+                        engineTCWear: state.damage.m_engineTCWear ?? null,
+                        tyresWear: state.damage.m_tyresWear ?? null,
+                        tyresDamage: state.damage.m_tyresDamage ?? null
+                    } : null
+                } : {})
+            },
+            tyreStints: stints,
+            laps: processedLaps
+        };
+
+    }
+
+    return {
+        metadata: {
+            title: 'F1 Telemetry Dashboard - Complete Session Data Export',
+            exportedAt: new Date().toISOString(),
+            exportedTimestamp: Date.now(),
+            gameYear: currentGameYear,
+            sessionUID: currentSessionUID,
+            sessionType: cleanSessionName,
+            sessionCategory: state.session.sessionCategory,
+            trackId: currentTrackId,
+            trackName: cleanTrackName,
+            trackLengthMeters: state.session.trackLength,
+            raceDistanceMeters: state.session.raceDistance,
+            totalLaps: state.session.lapsTotal,
+            weather: state.session.weather,
+            trackTempCelsius: state.session.trackTemp,
+            airTempCelsius: state.session.airTemp,
+            pitSpeedLimitKmh: state.session.pitLimit,
+            safetyCarStatus: state.session.sc,
+            fastestLap: {
+                carIndex: state.session.fastestLapCarIndex,
+                driver: state.session.sessionFastestDriver || 'None',
+                timeMs: state.session.sessionFastestLapMs === Infinity ? 0 : state.session.sessionFastestLapMs,
+                timeFormatted: formatMsExport(state.session.sessionFastestLapMs)
+            },
+            bestSectors: {
+                s1Ms: state.session.sessionBestS1 === Infinity ? 0 : state.session.sessionBestS1,
+                s1Formatted: formatSectorMs(state.session.sessionBestS1),
+                s2Ms: state.session.sessionBestS2 === Infinity ? 0 : state.session.sessionBestS2,
+                s2Formatted: formatSectorMs(state.session.sessionBestS2),
+                s3Ms: state.session.sessionBestS3 === Infinity ? 0 : state.session.sessionBestS3,
+                s3Formatted: formatSectorMs(state.session.sessionBestS3)
+            },
+            allTimeTrackRecord: {
+                driver: state.session.allTimeFastestDriver,
+                timeMs: state.session.allTimeFastestLapMs === Infinity ? 0 : state.session.allTimeFastestLapMs,
+                timeFormatted: formatMsExport(state.session.allTimeFastestLapMs)
+            }
+        },
+        participants: state.participants || [],
+        leaderboard: state.leaderboard || [],
+        detailedLapsByDriver: detailedLapsByDriver,
+        allLapsFlatTable: allLapsFlatTable,
+        tyreStintsByDriver: allTyreStints,
+        rawLapHistories: allLapHistories || {},
+        player: {
+            playerIndex: pIdx,
+            driverName: (state.participants && state.participants[pIdx]) ? state.participants[pIdx] : `Player (Car ${pIdx})`,
+            lap: state.lap,
+            penalties: state.penalties,
+            inputs: state.inputs,
+            car: state.car,
+            setup: state.setup,
+            ers: state.ers,
+            damage: state.damage,
+            motion: {
+                pitch: state.motion.pitch,
+                roll: state.motion.roll,
+                gLat: state.motion.gLat,
+                gLong: state.motion.gLong,
+                gVert: state.motion.gVert,
+                maxGSeen: state.motion.maxGSeen,
+                susp: state.motion.susp,
+                gEnvelopeArray: state.motion.gEnvelopeArray,
+                gHistory: state.motion.gHistory
+            }
+        },
+        allCarsTracking: carDataTracker,
+        physics: carPhysics,
+        trackData: {
+            trackPoints: state.trackPoints,
+            pitLanePoints: state.pitLanePoints,
+            startLine: state.startLine,
+            sector1: state.sector1,
+            sector2: state.sector2,
+            customSectorLines: state.customSectorLines
+        },
+        weatherForecast: state.weatherForecast || [],
+        ghostLapTelemetry: fastestLapGhostData || [],
+        playerLastLapTelemetry: lastLapTelemetry[pIdx] || [],
+        playerCurrentLapTelemetry: currentLapTelemetry[pIdx] || [],
+        allCarsCurrentLapTelemetry: currentLapTelemetry,
+        allCarsLastLapTelemetry: lastLapTelemetry
+    };
+}
 
 
 
@@ -167,6 +410,11 @@ function handleWsConnection(ws) {
                         } catch (e) { }
                     }
                 }
+                return;
+            }
+
+            if (data.action === 'exportSession' || data.action === 'getSessionExport' || data.action === 'downloadSession') {
+                ws.send(JSON.stringify({ type: 'sessionExportResponse', data: generateSessionExportJson() }));
                 return;
             }
 
@@ -296,6 +544,9 @@ legacyWss.on('connection', handleWsConnection);
 const weatherMap = { 0: 'Clear', 1: 'Light Cloud', 2: 'Overcast', 3: 'Light Rain', 4: 'Heavy Rain', 5: 'Storm', 6: 'Unknown' };
 const scMap = { 0: 'Clear', 1: 'Full SC', 2: 'VSC', 3: 'Formation', 4: 'SC Ending' };
 const ersMap = { 0: 'None', 1: 'Medium', 2: 'Hotlap', 3: 'Overtake' };
+const visualTyreNames = { 16: 'SOFT', 17: 'MEDIUM', 18: 'HARD', 7: 'INTER', 8: 'WET' };
+const visualTyreColors = { 16: '#E10600', 17: '#FFC72C', 18: '#FFFFFF', 7: '#00E676', 8: '#00D2FF' };
+const fallbackTyreNames = { 7: 'INTER', 8: 'WET', 9: 'DRY', 10: 'WET', 11: 'SUPER SOFT', 12: 'SOFT', 13: 'MEDIUM', 14: 'HARD', 15: 'WET' };
 
 const gameModeMap = {
     4: 'Grand Prix ‘23', 5: 'Time Trial', 6: 'Splitscreen', 7: 'Online Custom',
@@ -403,7 +654,8 @@ let isTrackMapped = false;
 
 let carDataTracker = Array.from({ length: 22 }, () => ({
     pos: 0, lapNum: 0, pitStatus: 0, driverStatus: 0, bestLapMs: 0, gapText: '', maxSpeed: 0, tyre: 'UNK', tyreClass: '#FFFFFF', teamColor: '#FFFFFF', teamName: 'Unknown',
-    s1: 0, s2: 0, s3: 0, bestS1: 0, bestS2: 0, bestS3: 0
+    s1: 0, s2: 0, s3: 0, bestS1: 0, bestS2: 0, bestS3: 0,
+    penalties: 0, warnings: 0, cornerCutting: 0, unservedDT: 0, unservedSG: 0, invalidLap: false
 }));
 
 let carPhysics = Array.from({ length: 22 }, () => ({
@@ -411,6 +663,7 @@ let carPhysics = Array.from({ length: 22 }, () => ({
 }));
 
 let allLapHistories = {};
+let allTyreStints = {};
 let currentLapTelemetry = Array.from({ length: 22 }, () => []);
 let lastLapTelemetry = Array.from({ length: 22 }, () => []);
 let fastestLapGhostData = [];
@@ -421,11 +674,20 @@ let state = {
     session: {
         trackName: 'Unknown', trackLength: 0, raceDistance: 0, lapsLeft: 0, type: 'Unknown', weather: '--',
         trackTemp: 0, airTemp: 0, sc: 'Clear', lapsTotal: 0, pitLimit: 80, fastestLapCarIndex: -1,
-        sessionFastestLapMs: Infinity, sessionBestS1: 0, trackId: 0, timeRemaining: 0, timeTotal: 0, safetyCarStatus: 'NONE', sessionType: 'NONE', sessionCategory: 'Race', allTimeFastestLapMs: Infinity, allTimeFastestDriver: 'Unknown', sector2Distance: 0, sector3Distance: 0
+        sessionFastestLapMs: Infinity, sessionFastestDriver: 'None', sessionBestS1: 0, trackId: 0, timeRemaining: 0, timeTotal: 0, safetyCarStatus: 'NONE', sessionType: 'NONE', sessionCategory: 'Race', allTimeFastestLapMs: Infinity, allTimeFastestDriver: 'Unknown', sector2Distance: 0, sector3Distance: 0
     },
     weatherForecast: [],
     damage: null,
-    lap: { currentMs: 0, lastMs: 0, bestMs: 0, s1: 0, s2: 0, s3: 0, liveS1: 0, liveS2: 0, liveS3: 0, s1State: 'pending', s2State: 'pending', s3State: 'pending', pos: 0, lapNum: 0, gapFront: 0, pitStatus: 'ON TRACK', currentSector: 0, pendingS1: false, pendingS2: false, liveDeltaToRecord: 0, deltaToLeader: 0, ghostLapTimeMs: 0 },
+    penalties: { timePenalties: 0, warnings: 0, cornerCuts: 0, driveThrough: 0, stopGo: 0, invalidLap: 0 },
+    lap: {
+        currentMs: 0, lastMs: 0, bestMs: 0, s1: 0, s2: 0, s3: 0, liveS1: 0, liveS2: 0, liveS3: 0,
+        s1State: 'pending', s2State: 'pending', s3State: 'pending', pos: 0, lapNum: 0, gapFront: '+0.000',
+        driverAhead: 'LEADER', driverAheadCarIndex: -1, driverAheadTyre: '', driverAheadTeamColor: '#FFD700',
+        driverBehind: 'NONE', driverBehindCarIndex: -1, gapBehind: '--', driverBehindTyre: '', driverBehindTeamColor: '#888888',
+        drsThreat: false, gapBehindSec: null, deltaToSessionFastest: null, lastLapDeltaToSessionFastest: null, isSessionFastest: false,
+        pitStatus: 'ON TRACK', currentSector: 0, pendingS1: false, pendingS2: false, liveDeltaToRecord: 0, deltaToLeader: 0, ghostLapTimeMs: 0,
+        penalties: 0, warnings: 0, cornerCutting: 0, unservedDT: 0, unservedSG: 0, scDelta: 0, invalid: false
+    },
     motion: { pitch: 0, roll: 0, gLat: 0, gLong: 0, gVert: 0, susp: { fl: 0, fr: 0, rl: 0, rr: 0 }, gEnvelopeArray: gForceData.envelopeArray, gHistory: gForceData.history, maxGSeen: gForceData.maxGSeen },
     inputs: { speed: 0, gear: 'N', rpm: 0, throttle: 0, brake: 0, clutch: 0, steer: 0, drs: 'CLOSED' },
     ers: { mode: 'None', battery: 0 },
@@ -441,10 +703,12 @@ function resetSessionData() {
     //console.log('🔄 Wiping old session telemetry data and resetting state...');
     carDataTracker = Array.from({ length: 22 }, () => ({
         pos: 0, lapNum: 0, pitStatus: 0, driverStatus: 0, bestLapMs: 0, gapText: '', maxSpeed: 0, tyre: 'UNK', tyreClass: '#FFFFFF', teamColor: '#FFFFFF', teamName: 'Unknown',
-        s1: 0, s2: 0, s3: 0, bestS1: 0, bestS2: 0, bestS3: 0
+        s1: 0, s2: 0, s3: 0, bestS1: 0, bestS2: 0, bestS3: 0,
+        penalties: 0, warnings: 0, cornerCutting: 0, unservedDT: 0, unservedSG: 0, invalidLap: false
     }));
     carPhysics = Array.from({ length: 22 }, () => ({ speed: 0, lapDistance: 0, lapNum: 0, officialDelta: 0, sector: 0 }));
     allLapHistories = {};
+    allTyreStints = {};
     for (let i = 0; i < 22; i++) {
         currentLapTelemetry[i] = [];
         lastLapTelemetry[i] = [];
@@ -462,10 +726,20 @@ function resetSessionData() {
     state.customSectorLines = [0];
     state.weatherForecast = [];
     state.damage = null;
-    state.lap = { currentMs: 0, lastMs: 0, bestMs: 0, s1: 0, s2: 0, s3: 0, liveS1: 0, liveS2: 0, liveS3: 0, s1State: 'pending', s2State: 'pending', s3State: 'pending', pos: 0, lapNum: 0, gapFront: 0, pitStatus: 'ON TRACK', currentSector: 0, pendingS1: false, pendingS2: false, liveDeltaToRecord: 0, deltaToLeader: 0, ghostLapTimeMs: 0, penalties: 0, warnings: 0, cornerCutting: 0, unservedDT: 0, unservedSG: 0, scDelta: 0, invalid: false };
+    state.penalties = { timePenalties: 0, warnings: 0, cornerCuts: 0, driveThrough: 0, stopGo: 0, invalidLap: 0 };
+    state.lap = {
+        currentMs: 0, lastMs: 0, bestMs: 0, s1: 0, s2: 0, s3: 0, liveS1: 0, liveS2: 0, liveS3: 0,
+        s1State: 'pending', s2State: 'pending', s3State: 'pending', pos: 0, lapNum: 0, gapFront: '+0.000',
+        driverAhead: 'LEADER', driverAheadCarIndex: -1, driverAheadTyre: '', driverAheadTeamColor: '#FFD700',
+        driverBehind: 'NONE', driverBehindCarIndex: -1, gapBehind: '--', driverBehindTyre: '', driverBehindTeamColor: '#888888',
+        drsThreat: false, gapBehindSec: null, deltaToSessionFastest: null, lastLapDeltaToSessionFastest: null, isSessionFastest: false,
+        pitStatus: 'ON TRACK', currentSector: 0, pendingS1: false, pendingS2: false, liveDeltaToRecord: 0, deltaToLeader: 0, ghostLapTimeMs: 0,
+        penalties: 0, warnings: 0, cornerCutting: 0, unservedDT: 0, unservedSG: 0, scDelta: 0, invalid: false
+    };
 
     state.session.fastestLapCarIndex = -1;
     state.session.sessionFastestLapMs = Infinity;
+    state.session.sessionFastestDriver = 'None';
     state.session.sessionBestS1 = Infinity;
     state.session.sessionBestS2 = Infinity;
     state.session.sessionBestS3 = Infinity;
@@ -887,6 +1161,21 @@ f1Client.on('event', (data) => {
     if (eventCode === 'SSTA') {
         //console.log('🚩 Event SSTA (Session Started) received! Wiping old telemetry data...');
         resetSessionData();
+    } else if (eventCode === 'FTLP' && data.m_eventDetails) {
+        const vIdx = data.m_eventDetails.vehicleIdx;
+        const lTime = data.m_eventDetails.lapTime;
+        const lapTimeMs = typeof lTime === 'number' ? Math.round(lTime * 1000) : 0;
+        if (lapTimeMs > 0 && (state.session.sessionFastestLapMs === Infinity || lapTimeMs < state.session.sessionFastestLapMs)) {
+            state.session.sessionFastestLapMs = lapTimeMs;
+            state.session.fastestLapCarIndex = vIdx;
+            state.session.sessionFastestDriver = (state.participants && state.participants[vIdx]) ? state.participants[vIdx] : `Car ${vIdx}`;
+        }
+    } else if (eventCode === 'PENA' && data.m_eventDetails) {
+        const d = data.m_eventDetails;
+        const penType = penaltyMap[d.penaltyType] || `Type ${d.penaltyType}`;
+        const infType = infringementMap[d.infringementType] || `Infringement ${d.infringementType}`;
+        const driverName = (state.participants && state.participants[d.vehicleIdx]) ? state.participants[d.vehicleIdx] : `Car ${d.vehicleIdx}`;
+        console.log(`⚠️ STEWARDS PENALTY EVENT: ${driverName} received ${penType} (${d.time}s) for ${infType} on Lap ${d.lapNum}`);
     }
 });
 
@@ -910,6 +1199,15 @@ f1Client.on('sessionHistory', (data) => {
             validFlags: lap.m_lapValidBitFlags !== undefined ? lap.m_lapValidBitFlags : 0x0f
         };
     });
+
+    const tyreStints = data.m_tyreStintsHistoryData || data.tyreStintsHistoryData || [];
+    const numTyreStints = data.m_numTyreStints !== undefined ? data.m_numTyreStints : (data.numTyreStints || tyreStints.length);
+    allTyreStints[carIndex] = tyreStints.slice(0, numTyreStints).map(stint => ({
+        endLap: stint.m_endLap !== undefined ? stint.m_endLap : stint.endLap,
+        actualTyreCompound: stint.m_tyreActualCompound !== undefined ? stint.m_tyreActualCompound : stint.tyreActualCompound,
+        visualTyreCompound: stint.m_tyreVisualCompound !== undefined ? stint.m_tyreVisualCompound : stint.tyreVisualCompound,
+        tyreName: visualTyreNames[stint.m_tyreVisualCompound] || fallbackTyreNames[stint.m_tyreActualCompound] || 'UNK'
+    }));
 
     if (numLaps > 0) {
         const bS1Lap = data.m_bestSector1LapNum !== undefined ? data.m_bestSector1LapNum : data.bestSector1LapNum;
@@ -1201,6 +1499,12 @@ f1Client.on('lapData', (data) => {
         carDataTracker[i].lapNum = lap.m_currentLapNum;
         carDataTracker[i].pitStatus = lap.m_pitStatus;
         carDataTracker[i].driverStatus = lap.m_resultStatus;
+        carDataTracker[i].penalties = lap.m_penalties || 0;
+        carDataTracker[i].warnings = lap.m_totalWarnings || 0;
+        carDataTracker[i].cornerCutting = lap.m_cornerCuttingWarnings || 0;
+        carDataTracker[i].unservedDT = lap.m_numUnservedDriveThroughPens || 0;
+        carDataTracker[i].unservedSG = lap.m_numUnservedStopGoPens || 0;
+        carDataTracker[i].invalidLap = lap.m_currentLapInvalid === 1;
 
         if (i === pIdx) {
             const sector = lap.m_sector !== undefined ? lap.m_sector : (lap.sector || 0);
@@ -1247,11 +1551,21 @@ f1Client.on('lapData', (data) => {
             state.lap.unservedSG = lap.m_numUnservedStopGoPens || 0;
             state.lap.scDelta = lap.m_safetyCarDelta || 0;
             state.lap.invalid = lap.m_currentLapInvalid === 1;
+
+            state.penalties = {
+                timePenalties: state.lap.penalties,
+                warnings: state.lap.warnings,
+                cornerCuts: state.lap.cornerCutting,
+                driveThrough: state.lap.unservedDT,
+                stopGo: state.lap.unservedSG,
+                invalidLap: state.lap.invalid ? 1 : 0
+            };
         }
     }
 
     state.session.fastestLapCarIndex = fastestLapIndex;
     state.session.sessionFastestLapMs = sessionFastestLapMs;
+    state.session.sessionFastestDriver = fastestLapIndex >= 0 ? (state.participants[fastestLapIndex] || `Car ${fastestLapIndex}`) : 'None';
     state.pitLanePoints = buildApproxPitLane(state.trackPoints);
 
     state.session.raceDistance = state.session.trackLength * state.session.lapsTotal;
@@ -1351,10 +1665,6 @@ f1Client.on('carTelemetry', (data) => {
 f1Client.on('carStatus', (data) => {
     setPlayerIndex(data.m_header);
     const pIdx = state.playerIndex;
-
-    const visualTyreNames = { 16: 'SOFT', 17: 'MEDIUM', 18: 'HARD', 7: 'INTER', 8: 'WET' };
-    const visualTyreColors = { 16: '#E10600', 17: '#FFC72C', 18: '#FFFFFF', 7: '#00E676', 8: '#00D2FF' };
-    const fallbackTyreNames = { 7: 'INTER', 8: 'WET', 9: 'DRY', 10: 'WET', 11: 'SUPER SOFT', 12: 'SOFT', 13: 'MEDIUM', 14: 'HARD', 15: 'WET' };
 
     for (let i = 0; i < 22; i++) {
         const s = data.m_carStatusData[i];
@@ -1492,8 +1802,65 @@ setInterval(() => {
 
     state.leaderboard = newLeaderboard;
     const pIdx = state.playerIndex;
-    const playerLbInfo = state.leaderboard.find(d => d.carIndex === pIdx);
-    if (playerLbInfo) state.lap.gapFront = playerLbInfo.gapText;
+    const playerLbIndex = state.leaderboard.findIndex(d => d.carIndex === pIdx);
+    const playerLbInfo = playerLbIndex >= 0 ? state.leaderboard[playerLbIndex] : null;
+
+    if (playerLbInfo) {
+        state.lap.gapFront = playerLbInfo.gapText || '+0.000';
+        
+        // Driver Ahead Info
+        if (playerLbIndex > 0) {
+            const carAhead = state.leaderboard[playerLbIndex - 1];
+            state.lap.driverAhead = (state.participants && state.participants[carAhead.carIndex]) ? state.participants[carAhead.carIndex] : (carAhead.teamName || `Car ${carAhead.carIndex}`);
+            state.lap.driverAheadCarIndex = carAhead.carIndex;
+            state.lap.driverAheadTyre = carAhead.tyre || 'UNK';
+            state.lap.driverAheadTeamColor = carAhead.teamColor || '#FFF';
+        } else {
+            state.lap.driverAhead = 'LEADER';
+            state.lap.driverAheadCarIndex = -1;
+            state.lap.driverAheadTyre = '';
+            state.lap.driverAheadTeamColor = '#FFD700';
+        }
+
+        // Driver Behind Info & DRS Threat Calculation
+        if (playerLbIndex < state.leaderboard.length - 1 && playerLbIndex >= 0) {
+            const carBehind = state.leaderboard[playerLbIndex + 1];
+            state.lap.driverBehind = (state.participants && state.participants[carBehind.carIndex]) ? state.participants[carBehind.carIndex] : (carBehind.teamName || `Car ${carBehind.carIndex}`);
+            state.lap.driverBehindCarIndex = carBehind.carIndex;
+            state.lap.gapBehind = carBehind.gapText || '+0.000';
+            state.lap.driverBehindTyre = carBehind.tyre || 'UNK';
+            state.lap.driverBehindTeamColor = carBehind.teamColor || '#FFF';
+
+            // Check if car behind is within DRS range (< 1.000s)
+            let gapBehindSec = 999;
+            const parsedGap = parseFloat(String(carBehind.gapText || '').replace(/[^0-9.]/g, ''));
+            if (!isNaN(parsedGap) && !String(carBehind.gapText).includes('LAP') && !String(carBehind.gapText).includes('PIT')) {
+                gapBehindSec = parsedGap;
+            }
+            state.lap.drsThreat = gapBehindSec <= 1.0 && gapBehindSec > 0;
+            state.lap.gapBehindSec = gapBehindSec < 999 ? gapBehindSec : null;
+        } else {
+            state.lap.driverBehind = 'NONE';
+            state.lap.driverBehindCarIndex = -1;
+            state.lap.gapBehind = '--';
+            state.lap.driverBehindTyre = '';
+            state.lap.driverBehindTeamColor = '#888888';
+            state.lap.drsThreat = false;
+            state.lap.gapBehindSec = null;
+        }
+    }
+
+    // Delta vs Session Fastest Lap Calculation
+    const sessFastest = state.session.sessionFastestLapMs;
+    if (sessFastest > 0 && sessFastest !== Infinity) {
+        state.lap.deltaToSessionFastest = state.lap.bestMs > 0 ? (state.lap.bestMs - sessFastest) : null;
+        state.lap.lastLapDeltaToSessionFastest = state.lap.lastMs > 0 ? (state.lap.lastMs - sessFastest) : null;
+        state.lap.isSessionFastest = (state.lap.bestMs > 0 && state.lap.bestMs <= sessFastest);
+    } else {
+        state.lap.deltaToSessionFastest = null;
+        state.lap.lastLapDeltaToSessionFastest = null;
+        state.lap.isSessionFastest = false;
+    }
 
     // --- Live Ghost Delta Calculation ---
     state.lap.liveDeltaToRecord = 0;

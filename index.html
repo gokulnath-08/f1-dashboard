@@ -182,6 +182,234 @@
             100% { transform: scale(0.9); opacity: 0.7; box-shadow: 0 0 4px var(--rbr-red); }
         }
 
+        /* ══════════ SESSION DOWNLOAD & TOAST NOTIFICATION ══════════ */
+        .rbr-download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.3) 100%);
+            border: 1px solid rgba(96, 165, 250, 0.5);
+            color: #93C5FD;
+            font-family: "Roboto Mono", monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+            text-decoration: none;
+        }
+        .rbr-download-btn:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.4) 0%, rgba(37, 99, 235, 0.55) 100%);
+            border-color: #93C5FD;
+            color: #FFFFFF;
+            box-shadow: 0 0 16px rgba(59, 130, 246, 0.5);
+            transform: translateY(-1px);
+        }
+        .rbr-download-btn:active {
+            transform: translateY(0);
+        }
+
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 10000;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast-msg {
+            background: rgba(10, 22, 44, 0.95);
+            border: 1px solid var(--fia-blue);
+            color: #FFFFFF;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-family: "Titillium Web", sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(59, 130, 246, 0.4);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            pointer-events: auto;
+        }
+        @keyframes toastSlideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Steward & Penalty Badges */
+        .badge-pen {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.68rem;
+            font-family: "Roboto Mono", monospace;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+        .badge-pen.time-pen {
+            background: rgba(225, 6, 0, 0.25);
+            border: 1px solid var(--f1-red);
+            color: #FF6B6B;
+        }
+        .badge-pen.dt-pen {
+            background: rgba(255, 209, 0, 0.25);
+            border: 1px solid var(--fia-yellow);
+            color: #FFD54F;
+        }
+        .badge-pen.sg-pen {
+            background: rgba(255, 112, 67, 0.25);
+            border: 1px solid #FF7043;
+            color: #FF8A65;
+        }
+        .badge-pen.warn-pen {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid var(--text-muted);
+            color: #E2E8F0;
+        }
+
+        /* ══════════ ADVANCED CAR DAMAGE & SCHEMATIC UX ══════════ */
+        .dmg-container {
+            display: grid;
+            grid-template-columns: 1fr 340px 1fr;
+            gap: 16px;
+            height: 100%;
+        }
+        @media (max-width: 1200px) {
+            .dmg-container {
+                grid-template-columns: 1fr;
+                overflow-y: auto;
+            }
+        }
+        .dmg-banner {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 900px) {
+            .dmg-banner {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .dmg-card {
+            background: rgba(14, 28, 54, 0.7);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--bento-radius);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .dmg-kpi-box {
+            background: rgba(7, 18, 36, 0.85);
+            border: 1px solid var(--f1-border);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .dmg-kpi-title {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+        .dmg-kpi-val {
+            font-size: 1.35rem;
+            font-weight: 800;
+            font-family: 'Roboto Mono', monospace;
+            margin-top: 4px;
+        }
+        .dmg-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .dmg-row:last-child {
+            border-bottom: none;
+        }
+        .dmg-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.82rem;
+        }
+        .dmg-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .dmg-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--fia-green);
+            border-radius: 3px;
+            transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease;
+        }
+        .dmg-schematic-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, rgba(14, 28, 54, 0.95) 0%, rgba(7, 18, 36, 0.98) 100%);
+            border: 1px solid var(--f1-border);
+            border-radius: var(--bento-radius);
+            padding: 20px;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+        }
+        .dmg-car-svg {
+            width: 100%;
+            max-width: 250px;
+            height: auto;
+            filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.8));
+        }
+        .dmg-part {
+            transition: fill 0.3s ease, stroke 0.3s ease, filter 0.3s ease;
+            cursor: pointer;
+        }
+        .dmg-part:hover {
+            filter: brightness(1.3) drop-shadow(0 0 8px currentColor);
+        }
+        .dmg-fault-badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+        .dmg-fault-ok {
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--fia-green);
+            border: 1px solid var(--fia-green);
+        }
+        .dmg-fault-err {
+            background: rgba(255, 30, 0, 0.2);
+            color: var(--f1-red);
+            border: 1px solid var(--f1-red);
+            animation: rbrPulse 1s infinite;
+        }
+
         /* ══════════ BENTO HEADER ROW ══════════ */
         .header-bar {
             flex: 0 0 auto;
@@ -557,79 +785,286 @@
         }
 
         /* ══════════ CAR TYRE ALIGNMENT ══════════ */
-        .car-tyre-layout {
-            display: grid;
-            grid-template-columns: 1fr 280px 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: var(--bento-gap);
-            flex-grow: 1;
-            min-height: 0;
-            align-items: center;
-        }
-
-        .tyre-pos-fl {
-            grid-column: 1;
-            grid-row: 1;
-        }
-
-        .tyre-pos-fr {
-            grid-column: 3;
-            grid-row: 1;
-        }
-
-        .tyre-pos-rl {
-            grid-column: 1;
-            grid-row: 2;
-        }
-
-        .tyre-pos-rr {
-            grid-column: 3;
-            grid-row: 2;
-        }
-
-        .car-visual-center {
-            grid-column: 2;
-            grid-row: 1 / 3;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .tyre-box {
-            background: var(--f1-dark-alt);
-            padding: 16px;
-            border-radius: var(--card-radius);
-            border: 1px solid var(--f1-border);
-            text-align: center;
+        /* ══════════ TYRE COMMAND CENTER ══════════ */
+        .tyre-command-center {
             display: flex;
             flex-direction: column;
+            gap: 12px;
+            height: 100%;
+        }
+
+        /* Compound hero banner */
+        .tyre-compound-hero {
+            display: flex;
+            align-items: center;
             justify-content: center;
-            transition: border-color 0.2s;
+            gap: 20px;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(10,22,44,0.9) 0%, rgba(5,12,28,0.95) 100%);
+            border: 1px solid var(--f1-border-strong);
+            border-radius: var(--bento-radius);
+            flex-wrap: wrap;
         }
 
-        .tyre-box:hover {
-            border-color: var(--text-dim);
+        .compound-badge-hero {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 900;
+            font-size: 2rem;
+            border: 4px solid currentColor;
+            box-shadow: 0 0 24px currentColor, inset 0 0 12px rgba(0,0,0,0.6);
+            transition: all 0.4s ease;
+            flex-shrink: 0;
         }
 
-        .tyre-box .label {
-            margin-bottom: 6px;
-            border-bottom: none;
+        .compound-hero-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
+        .compound-hero-name {
+            font-family: 'Titillium Web', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .compound-hero-sub {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        .compound-hero-stats {
+            display: flex;
+            gap: 16px;
+            margin-left: auto;
+            flex-wrap: wrap;
+        }
+
+        .hero-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 8px 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--f1-border);
+            border-radius: 10px;
+            min-width: 70px;
+        }
+
+        .hero-stat-val {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .hero-stat-lbl {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* 4-corner tyre grid */
+        .tyre-grid-4 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .tyre-card {
+            background: linear-gradient(145deg, rgba(10,22,44,0.95), rgba(5,12,26,0.98));
+            border: 1px solid var(--f1-border);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tyre-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.015) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .tyre-card:hover {
+            border-color: rgba(255,209,0,0.35);
+            box-shadow: 0 4px 20px rgba(255,209,0,0.06);
+        }
+
+        .tyre-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tyre-corner-label {
+            font-family: 'Titillium Web', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .tyre-corner-badge {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+            border: 1px solid;
+            text-transform: uppercase;
+        }
+
+        /* Ring wear gauge */
+        .tyre-ring-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .tyre-ring-svg {
+            width: 68px;
+            height: 68px;
+            flex-shrink: 0;
+        }
+
+        .tyre-ring-bg {
+            fill: none;
+            stroke: rgba(255,255,255,0.07);
+            stroke-width: 7;
+        }
+
+        .tyre-ring-arc {
+            fill: none;
+            stroke-width: 7;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 34px 34px;
+            transition: stroke-dasharray 0.6s cubic-bezier(0.4,0,0.2,1), stroke 0.4s ease;
+        }
+
+        .tyre-ring-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            fill: white;
+            dominant-baseline: middle;
+            text-anchor: middle;
+        }
+
+        .tyre-ring-sub {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 7px;
+            fill: rgba(255,255,255,0.45);
+            dominant-baseline: middle;
+            text-anchor: middle;
+        }
+
+        .tyre-data-col {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .tyre-data-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .tyre-data-lbl {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tyre-data-val {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-main);
+            text-align: right;
+        }
+
+        /* temp gradient bar */
+        .tyre-temp-bar-wrap {
+            width: 100%;
+        }
+
+        .tyre-temp-bar-track {
+            width: 100%;
+            height: 3px;
+            background: rgba(255,255,255,0.07);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .tyre-temp-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.4s ease, background 0.4s ease;
+        }
+
+        .tyre-temp-label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+
+        .tyre-temp-label {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tyre-temp-val {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        /* ── Wear-bar (legacy kept for JS compat) ── */
         .tyre-wear-bar-container {
             width: 100%;
             height: 4px;
             background: var(--f1-dark);
             border-radius: 2px;
-            margin: 8px 0;
+            margin: 4px 0;
+            display: none;   /* hidden – ring gauge is used instead */
         }
 
         .tyre-wear-bar {
             height: 100%;
             border-radius: 2px;
-            transition:
-                width 0.3s ease,
-                background-color 0.3s ease;
+            transition: width 0.3s ease, background-color 0.3s ease;
         }
 
         /* ══════════ TRACK MAP ══════════ */
@@ -982,27 +1417,10 @@
                 grid-template-columns: 1fr;
             }
 
-            .car-tyre-layout {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .car-visual-center {
-                display: none;
-            }
-
-            .tyre-pos-fr {
-                grid-column: 2;
-                grid-row: 1;
-            }
-
-            .tyre-pos-rl {
-                grid-column: 1;
-                grid-row: 2;
-            }
-
-            .tyre-pos-rr {
-                grid-column: 2;
-                grid-row: 2;
+            /* tyre grid stays 2-col but compound hero wraps */
+            .compound-hero-stats {
+                margin-left: 0;
+                justify-content: center;
             }
 
             .map-wrapper {
@@ -1053,6 +1471,51 @@
 
             #main-content {
                 overflow: visible;
+            }
+
+            .tyre-compound-hero {
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
+            }
+
+            .compound-hero-stats {
+                margin-left: 0;
+                justify-content: center;
+                width: 100%;
+            }
+
+            .tyre-grid-4 {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .compound-badge-hero {
+                width: 56px;
+                height: 56px;
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tyre-grid-4 {
+                grid-template-columns: 1fr;
+            }
+
+            .tyre-card {
+                padding: 12px;
+            }
+
+            .tyre-compound-hero {
+                padding: 12px;
+            }
+
+            .hero-stat {
+                padding: 6px 10px;
+                min-width: 60px;
+            }
+
+            .hero-stat-val {
+                font-size: 0.95rem;
             }
         }
 
@@ -1307,8 +1770,14 @@
             position: absolute;
             top: calc(50% - 8px);
             left: calc(50% - 8px);
-            transition: transform 0.05s ease-out;
+            transition: none;
             z-index: 2;
+        }
+
+        .gp-visualizer .fill-bar,
+        #lt-bar,
+        #rt-bar {
+            transition: none !important;
         }
     </style>
 </head>
@@ -1332,9 +1801,17 @@
             <span class="rbr-team-name">ORACLE <span class="rbr-highlight-yellow">RED BULL</span> RACING</span>
             <span class="rbr-telemetry-tag">RB20 • COMMAND CENTER</span>
         </div>
-        <div class="rbr-live-badge">
-            <span class="rbr-pulse-dot"></span>
-            LIVE TELEMETRY 20Hz
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="btn-download-session" class="rbr-download-btn" onclick="downloadSessionJson()" title="Download Full Session Telemetry (JSON)">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                    <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+                </svg>
+                <span>DOWNLOAD SESSION JSON</span>
+            </button>
+            <div class="rbr-live-badge">
+                <span class="rbr-pulse-dot"></span>
+                LIVE TELEMETRY 20Hz
+            </div>
         </div>
     </div>
 
@@ -1354,6 +1831,13 @@
         <div class="header-item">
             <div class="label">TRACK TEMP</div>
             <div class="val" id="track-temp">-- °C</div>
+        </div>
+        <div class="header-item" style="border-color: rgba(187, 0, 255, 0.35);">
+            <div class="label" style="color: var(--fia-purple);">FASTEST LAP</div>
+            <div class="val highlight" style="color: var(--fia-purple); text-shadow: 0 0 10px var(--fia-purple-glow);">
+                <span id="hdr-fastest-lap">--:--.---</span>
+                <span id="hdr-fastest-driver" style="font-size: 0.78rem; color: var(--text-muted); display: block; font-weight: normal; margin-top: 1px;">--</span>
+            </div>
         </div>
         <div class="header-item">
             <div class="label">LAP</div>
@@ -1554,6 +2038,23 @@
                         </div>
                     </div>
                     <div class="data-row" style="margin-top: 8px">
+                        <span class="label1" style="color: var(--fia-purple)">Session Fastest
+                            <span id="session-fastest-driver" style="font-size: 0.8rem; color: var(--text-muted)"></span></span>
+                        <div style="text-align: right">
+                            <span class="val purple" id="session-fastest-lap" style="
+                    color: var(--fia-purple);
+                    text-shadow: 0 0 10px var(--fia-purple-glow);
+                    font-weight: bold;
+                  ">--:--.---</span>
+                        </div>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Δ vs Session Best</span>
+                        <div style="text-align: right">
+                            <span class="val" id="delta-session-best" style="font-weight: bold; font-family: 'Roboto Mono', monospace; color: var(--text-main);">--</span>
+                        </div>
+                    </div>
+                    <div class="data-row">
                         <span class="label1" style="color: var(--fia-purple)">Track Record
                             <span id="record-driver" style="font-size: 0.8rem; color: var(--text-muted)"></span></span>
                         <div style="text-align: right">
@@ -1571,10 +2072,24 @@
               border-top: 1px solid var(--f1-border);
               padding-top: 12px;
             ">
-                    <div class="panel-header">Strategy & Race Control</div>
+                    <div class="panel-header">Strategy & Battle Radar</div>
                     <div class="data-row">
-                        <span class="label">Gap Ahead</span>
-                        <span class="val" id="gap-front" style="color: var(--fia-green)">+0.000s</span>
+                        <span class="label">Car Ahead</span>
+                        <span class="val" id="driver-ahead-wrap" style="color: var(--fia-green); display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                            <span id="ahead-name" style="font-weight: 700;">LEADER</span>
+                            <span id="ahead-gap" style="font-family: 'Roboto Mono', monospace; font-size: 0.85rem; color: var(--fia-green); background: rgba(0,230,118,0.1); padding: 1px 5px; border-radius: 3px;">+0.000s</span>
+                        </span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Car Behind</span>
+                        <span class="val" id="driver-behind-wrap" style="color: #93C5FD; display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                            <span id="behind-name" style="font-weight: 700;">NONE</span>
+                            <span id="behind-gap" style="font-family: 'Roboto Mono', monospace; font-size: 0.85rem; color: #93C5FD; background: rgba(59,130,246,0.1); padding: 1px 5px; border-radius: 3px;">--</span>
+                        </span>
+                    </div>
+                    <div class="data-row" id="drs-threat-row" style="display: none;">
+                        <span class="label" style="color: var(--fia-yellow); font-weight: 700;">DRS Threat</span>
+                        <span class="val" style="background: rgba(255, 209, 0, 0.2); color: var(--fia-yellow); border: 1px solid var(--fia-yellow); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; animation: rbrPulse 1s infinite;">⚠️ BEHIND IN DRS RANGE (&lt;1.0s)</span>
                     </div>
                     <div class="data-row">
                         <span class="label">Compound</span>
@@ -1607,7 +2122,7 @@
               padding-top: 12px;
               margin-top: 12px;
             ">
-                    <div class="panel-header">Driver Offenses</div>
+                    <div class="panel-header">Driver Offenses & Stewards</div>
                     <div class="data-row">
                         <span class="label">Time Penalties</span>
                         <span class="val" id="penalties">0s</span>
@@ -1617,12 +2132,20 @@
                         <span class="val" id="warnings">0</span>
                     </div>
                     <div class="data-row">
+                        <span class="label">Corner Cuts</span>
+                        <span class="val" id="corner-cuts">0</span>
+                    </div>
+                    <div class="data-row">
                         <span class="label">Unserved DT</span>
                         <span class="val" id="unserved-dt">0</span>
                     </div>
                     <div class="data-row">
                         <span class="label">Unserved SG</span>
                         <span class="val" id="unserved-sg">0</span>
+                    </div>
+                    <div class="data-row" id="lap-invalid-row" style="display: none">
+                        <span class="label" style="color: var(--f1-red); font-weight: 700;">Lap Status</span>
+                        <span class="val" id="lap-invalid-status" style="color: var(--f1-red); font-weight: bold; background: rgba(225,6,0,0.15); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--f1-red);">INVALIDATED</span>
                     </div>
                 </div>
             </div>
@@ -1807,250 +2330,228 @@
         </div>
 
         <div id="tab-tyres" class="tab-content">
-            <div class="panel" style="flex-grow: 1; overflow: hidden">
-                <div class="panel-header">Tyre Carcass &amp; Brake Thermals</div>
-                <div class="car-tyre-layout">
-                    <!-- Front Left Data -->
-                    <div class="tyre-box tyre-pos-fl" style="position: relative;">
-                        <!-- Tyre Compound Circle -->
-                        <div id="tyre-compound-circle-fl"
-                            style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
-                            -
-                        </div>
-                        <div class="label">FRONT LEFT</div>
-                        <div class="val highlight val-large">
-                            <span id="temp-surf-fl">0</span>°C /
-                            <span id="temp-in-fl">0</span>°C
-                        </div>
-                        <div class="tyre-wear-bar-container">
-                            <div class="tyre-wear-bar" id="wear-bar-fl"></div>
-                        </div>
-                        <div class="val tyre-wear-val" id="wear-text-fl">0% Wear</div>
-                        <div class="val"><span id="press-fl">0.0</span> psi</div>
-                        <div class="val" style="color: var(--fia-blue); margin-top: 4px">
-                            Brk: <span id="brake-temp-fl">0</span>°C
-                        </div>
+            <div class="panel" style="flex-grow:1;overflow:auto;display:flex;flex-direction:column;">
+
+                <!-- Compound Hero Banner -->
+                <div class="tyre-compound-hero">
+                    <div id="compound-badge-hero" class="compound-badge-hero" style="color:#888;">-</div>
+                    <div class="compound-hero-info">
+                        <div class="compound-hero-name" id="tyre-compound-display">--</div>
+                        <div class="compound-hero-sub">TYRE CARCASS &amp; THERMAL STATUS</div>
                     </div>
-
-                    <!-- Front Right Data -->
-                    <div class="tyre-box tyre-pos-fr" style="position: relative;">
-                        <!-- Tyre Compound Circle -->
-                        <div id="tyre-compound-circle-fr"
-                            style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
-                            -
+                    <div class="compound-hero-stats">
+                        <div class="hero-stat">
+                            <span class="hero-stat-val" id="tyre-age-display">0</span>
+                            <span class="hero-stat-lbl">Stint Age</span>
                         </div>
-                        <div class="label">FRONT RIGHT</div>
-                        <div class="val highlight val-large">
-                            <span id="temp-surf-fr">0</span>°C /
-                            <span id="temp-in-fr">0</span>°C
+                        <div class="hero-stat">
+                            <span class="hero-stat-val" id="engine-temp">0°C</span>
+                            <span class="hero-stat-lbl">ICE Temp</span>
                         </div>
-                        <div class="tyre-wear-bar-container">
-                            <div class="tyre-wear-bar" id="wear-bar-fr"></div>
-                        </div>
-                        <div class="val tyre-wear-val" id="wear-text-fr">0% Wear</div>
-                        <div class="val"><span id="press-fr">0.0</span> psi</div>
-                        <div class="val" style="color: var(--fia-blue); margin-top: 4px">
-                            Brk: <span id="brake-temp-fr">0</span>°C
-                        </div>
-                    </div>
-
-                    <!-- Center Car SVG Visual -->
-                    <div class="car-visual-center">
-                        <svg id="car-tyre-svg" viewBox="0 0 300 520" xmlns="http://www.w3.org/2000/svg"
-                            style="width: 100%; height: 100%; max-height: 100%">
-                            <defs>
-                                <filter id="tyre-glow">
-                                    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
-                                    <feMerge>
-                                        <feMergeNode in="blur" />
-                                        <feMergeNode in="SourceGraphic" />
-                                    </feMerge>
-                                </filter>
-                                <linearGradient id="carBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" style="stop-color: rgba(255, 255, 255, 0.08)" />
-                                    <stop offset="100%" style="stop-color: rgba(255, 255, 255, 0.02)" />
-                                </linearGradient>
-                            </defs>
-
-                            <!-- Car Body - Top Down F1 Silhouette -->
-                            <g id="car-body" opacity="0.7">
-                                <!-- Main body -->
-                                <path
-                                    d="M150,30 L170,50 L178,80 L185,120 L188,160 L190,200 L188,280 L192,320 L195,380 L190,430 L180,460 L170,480 L150,490 L130,480 L120,460 L110,430 L105,380 L108,320 L112,280 L110,200 L112,160 L115,120 L122,80 L130,50 Z"
-                                    fill="url(#carBodyGrad)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
-
-                                <!-- Front wing -->
-                                <path d="M105,55 L195,55 L200,65 L195,75 L105,75 L100,65 Z"
-                                    fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
-
-                                <!-- Rear wing -->
-                                <path d="M100,460 L200,460 L205,470 L200,480 L100,480 L95,470 Z"
-                                    fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
-
-                                <!-- Cockpit / Halo -->
-                                <ellipse cx="150" cy="195" rx="22" ry="40" fill="rgba(0,0,0,0.5)"
-                                    stroke="rgba(255,255,255,0.1)" stroke-width="1" />
-                                <path d="M140,165 L160,165 L158,195 L150,210 L142,195 Z" fill="rgba(255,255,255,0.04)"
-                                    stroke="rgba(255,255,255,0.08)" stroke-width="0.8" />
-
-                                <!-- Sidepods -->
-                                <path d="M112,180 L100,200 L98,280 L110,300 L112,280 Z" fill="rgba(255,255,255,0.03)"
-                                    stroke="rgba(255,255,255,0.08)" stroke-width="0.8" />
-                                <path d="M188,180 L200,200 L202,280 L190,300 L188,280 Z" fill="rgba(255,255,255,0.03)"
-                                    stroke="rgba(255,255,255,0.08)" stroke-width="0.8" />
-
-                                <!-- Center line -->
-                                <line x1="150" y1="60" x2="150" y2="480" stroke="rgba(255,255,255,0.06)"
-                                    stroke-width="0.5" stroke-dasharray="4,6" />
-                            </g>
-
-                            <!-- Tyres - Rounded rectangles positioned at each corner -->
-                            <!-- Front Left Tyre -->
-                            <g id="tyre-visual-fl" filter="url(#tyre-glow)">
-                                <rect x="50" y="60" width="48" height="80" rx="12" ry="12" id="tyre-rect-fl"
-                                    fill="#00e461" opacity="0.85" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
-                                <text x="74" y="96" text-anchor="middle" fill="white"
-                                    font-family="Roboto Mono, monospace" font-size="15" font-weight="700"
-                                    opacity="0.95">
-                                    <tspan id="tyre-pct-fl">0%</tspan>
-                                </text>
-                                <text x="74" y="114" text-anchor="middle" fill="rgba(255,255,255,0.6)"
-                                    font-family="Roboto Mono, monospace" font-size="9" font-weight="600">
-                                    WEAR
-                                </text>
-                            </g>
-
-                            <!-- Front Right Tyre -->
-                            <g id="tyre-visual-fr" filter="url(#tyre-glow)">
-                                <rect x="202" y="60" width="48" height="80" rx="12" ry="12" id="tyre-rect-fr"
-                                    fill="#00e461" opacity="0.85" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
-                                <text x="226" y="96" text-anchor="middle" fill="white"
-                                    font-family="Roboto Mono, monospace" font-size="15" font-weight="700"
-                                    opacity="0.95">
-                                    <tspan id="tyre-pct-fr">0%</tspan>
-                                </text>
-                                <text x="226" y="114" text-anchor="middle" fill="rgba(255,255,255,0.6)"
-                                    font-family="Roboto Mono, monospace" font-size="9" font-weight="600">
-                                    WEAR
-                                </text>
-                            </g>
-
-                            <!-- Rear Left Tyre -->
-                            <g id="tyre-visual-rl" filter="url(#tyre-glow)">
-                                <rect x="45" y="390" width="52" height="86" rx="12" ry="12" id="tyre-rect-rl"
-                                    fill="#00e461" opacity="0.85" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
-                                <text x="71" y="428" text-anchor="middle" fill="white"
-                                    font-family="Roboto Mono, monospace" font-size="16" font-weight="700"
-                                    opacity="0.95">
-                                    <tspan id="tyre-pct-rl">0%</tspan>
-                                </text>
-                                <text x="71" y="448" text-anchor="middle" fill="rgba(255,255,255,0.6)"
-                                    font-family="Roboto Mono, monospace" font-size="9" font-weight="600">
-                                    WEAR
-                                </text>
-                            </g>
-
-                            <!-- Rear Right Tyre -->
-                            <g id="tyre-visual-rr" filter="url(#tyre-glow)">
-                                <rect x="203" y="390" width="52" height="86" rx="12" ry="12" id="tyre-rect-rr"
-                                    fill="#00e461" opacity="0.85" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
-                                <text x="229" y="428" text-anchor="middle" fill="white"
-                                    font-family="Roboto Mono, monospace" font-size="16" font-weight="700"
-                                    opacity="0.95">
-                                    <tspan id="tyre-pct-rr">0%</tspan>
-                                </text>
-                                <text x="229" y="448" text-anchor="middle" fill="rgba(255,255,255,0.6)"
-                                    font-family="Roboto Mono, monospace" font-size="9" font-weight="600">
-                                    WEAR
-                                </text>
-                            </g>
-
-                            <!-- Axle lines connecting tyres to body -->
-                            <line x1="93" y1="100" x2="115" y2="100" stroke="rgba(255,255,255,0.1)"
-                                stroke-width="1.5" />
-                            <line x1="207" y1="100" x2="185" y2="100" stroke="rgba(255,255,255,0.1)"
-                                stroke-width="1.5" />
-                            <line x1="92" y1="434" x2="110" y2="434" stroke="rgba(255,255,255,0.1)"
-                                stroke-width="1.5" />
-                            <line x1="208" y1="434" x2="190" y2="434" stroke="rgba(255,255,255,0.1)"
-                                stroke-width="1.5" />
-
-                            <!-- Compound label -->
-                            <text x="150" y="310" text-anchor="middle" fill="rgba(255,255,255,0.5)"
-                                font-family="Titillium Web, sans-serif" font-size="10" font-weight="700"
-                                letter-spacing="2" id="car-compound-label">
-                                COMPOUND
-                            </text>
-                            <text x="150" y="330" text-anchor="middle" fill="var(--text-main)"
-                                font-family="Roboto Mono, monospace" font-size="14" font-weight="700"
-                                id="car-compound-value">
-                                --
-                            </text>
-                        </svg>
-                    </div>
-
-                    <!-- Rear Left Data -->
-                    <div class="tyre-box tyre-pos-rl" style="position: relative;">
-                        <!-- Tyre Compound Circle -->
-                        <div id="tyre-compound-circle-rl"
-                            style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
-                            -
-                        </div>
-                        <div class="label">REAR LEFT</div>
-                        <div class="val highlight val-large">
-                            <span id="temp-surf-rl">0</span>°C /
-                            <span id="temp-in-rl">0</span>°C
-                        </div>
-                        <div class="tyre-wear-bar-container">
-                            <div class="tyre-wear-bar" id="wear-bar-rl"></div>
-                        </div>
-                        <div class="val tyre-wear-val" id="wear-text-rl">0% Wear</div>
-                        <div class="val"><span id="press-rl">0.0</span> psi</div>
-                        <div class="val" style="color: var(--fia-blue); margin-top: 4px">
-                            Brk: <span id="brake-temp-rl">0</span>°C
-                        </div>
-                    </div>
-
-                    <!-- Rear Right Data -->
-                    <div class="tyre-box tyre-pos-rr" style="position: relative;">
-                        <!-- Tyre Compound Circle -->
-                        <div id="tyre-compound-circle-rr"
-                            style="position: absolute; top: 12px; left: 12px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--text-main); background: #000; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 18px; color: #FFF; box-shadow: 0 0 6px rgba(0,0,0,0.6);">
-                            -
-                        </div>
-                        <div class="label">REAR RIGHT</div>
-                        <div class="val highlight val-large">
-                            <span id="temp-surf-rr">0</span>°C /
-                            <span id="temp-in-rr">0</span>°C
-                        </div>
-                        <div class="tyre-wear-bar-container">
-                            <div class="tyre-wear-bar" id="wear-bar-rr"></div>
-                        </div>
-                        <div class="val tyre-wear-val" id="wear-text-rr">0% Wear</div>
-                        <div class="val"><span id="press-rr">0.0</span> psi</div>
-                        <div class="val" style="color: var(--fia-blue); margin-top: 4px">
-                            Brk: <span id="brake-temp-rr">0</span>°C
+                        <div class="hero-stat">
+                            <span class="hero-stat-val" id="tyre-max-wear">0%</span>
+                            <span class="hero-stat-lbl">Max Wear</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Bottom Row: ICE + Compound + Stint -->
-                <div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap">
-                    <div class="data-row" style="flex: 1; min-width: 140px">
-                        <span class="label">ICE Temp</span>
-                        <span class="val" id="engine-temp">0 °C</span>
+                <!-- 4-Corner Tyre Cards -->
+                <div class="tyre-grid-4" style="margin-top:10px;flex:1;">
+
+                    <!-- FRONT LEFT -->
+                    <div class="tyre-card" id="tyre-card-fl">
+                        <div class="tyre-card-header">
+                            <span class="tyre-corner-label">Front Left</span>
+                            <div id="tyre-compound-circle-fl" class="tyre-corner-badge" style="color:#888;border-color:#888;">-</div>
+                        </div>
+                        <div class="tyre-ring-wrap">
+                            <svg class="tyre-ring-svg" viewBox="0 0 68 68">
+                                <circle class="tyre-ring-bg" cx="34" cy="34" r="28"/>
+                                <circle class="tyre-ring-arc" id="tyre-ring-fl" cx="34" cy="34" r="28"
+                                    stroke="#00e676" stroke-dasharray="0 176"/>
+                                <text class="tyre-ring-text" x="34" y="31" id="tyre-pct-fl">0%</text>
+                                <text class="tyre-ring-sub" x="34" y="42">WEAR</text>
+                            </svg>
+                            <div class="tyre-data-col">
+                                <div class="tyre-data-row">
+                                    <span class="tyre-data-lbl">Pressure</span>
+                                    <span class="tyre-data-val"><span id="press-fl">0.0</span> psi</span>
+                                </div>
+                                <div class="tyre-data-row">
+                                    <span class="tyre-data-lbl">Brake</span>
+                                    <span class="tyre-data-val" id="brake-temp-display-fl" style="color:var(--fia-blue);"><span id="brake-temp-fl">0</span>°C</span>
+                                </div>
+                                <div class="tyre-temp-bar-wrap">
+                                    <div class="tyre-temp-label-row">
+                                        <span class="tyre-temp-label">Surface</span>
+                                        <span class="tyre-temp-val" id="temp-surf-fl" style="color:var(--fia-yellow);">0°C</span>
+                                    </div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tsurf-bar-fl" style="width:0%;background:var(--fia-yellow);"></div>
+                                    </div>
+                                </div>
+                                <div class="tyre-temp-bar-wrap">
+                                    <div class="tyre-temp-label-row">
+                                        <span class="tyre-temp-label">Inner</span>
+                                        <span class="tyre-temp-val" id="temp-in-fl" style="color:var(--f1-red);">0°C</span>
+                                    </div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tin-bar-fl" style="width:0%;background:var(--f1-red);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- hidden legacy compat -->
+                        <div class="tyre-wear-bar-container"><div class="tyre-wear-bar" id="wear-bar-fl"></div></div>
+                        <span style="display:none" id="wear-text-fl">0% Wear</span>
                     </div>
-                    <div class="data-row" style="flex: 1; min-width: 140px">
-                        <span class="label">Compound</span>
-                        <span class="val" id="tyre-compound-display">--</span>
+
+                    <!-- FRONT RIGHT -->
+                    <div class="tyre-card" id="tyre-card-fr">
+                        <div class="tyre-card-header">
+                            <span class="tyre-corner-label">Front Right</span>
+                            <div id="tyre-compound-circle-fr" class="tyre-corner-badge" style="color:#888;border-color:#888;">-</div>
+                        </div>
+                        <div class="tyre-ring-wrap">
+                            <svg class="tyre-ring-svg" viewBox="0 0 68 68">
+                                <circle class="tyre-ring-bg" cx="34" cy="34" r="28"/>
+                                <circle class="tyre-ring-arc" id="tyre-ring-fr" cx="34" cy="34" r="28"
+                                    stroke="#00e676" stroke-dasharray="0 176"/>
+                                <text class="tyre-ring-text" x="34" y="31" id="tyre-pct-fr">0%</text>
+                                <text class="tyre-ring-sub" x="34" y="42">WEAR</text>
+                            </svg>
+                            <div class="tyre-data-col">
+                                <div class="tyre-data-row">
+                                    <span class="tyre-data-lbl">Pressure</span>
+                                    <span class="tyre-data-val"><span id="press-fr">0.0</span> psi</span>
+                                </div>
+                                <div class="tyre-data-row">
+                                    <span class="tyre-data-lbl">Brake</span>
+                                    <span class="tyre-data-val" style="color:var(--fia-blue);"><span id="brake-temp-fr">0</span>°C</span>
+                                </div>
+                                <div class="tyre-temp-bar-wrap">
+                                    <div class="tyre-temp-label-row">
+                                        <span class="tyre-temp-label">Surface</span>
+                                        <span class="tyre-temp-val" id="temp-surf-fr" style="color:var(--fia-yellow);">0°C</span>
+                                    </div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tsurf-bar-fr" style="width:0%;background:var(--fia-yellow);"></div>
+                                    </div>
+                                </div>
+                                <div class="tyre-temp-bar-wrap">
+                                    <div class="tyre-temp-label-row">
+                                        <span class="tyre-temp-label">Inner</span>
+                                        <span class="tyre-temp-val" id="temp-in-fr" style="color:var(--f1-red);">0°C</span>
+                                    </div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tin-bar-fr" style="width:0%;background:var(--f1-red);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tyre-wear-bar-container"><div class="tyre-wear-bar" id="wear-bar-fr"></div></div>
+                        <span style="display:none" id="wear-text-fr">0% Wear</span>
                     </div>
-                    <div class="data-row" style="flex: 1; min-width: 140px">
-                        <span class="label">Stint Age</span>
-                        <span class="val" id="tyre-age-display">0 Laps</span>
+
+                    <!-- REAR LEFT -->
+                    <div class="tyre-card" id="tyre-card-rl">
+                        <div class="tyre-card-header">
+                            <span class="tyre-corner-label">Rear Left</span>
+                            <div id="tyre-compound-circle-rl" class="tyre-corner-badge" style="color:#888;border-color:#888;">-</div>
+                        </div>
+                        <div class="tyre-ring-wrap">
+                            <svg class="tyre-ring-svg" viewBox="0 0 68 68">
+                                <circle class="tyre-ring-bg" cx="34" cy="34" r="28"/>
+                                <circle class="tyre-ring-arc" id="tyre-ring-rl" cx="34" cy="34" r="28"
+                                    stroke="#00e676" stroke-dasharray="0 176"/>
+                                <text class="tyre-ring-text" x="34" y="31" id="tyre-pct-rl">0%</text>
+                                <text class="tyre-ring-sub" x="34" y="42">WEAR</text>
+                            </svg>
+                            <div class="tyre-data-col">
+                                <div class="tyre-data-row">
+                                    <span class="tyre-data-lbl">Pressure</span>
+                                    <span class="tyre-data-val"><span id="press-rl">0.0</span> psi</span>
+                                </div>
+                                <div class="tyre-data-row">
+                                    <span class="tyre-data-lbl">Brake</span>
+                                    <span class="tyre-data-val" style="color:var(--fia-blue);"><span id="brake-temp-rl">0</span>°C</span>
+                                </div>
+                                <div class="tyre-temp-bar-wrap">
+                                    <div class="tyre-temp-label-row">
+                                        <span class="tyre-temp-label">Surface</span>
+                                        <span class="tyre-temp-val" id="temp-surf-rl" style="color:var(--fia-yellow);">0°C</span>
+                                    </div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tsurf-bar-rl" style="width:0%;background:var(--fia-yellow);"></div>
+                                    </div>
+                                </div>
+                                <div class="tyre-temp-bar-wrap">
+                                    <div class="tyre-temp-label-row">
+                                        <span class="tyre-temp-label">Inner</span>
+                                        <span class="tyre-temp-val" id="temp-in-rl" style="color:var(--f1-red);">0°C</span>
+                                    </div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tin-bar-rl" style="width:0%;background:var(--f1-red);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tyre-wear-bar-container"><div class="tyre-wear-bar" id="wear-bar-rl"></div></div>
+                        <span style="display:none" id="wear-text-rl">0% Wear</span>
                     </div>
-                </div>
+
+                    <!-- REAR RIGHT -->
+                    <div class="tyre-card" id="tyre-card-rr">
+                        <div class="tyre-card-header">
+                            <span class="tyre-corner-label">Rear Right</span>
+                            <div id="tyre-compound-circle-rr" class="tyre-corner-badge" style="color:#888;border-color:#888;">-</div>
+                        </div>
+                        <div class="tyre-ring-wrap">
+                            <svg class="tyre-ring-svg" viewBox="0 0 68 68">
+                                <circle class="tyre-ring-bg" cx="34" cy="34" r="28"/>
+                                <circle class="tyre-ring-arc" id="tyre-ring-rr" cx="34" cy="34" r="28"
+                                    stroke="#00e676" stroke-dasharray="0 176"/>
+                                <text class="tyre-ring-text" x="34" y="31" id="tyre-pct-rr">0%</text>
+                                <text class="tyre-ring-sub" x="34" y="42">WEAR</text>
+                            </svg>
+                            <div class="tyre-data-col">
+                                <div class="tyre-data-row">
+                                    <span class="tyre-data-lbl">Pressure</span>
+                                    <span class="tyre-data-val"><span id="press-rr">0.0</span> psi</span>
+                                </div>
+                                <div class="tyre-data-row">
+                                    <span class="tyre-data-lbl">Brake</span>
+                                    <span class="tyre-data-val" style="color:var(--fia-blue);"><span id="brake-temp-rr">0</span>°C</span>
+                                </div>
+                                <div class="tyre-temp-bar-wrap">
+                                    <div class="tyre-temp-label-row">
+                                        <span class="tyre-temp-label">Surface</span>
+                                        <span class="tyre-temp-val" id="temp-surf-rr" style="color:var(--fia-yellow);">0°C</span>
+                                    </div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tsurf-bar-rr" style="width:0%;background:var(--fia-yellow);"></div>
+                                    </div>
+                                </div>
+                                <div class="tyre-temp-bar-wrap">
+                                    <div class="tyre-temp-label-row">
+                                        <span class="tyre-temp-label">Inner</span>
+                                        <span class="tyre-temp-val" id="temp-in-rr" style="color:var(--f1-red);">0°C</span>
+                                    </div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tin-bar-rr" style="width:0%;background:var(--f1-red);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tyre-wear-bar-container"><div class="tyre-wear-bar" id="wear-bar-rr"></div></div>
+                        <span style="display:none" id="wear-text-rr">0% Wear</span>
+                    </div>
+
+                </div><!-- end tyre-grid-4 -->
             </div>
         </div>
+
+
 
         <div id="tab-engineering" class="tab-content">
             <div class="panel">
@@ -2164,8 +2665,14 @@
 
         <div id="tab-history" class="tab-content">
             <div class="panel" style="flex-grow: 1; padding: 0">
-                <div class="panel-header" style="margin: 15px 15px 0 15px">
-                    Session History
+                <div class="panel-header" style="margin: 15px 15px 0 15px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Session History</span>
+                    <button class="action-btn" onclick="downloadSessionJson()" style="padding: 4px 12px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.2); border: 1px solid var(--fia-blue); color: #93C5FD; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+                        </svg>
+                        Export Session JSON
+                    </button>
                 </div>
                 <div style="
               overflow-x: auto;
@@ -2189,97 +2696,200 @@
         </div>
 
         <div id="tab-damage" class="tab-content">
-            <div class="panel">
-                <div class="panel-header">Car Damage & Wear</div>
+            <div class="panel" style="padding: 20px;">
+                <!-- Top Diagnostic KPI Banner -->
+                <div class="dmg-banner">
+                    <div class="dmg-kpi-box">
+                        <div class="dmg-kpi-title">Vehicle Health Index</div>
+                        <div class="dmg-kpi-val" id="dmg-health-index" style="color: var(--fia-green);">100%</div>
+                    </div>
+                    <div class="dmg-kpi-box">
+                        <div class="dmg-kpi-title">Aero Downforce Loss</div>
+                        <div class="dmg-kpi-val" id="dmg-aero-loss" style="color: var(--fia-green);">0.0%</div>
+                    </div>
+                    <div class="dmg-kpi-box">
+                        <div class="dmg-kpi-title">Pit Repair Penalty</div>
+                        <div class="dmg-kpi-val" id="dmg-pit-repair" style="color: var(--fia-green);">0.0s</div>
+                    </div>
+                    <div class="dmg-kpi-box">
+                        <div class="dmg-kpi-title">PU Reliability Index</div>
+                        <div class="dmg-kpi-val" id="dmg-pu-wear" style="color: var(--fia-green);">100% Life</div>
+                    </div>
+                </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div>
-                        <div class="data-row">
-                            <span class="label">Front Left Wing</span>
-                            <span class="val highlight" id="dmg-fl-wing">0%</span>
+                <!-- 3-Column Detailed Breakdown -->
+                <div class="dmg-container">
+                    <!-- Column 1: Aerodynamics & Bodywork -->
+                    <div class="dmg-card">
+                        <div class="panel-header" style="margin-bottom: 4px; padding-bottom: 4px;">Aerodynamics & Chassis</div>
+                        
+                        <div class="dmg-row">
+                            <div class="dmg-row-header">
+                                <span class="label">Front Left Wing</span>
+                                <span class="val" id="dmg-fl-wing-val">0%</span>
+                            </div>
+                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-fl-wing-bar"></div></div>
                         </div>
-                        <div class="data-row">
-                            <span class="label">Front Right Wing</span>
-                            <span class="val highlight" id="dmg-fr-wing">0%</span>
+
+                        <div class="dmg-row">
+                            <div class="dmg-row-header">
+                                <span class="label">Front Right Wing</span>
+                                <span class="val" id="dmg-fr-wing-val">0%</span>
+                            </div>
+                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-fr-wing-bar"></div></div>
                         </div>
-                        <div class="data-row">
-                            <span class="label">Rear Wing</span>
-                            <span class="val highlight" id="dmg-r-wing">0%</span>
+
+                        <div class="dmg-row">
+                            <div class="dmg-row-header">
+                                <span class="label">Rear Wing & DRS</span>
+                                <span class="val" id="dmg-r-wing-val">0%</span>
+                            </div>
+                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-r-wing-bar"></div></div>
                         </div>
-                        <div class="data-row">
-                            <span class="label">Floor</span>
-                            <span class="val highlight" id="dmg-floor">0%</span>
+
+                        <div class="dmg-row">
+                            <div class="dmg-row-header">
+                                <span class="label">Underbody Floor</span>
+                                <span class="val" id="dmg-floor-val">0%</span>
+                            </div>
+                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-floor-bar"></div></div>
                         </div>
-                        <div class="data-row">
-                            <span class="label">Diffuser</span>
-                            <span class="val highlight" id="dmg-diffuser">0%</span>
+
+                        <div class="dmg-row">
+                            <div class="dmg-row-header">
+                                <span class="label">Rear Diffuser</span>
+                                <span class="val" id="dmg-diffuser-val">0%</span>
+                            </div>
+                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-diffuser-bar"></div></div>
                         </div>
-                        <div class="data-row">
-                            <span class="label">Sidepod</span>
-                            <span class="val highlight" id="dmg-sidepod">0%</span>
+
+                        <div class="dmg-row">
+                            <div class="dmg-row-header">
+                                <span class="label">Sidepods & Radiators</span>
+                                <span class="val" id="dmg-sidepod-val">0%</span>
+                            </div>
+                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-sidepod-bar"></div></div>
                         </div>
-                        <div class="data-row" style="margin-top: 15px;">
-                            <span class="label">Brakes (FL / FR)</span>
-                            <span class="val highlight"><span id="dmg-brakes-fl">0%</span> / <span
-                                    id="dmg-brakes-fr">0%</span></span>
-                        </div>
-                        <div class="data-row">
-                            <span class="label">Brakes (RL / RR)</span>
-                            <span class="val highlight"><span id="dmg-brakes-rl">0%</span> / <span
-                                    id="dmg-brakes-rr">0%</span></span>
-                        </div>
-                        <div class="data-row" style="margin-top: 15px;">
-                            <span class="label">Tyres (FL / FR)</span>
-                            <span class="val highlight"><span id="dmg-tyres-fl">0%</span> / <span
-                                    id="dmg-tyres-fr">0%</span></span>
-                        </div>
-                        <div class="data-row">
-                            <span class="label">Tyres (RL / RR)</span>
-                            <span class="val highlight"><span id="dmg-tyres-rl">0%</span> / <span
-                                    id="dmg-tyres-rr">0%</span></span>
+
+                        <div class="panel-header" style="margin-top: 10px; margin-bottom: 4px; padding-bottom: 4px;">System Fault Alarms</div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+                            <span id="dmg-drs-fault" class="dmg-fault-badge dmg-fault-ok">DRS OK</span>
+                            <span id="dmg-ers-fault" class="dmg-fault-badge dmg-fault-ok">ERS OK</span>
+                            <span id="dmg-engine-blown" class="dmg-fault-badge dmg-fault-ok">PU OK</span>
                         </div>
                     </div>
 
-                    <div>
-                        <div class="data-row">
-                            <span class="label">Gearbox</span>
-                            <span class="val highlight" id="dmg-gearbox">0%</span>
+                    <!-- Column 2: Interactive F1 Vehicle Schematic -->
+                    <div class="dmg-schematic-box">
+                        <div style="font-size: 0.72rem; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase; font-weight: 700;">Live Vehicle Schematic</div>
+                        <svg class="dmg-car-svg" viewBox="0 0 200 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Background Grid / Frame Outline -->
+                            <rect x="10" y="10" width="180" height="380" rx="12" stroke="rgba(255,255,255,0.05)" stroke-dasharray="4 4" fill="none" />
+                            
+                            <!-- Front Wing Left & Right -->
+                            <path id="svg-fl-wing" class="dmg-part" d="M20 50 L95 50 L90 70 L25 70 Z" fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            <path id="svg-fr-wing" class="dmg-part" d="M105 50 L180 50 L175 70 L110 70 Z" fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            
+                            <!-- Front Wheels -->
+                            <rect id="svg-tyres-fl" class="dmg-part" x="12" y="80" width="26" height="55" rx="5" fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            <rect id="svg-tyres-fr" class="dmg-part" x="162" y="80" width="26" height="55" rx="5" fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            
+                            <!-- Nosecone & Cockpit -->
+                            <path id="svg-nose" class="dmg-part" d="M85 70 L115 70 L120 180 L80 180 Z" fill="#0F1E3A" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
+                            
+                            <!-- Underbody Floor -->
+                            <path id="svg-floor" class="dmg-part" d="M45 150 L155 150 L160 280 L40 280 Z" fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            
+                            <!-- Sidepods Left & Right -->
+                            <path id="svg-sidepod" class="dmg-part" d="M45 160 L78 160 L78 260 L48 250 Z" fill="#1E293B" stroke="#00E676" stroke-width="1.5" />
+                            <path id="svg-sidepod-r" class="dmg-part" d="M122 160 L155 160 L152 250 L122 260 Z" fill="#1E293B" stroke="#00E676" stroke-width="1.5" />
+                            
+                            <!-- Engine / Hybrid Bay -->
+                            <path id="svg-engine-ice" class="dmg-part" d="M80 180 L120 180 L115 280 L85 280 Z" fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            <circle cx="100" cy="230" r="14" fill="#0A162C" stroke="var(--fia-yellow)" stroke-width="1.5" />
+                            <text x="100" y="234" text-anchor="middle" font-size="9" fill="var(--fia-yellow)" font-family="monospace" font-weight="bold">PU</text>
+                            
+                            <!-- Rear Wheels -->
+                            <rect id="svg-tyres-rl" class="dmg-part" x="10" y="275" width="28" height="60" rx="5" fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            <rect id="svg-tyres-rr" class="dmg-part" x="162" y="275" width="28" height="60" rx="5" fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            
+                            <!-- Rear Diffuser -->
+                            <path id="svg-diffuser" class="dmg-part" d="M60 320 L140 320 L145 355 L55 355 Z" fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            
+                            <!-- Rear Wing -->
+                            <path id="svg-r-wing" class="dmg-part" d="M30 360 L170 360 L165 385 L35 385 Z" fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                        </svg>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 8px;">*Live Telemetry Color-Coded Damage Map</div>
+                    </div>
+
+                    <!-- Column 3: Powertrain, Transmission & Running Gear -->
+                    <div class="dmg-card">
+                        <div class="panel-header" style="margin-bottom: 4px; padding-bottom: 4px;">Powertrain & Gearbox</div>
+                        
+                        <div class="dmg-row">
+                            <div class="dmg-row-header">
+                                <span class="label">Engine (ICE Wear)</span>
+                                <span class="val" id="dmg-engine-ice-val">0%</span>
+                            </div>
+                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-engine-ice-bar"></div></div>
                         </div>
-                        <div class="data-row">
-                            <span class="label">Engine (ICE)</span>
-                            <span class="val highlight" id="dmg-engine-ice">0%</span>
+
+                        <div class="dmg-row">
+                            <div class="dmg-row-header">
+                                <span class="label">MGU-K (Kinetic)</span>
+                                <span class="val" id="dmg-engine-mguk-val">0%</span>
+                            </div>
+                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-engine-mguk-bar"></div></div>
                         </div>
-                        <div class="data-row">
-                            <span class="label">MGU-H</span>
-                            <span class="val highlight" id="dmg-engine-mguh">0%</span>
+
+                        <div class="dmg-row">
+                            <div class="dmg-row-header">
+                                <span class="label">MGU-H (Heat)</span>
+                                <span class="val" id="dmg-engine-mguh-val">0%</span>
+                            </div>
+                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-engine-mguh-bar"></div></div>
                         </div>
-                        <div class="data-row">
-                            <span class="label">MGU-K</span>
-                            <span class="val highlight" id="dmg-engine-mguk">0%</span>
+
+                        <div class="dmg-row">
+                            <div class="dmg-row-header">
+                                <span class="label">Turbocharger (TC)</span>
+                                <span class="val" id="dmg-engine-tc-val">0%</span>
+                            </div>
+                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-engine-tc-bar"></div></div>
                         </div>
-                        <div class="data-row">
-                            <span class="label">Turbo Charger</span>
-                            <span class="val highlight" id="dmg-engine-tc">0%</span>
+
+                        <div class="dmg-row">
+                            <div class="dmg-row-header">
+                                <span class="label">Energy Store (Battery)</span>
+                                <span class="val" id="dmg-engine-es-val">0%</span>
+                            </div>
+                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-engine-es-bar"></div></div>
                         </div>
-                        <div class="data-row">
-                            <span class="label">Energy Store</span>
-                            <span class="val highlight" id="dmg-engine-es">0%</span>
+
+                        <div class="dmg-row">
+                            <div class="dmg-row-header">
+                                <span class="label">Gearbox Wear</span>
+                                <span class="val" id="dmg-gearbox-val">0%</span>
+                            </div>
+                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-gearbox-bar"></div></div>
                         </div>
-                        <div class="data-row">
-                            <span class="label">Control Electronics</span>
-                            <span class="val highlight" id="dmg-engine-ce">0%</span>
+
+                        <div class="panel-header" style="margin-top: 10px; margin-bottom: 4px; padding-bottom: 4px;">Running Gear & Brakes</div>
+                        <div class="data-row" style="font-size: 0.82rem;">
+                            <span class="label">Brakes Wear (FL / FR)</span>
+                            <span class="val"><span id="dmg-brakes-fl-val">0%</span> / <span id="dmg-brakes-fr-val">0%</span></span>
                         </div>
-                        <div class="data-row" style="margin-top: 15px;">
-                            <span class="label">DRS Fault</span>
-                            <span class="val highlight" id="dmg-drs-fault">OK</span>
+                        <div class="data-row" style="font-size: 0.82rem;">
+                            <span class="label">Brakes Wear (RL / RR)</span>
+                            <span class="val"><span id="dmg-brakes-rl-val">0%</span> / <span id="dmg-brakes-rr-val">0%</span></span>
                         </div>
-                        <div class="data-row">
-                            <span class="label">ERS Fault</span>
-                            <span class="val highlight" id="dmg-ers-fault">OK</span>
+                        <div class="data-row" style="font-size: 0.82rem;">
+                            <span class="label">Tyres Wear (FL / FR)</span>
+                            <span class="val"><span id="dmg-tyres-fl-val">0%</span> / <span id="dmg-tyres-fr-val">0%</span></span>
                         </div>
-                        <div class="data-row">
-                            <span class="label">Engine Blown</span>
-                            <span class="val highlight" id="dmg-engine-blown">OK</span>
+                        <div class="data-row" style="font-size: 0.82rem;">
+                            <span class="label">Tyres Wear (RL / RR)</span>
+                            <span class="val"><span id="dmg-tyres-rl-val">0%</span> / <span id="dmg-tyres-rr-val">0%</span></span>
                         </div>
                     </div>
                 </div>
@@ -3233,66 +3843,146 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         }
 
         /**
+         * Returns an HSL colour for a temperature value given a safe range.
+         * cold=blue, optimal=green, hot=orange/red.
+         */
+        function getTempColor(tempC, optLow, optHigh) {
+            if (tempC < optLow) return '#60a5fa'; // cool – blue
+            if (tempC > optHigh + 40) return 'var(--f1-red)';
+            if (tempC > optHigh) return '#fb923c'; // hot – orange
+            return 'var(--fia-green)'; // optimal
+        }
+
+        /**
          * Updates the graphical tyre wear widget for all four wheels based on real-time wear data.
-         * Colors the SVG elements and updates the percentage text fields.
+         * Drives both legacy SVG rects (for tyre-visual-*) and new ring-gauge arcs + compound badge.
          */
         function updateCarTyreVisual(wearData, compound) {
-            ["fl", "fr", "rl", "rr"].forEach((corner) => {
+            const CIRC = 2 * Math.PI * 28; // circumference of r=28 ring (~175.9)
+            let maxWear = 0;
+
+            ['fl', 'fr', 'rl', 'rr'].forEach((corner) => {
                 const wear = Math.round(wearData[corner] || 0);
+                if (wear > maxWear) maxWear = wear;
                 const color = getWearColor(wear);
 
-                // Update SVG tyre rectangle color
+                // ── Legacy SVG rect (tyre-visual-* group still in DOM for other tabs) ──
                 const tyreRect = document.getElementById(`tyre-rect-${corner}`);
-                if (tyreRect) {
-                    tyreRect.setAttribute("fill", color);
+                if (tyreRect) tyreRect.setAttribute('fill', color);
+
+                // ── New ring gauge arc ──
+                const ring = document.getElementById(`tyre-ring-${corner}`);
+                if (ring) {
+                    const filled = (wear / 100) * CIRC;
+                    ring.setAttribute('stroke-dasharray', `${filled.toFixed(1)} ${(CIRC - filled).toFixed(1)}`);
+                    ring.setAttribute('stroke', color);
                 }
 
-                // Update SVG wear percentage text
-                const tyrePct = document.getElementById(`tyre-pct-${corner}`);
-                if (tyrePct) {
-                    tyrePct.textContent = `${wear}%`;
-                }
+                // ── Wear percentage text (both SVG variants) ──
+                document.querySelectorAll(`#tyre-pct-${corner}`).forEach(el => {
+                    el.textContent = `${wear}%`;
+                });
 
-                // Update wear bar in data panel
+                // ── Legacy wear bar (hidden but kept for JS compat) ──
                 const wearBar = document.getElementById(`wear-bar-${corner}`);
                 if (wearBar) {
                     wearBar.style.width = `${wear}%`;
                     wearBar.style.backgroundColor = color;
                 }
 
-                // Update wear text in data panel
+                // ── Wear text (hidden span) ──
                 const wearText = document.getElementById(`wear-text-${corner}`);
                 if (wearText) {
                     wearText.textContent = `${wear}% Wear`;
                     wearText.style.color = color;
                 }
-            });
 
-            // Update compound label on car SVG
-            const compVal = document.getElementById("car-compound-value");
-            if (compVal) compVal.textContent = (compound || "--").toUpperCase();
-
-            // Update the compound circle for all boxes
-            const compoundStr = (compound || "").toUpperCase();
-            let cLetter = "-";
-            let cColor = "var(--text-main)";
-            if (compoundStr.includes("SOFT")) { cLetter = "S"; cColor = "var(--f1-red)"; }
-            else if (compoundStr.includes("MEDIUM")) { cLetter = "M"; cColor = "var(--fia-yellow)"; }
-            else if (compoundStr.includes("HARD")) { cLetter = "H"; cColor = "#FFF"; }
-            else if (compoundStr.includes("INTER")) { cLetter = "I"; cColor = "var(--fia-green)"; }
-            else if (compoundStr.includes("WET")) { cLetter = "W"; cColor = "var(--fia-blue)"; }
-
-            ["fl", "fr", "rl", "rr"].forEach((corner) => {
-                const circle = document.getElementById(`tyre-compound-circle-${corner}`);
-                if (circle) {
-                    circle.textContent = cLetter;
-                    circle.style.borderColor = cColor;
-                    circle.style.color = cColor;
+                // ── Tyre card border glow by wear level ──
+                const card = document.getElementById(`tyre-card-${corner}`);
+                if (card) {
+                    card.style.borderColor = wear > 70 ? 'rgba(255,30,0,0.5)' :
+                                             wear > 45 ? 'rgba(251,146,60,0.4)' :
+                                             'var(--f1-border)';
                 }
             });
 
-            // Also update the bottom row displays
-            setText("tyre-compound-display", compound || "--");
+            // ── Compound mapping ──
+            const compoundStr = (compound || '').toUpperCase();
+            let cLetter = '-', cColor = '#888';
+            if (compoundStr.includes('SOFT'))   { cLetter = 'S'; cColor = 'var(--f1-red)'; }
+            else if (compoundStr.includes('MEDIUM')) { cLetter = 'M'; cColor = 'var(--fia-yellow)'; }
+            else if (compoundStr.includes('HARD'))   { cLetter = 'H'; cColor = '#FFFFFF'; }
+            else if (compoundStr.includes('INTER'))  { cLetter = 'I'; cColor = 'var(--fia-green)'; }
+            else if (compoundStr.includes('WET'))    { cLetter = 'W'; cColor = 'var(--fia-blue)'; }
+
+            // Hero badge
+            const heroBadge = document.getElementById('compound-badge-hero');
+            if (heroBadge) {
+                heroBadge.textContent = cLetter;
+                heroBadge.style.color = cColor;
+                heroBadge.style.boxShadow = `0 0 24px ${cColor}, inset 0 0 12px rgba(0,0,0,0.6)`;
+            }
+
+            // Hero compound name
+            const heroName = document.getElementById('tyre-compound-display');
+            if (heroName) heroName.textContent = compound || '--';
+
+            // Corner badges
+            ['fl', 'fr', 'rl', 'rr'].forEach((corner) => {
+                const badge = document.getElementById(`tyre-compound-circle-${corner}`);
+                if (badge) {
+                    badge.textContent = cLetter;
+                    badge.style.color = cColor;
+                    badge.style.borderColor = cColor;
+                }
+            });
+
+            // Max wear hero stat
+            const mwEl = document.getElementById('tyre-max-wear');
+            if (mwEl) mwEl.textContent = `${maxWear}%`;
+
+            // Legacy compound value on SVG car schematic
+            const compVal = document.getElementById('car-compound-value');
+            if (compVal) compVal.textContent = (compound || '--').toUpperCase();
+        }
+
+        /**
+         * Updates temperature bars for all four tyre corners.
+         * Called with the surface & inner temp objects from the telemetry payload.
+         */
+        function updateTyreTemps(surfTemp, inTemp) {
+            ['fl', 'fr', 'rl', 'rr'].forEach((corner) => {
+                const surf = Math.round(surfTemp[corner] || 0);
+                const inn  = Math.round(inTemp[corner]  || 0);
+
+                // Surface temp bar (max ~130°C for display)
+                const surfBar = document.getElementById(`tsurf-bar-${corner}`);
+                const surfEl  = document.getElementById(`temp-surf-${corner}`);
+                if (surfBar) {
+                    const pct = Math.min(100, (surf / 130) * 100);
+                    const col = getTempColor(surf, 80, 110);
+                    surfBar.style.width = `${pct}%`;
+                    surfBar.style.background = col;
+                }
+                if (surfEl) {
+                    surfEl.textContent = `${surf}°C`;
+                    surfEl.style.color = getTempColor(surf, 80, 110);
+                }
+
+                // Inner temp bar (max ~130°C)
+                const innBar = document.getElementById(`tin-bar-${corner}`);
+                const innEl  = document.getElementById(`temp-in-${corner}`);
+                if (innBar) {
+                    const pct = Math.min(100, (inn / 130) * 100);
+                    const col = getTempColor(inn, 85, 115);
+                    innBar.style.width = `${pct}%`;
+                    innBar.style.background = col;
+                }
+                if (innEl) {
+                    innEl.textContent = `${inn}°C`;
+                    innEl.style.color = getTempColor(inn, 85, 115);
+                }
+            });
         }
 
         /**
@@ -3921,21 +4611,38 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             setText("sc-status", data.session.sc);
 
-            if (data.penalties) {
-                setText(
-                    "pen-time",
-                    data.penalties.timePenalties > 0
-                        ? `${data.penalties.timePenalties} s`
-                        : "0 s",
-                );
-                setText("pen-warn", data.penalties.warnings || 0);
-                setText("pen-cc", data.penalties.cornerCuts || 0);
-                setText(
-                    "pen-dt-sg",
-                    `${data.penalties.driveThrough || 0} / ${data.penalties.stopGo || 0}`,
-                );
-                document.getElementById("lap-invalid-row").style.display =
-                    data.penalties.invalidLap === 1 ? "flex" : "none";
+            // --- Driver Offenses & Penalties Updates ---
+            const penTime = (data.penalties && typeof data.penalties.timePenalties === 'number') 
+                ? data.penalties.timePenalties 
+                : (data.lap?.penalties || 0);
+            const penWarn = (data.penalties && typeof data.penalties.warnings === 'number') 
+                ? data.penalties.warnings 
+                : (data.lap?.warnings || 0);
+            const penCC = (data.penalties && typeof data.penalties.cornerCuts === 'number') 
+                ? data.penalties.cornerCuts 
+                : (data.lap?.cornerCutting || 0);
+            const penDT = (data.penalties && typeof data.penalties.driveThrough === 'number') 
+                ? data.penalties.driveThrough 
+                : (data.lap?.unservedDT || 0);
+            const penSG = (data.penalties && typeof data.penalties.stopGo === 'number') 
+                ? data.penalties.stopGo 
+                : (data.lap?.unservedSG || 0);
+            const isInvalidLap = Boolean((data.penalties && data.penalties.invalidLap === 1) || data.lap?.invalid);
+
+            const penEl = document.getElementById("penalties");
+            if (penEl) {
+                penEl.textContent = penTime > 0 ? `${penTime}s` : "0s";
+                penEl.style.color = penTime > 0 ? "var(--f1-red)" : "var(--text-main)";
+                penEl.style.fontWeight = penTime > 0 ? "bold" : "normal";
+            }
+            setText("warnings", penWarn);
+            setText("corner-cuts", penCC);
+            setText("unserved-dt", penDT);
+            setText("unserved-sg", penSG);
+
+            const invalidRow = document.getElementById("lap-invalid-row");
+            if (invalidRow) {
+                invalidRow.style.display = isInvalidLap ? "flex" : "none";
             }
             setText("pit-status", data.lap.pitStatus);
             setText("tyre-compound", data.car.compound);
@@ -4095,45 +4802,49 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             updateSectorDeltas(data, playerLbData);
 
-            data.lap = originalLapData;
-
+            // --- Car Damage & Health Status Update ---
             if (data.damage) {
-                const setDmgText = (id, val) => {
-                    const printVal = (val === undefined || val === null) ? 0 : val;
-                    setText(id, `${printVal}%`);
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.style.color = printVal > 70 ? '#ff4444' : (printVal > 30 ? 'var(--fia-yellow)' : (printVal > 0 ? 'var(--fia-green)' : 'white'));
-                    }
-                };
-                setDmgText("dmg-fl-wing", data.damage.m_frontLeftWingDamage);
-                setDmgText("dmg-fr-wing", data.damage.m_frontRightWingDamage);
-                setDmgText("dmg-r-wing", data.damage.m_rearWingDamage);
-                setDmgText("dmg-floor", data.damage.m_floorDamage);
-                setDmgText("dmg-diffuser", data.damage.m_diffuserDamage);
-                setDmgText("dmg-sidepod", data.damage.m_sidepodDamage);
-                setDmgText("dmg-brakes-fl", data.damage.m_brakesDamage[0]);
-                setDmgText("dmg-brakes-fr", data.damage.m_brakesDamage[1]);
-                setDmgText("dmg-brakes-rl", data.damage.m_brakesDamage[2]);
-                setDmgText("dmg-brakes-rr", data.damage.m_brakesDamage[3]);
-                setDmgText("dmg-tyres-fl", data.damage.m_tyresWear[0]);
-                setDmgText("dmg-tyres-fr", data.damage.m_tyresWear[1]);
-                setDmgText("dmg-tyres-rl", data.damage.m_tyresWear[2]);
-                setDmgText("dmg-tyres-rr", data.damage.m_tyresWear[3]);
-                setDmgText("dmg-gearbox", data.damage.m_gearBoxDamage);
-                setDmgText("dmg-engine-ice", data.damage.m_engineICEWear);
-                setDmgText("dmg-engine-mguh", data.damage.m_engineMGUHWear);
-                setDmgText("dmg-engine-mguk", data.damage.m_engineMGUKWear);
-                setDmgText("dmg-engine-tc", data.damage.m_engineTCWear);
-                setDmgText("dmg-engine-es", data.damage.m_engineESWear);
-                setDmgText("dmg-engine-ce", data.damage.m_engineCEWear);
+                updateDamageUX(data.damage, data.car);
+            }
 
-                const drsEl = document.getElementById("dmg-drs-fault");
-                if (drsEl) { drsEl.textContent = data.damage.m_drsFault ? "FAULT" : "OK"; drsEl.style.color = data.damage.m_drsFault ? "red" : "white"; }
-                const ersEl = document.getElementById("dmg-ers-fault");
-                if (ersEl) { ersEl.textContent = data.damage.m_ersFault ? "FAULT" : "OK"; ersEl.style.color = data.damage.m_ersFault ? "red" : "white"; }
-                const engineEl = document.getElementById("dmg-engine-blown");
-                if (engineEl) { engineEl.textContent = data.damage.m_engineBlown ? "BLOWN" : "OK"; engineEl.style.color = data.damage.m_engineBlown ? "red" : "white"; }
+            // --- Battle Radar (Car Ahead & Behind) & Delta vs Session Best ---
+            if (data.lap) {
+                // Ahead
+                setText("ahead-name", data.lap.driverAhead || "LEADER");
+                setText("ahead-gap", data.lap.gapFront || "+0.000s");
+                
+                // Behind
+                setText("behind-name", data.lap.driverBehind || "NONE");
+                setText("behind-gap", data.lap.gapBehind || "--");
+
+                // DRS Threat
+                const drsRow = document.getElementById("drs-threat-row");
+                if (drsRow) {
+                    drsRow.style.display = data.lap.drsThreat ? "flex" : "none";
+                }
+
+                // Delta vs Session Best
+                const deltaSessionEl = document.getElementById('delta-session-best');
+                if (deltaSessionEl) {
+                    const pbLap = playerLbData?.bestLapMs || data.lap.bestMs || 0;
+                    const sbLap = (data.session.sessionFastestLapMs && data.session.sessionFastestLapMs !== Infinity)
+                        ? data.session.sessionFastestLapMs : 0;
+                    if (pbLap > 0 && sbLap > 0) {
+                        const diffMs = pbLap - sbLap;
+                        if (diffMs <= 0) {
+                            deltaSessionEl.innerHTML = `<span style="color:var(--fia-purple);font-size:0.9rem;">⏱ SESSION BEST</span>`;
+                        } else {
+                            const diffSec = (diffMs / 1000).toFixed(3);
+                            const col = diffMs < 500 ? 'var(--fia-green)' : diffMs < 1500 ? 'var(--fia-yellow)' : 'var(--f1-red)';
+                            deltaSessionEl.innerHTML = `<span style="color:${col}">+${diffSec}s</span>`;
+                        }
+                    } else if (sbLap > 0 && pbLap === 0) {
+                        deltaSessionEl.innerHTML = `<span style="color:var(--text-muted);font-size:0.8rem;">No best lap yet</span>`;
+                    } else {
+                        deltaSessionEl.textContent = '--';
+                        deltaSessionEl.style.color = 'var(--text-muted)';
+                    }
+                }
             }
 
             const weatherContainer = document.getElementById("weather-cards-container");
@@ -4200,10 +4911,24 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             setText("lap-record", formatMs(recordMs));
             setText(
                 "record-driver",
-                data.session.allTimeFastestDriver !== "Unknown"
+                data.session.allTimeFastestDriver !== "Unknown" && data.session.allTimeFastestDriver !== "None"
                     ? `(${data.session.allTimeFastestDriver})`
                     : "",
             );
+
+            // Update Session Fastest Lap Metrics
+            const sessionFastestMs = (data.session.sessionFastestLapMs && data.session.sessionFastestLapMs !== Infinity)
+                ? data.session.sessionFastestLapMs
+                : 0;
+            const sessionFastestDriver = data.session.sessionFastestDriver && data.session.sessionFastestDriver !== "None" && data.session.sessionFastestDriver !== "Unknown"
+                ? data.session.sessionFastestDriver
+                : (data.session.fastestLapCarIndex >= 0 && data.participants && data.participants[data.session.fastestLapCarIndex]
+                    ? data.participants[data.session.fastestLapCarIndex]
+                    : "");
+            setText("session-fastest-lap", formatMs(sessionFastestMs));
+            setText("session-fastest-driver", sessionFastestDriver ? `(${sessionFastestDriver})` : "");
+            setText("hdr-fastest-lap", sessionFastestMs > 0 ? formatMs(sessionFastestMs) : "--:--.---");
+            setText("hdr-fastest-driver", sessionFastestDriver || "--");
 
             const isMenu =
                 data.session.trackName === "TRACK NOT FOUND" ||
@@ -4477,7 +5202,9 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 setText(`brake-temp-${c}`, data.car.brakeTemp[c]);
             });
             updateCarTyreVisual(data.car.wear, data.car.compound);
+            updateTyreTemps(data.car.surfTemp, data.car.inTemp);
             setText("tyre-age-display", `${data.car.tyreAge} Laps`);
+
 
             setText("ers-mode", data.ers.mode);
             setStyleById(
@@ -4596,12 +5323,28 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                             ? data.participants[driver.carIndex].toUpperCase()
                             : `CAR ${driver.carIndex}`;
                     const fastcolor = isFastest ? ' purple' : "";
-                    const fasticon = isFastest ? '<span class="fl-icon" style="color:purple"> ⏱</span>' : "";
+                    const fasticon = isFastest ? '<span class="fl-icon" style="color:var(--fia-purple)"> ⏱</span>' : "";
+
+                    // Penalty Badges
+                    let penaltyBadges = "";
+                    if (driver.penalties > 0) {
+                        penaltyBadges += `<span class="badge-pen time-pen">+${driver.penalties}s</span>`;
+                    }
+                    if (driver.unservedDT > 0) {
+                        penaltyBadges += `<span class="badge-pen dt-pen">DT</span>`;
+                    }
+                    if (driver.unservedSG > 0) {
+                        penaltyBadges += `<span class="badge-pen sg-pen">SG</span>`;
+                    }
+                    if (driver.warnings > 0) {
+                        penaltyBadges += `<span class="badge-pen warn-pen" title="${driver.warnings} Warnings">⚠️${driver.warnings}</span>`;
+                    }
+
                     let rowHtml = `<div class="lb-row" data-car-index="${driver.carIndex}" style="background: ${bgCol};">
                         <span class="val col-pos">${displayPos}</span>
                         <span class="val col-driver" style="color: ${nameColor};">
                             <span class="team-stripe" style="background: ${teamColor}; color: ${teamColor};"></span>
-                            <span style="color:${fastcolor}" class="driver-name-text">${driverName}${fasticon}</span>
+                            <span style="color:${fastcolor}" class="driver-name-text">${driverName}${fasticon}${penaltyBadges}</span>
                         </span>`;
 
                     if (isTimeBased) {
@@ -4847,12 +5590,41 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         /* ══════════ GAMEPAD MODAL & VIBRATION LOGIC ══════════ */
         let gamepadAnimFrame = null;
         let selectedGamepadIndex = null;
+        let lastGamepadSignature = "";
+
+        const gpDom = {
+            btns: [],
+            leftDot: null,
+            leftVal: null,
+            rightDot: null,
+            rightVal: null,
+            ltBar: null,
+            rtBar: null,
+            ltVal: null,
+            rtVal: null,
+            isInit: false,
+            init() {
+                if (this.isInit) return;
+                for (let i = 0; i < 16; i++) {
+                    this.btns[i] = document.getElementById(`gp-btn-${i}`);
+                }
+                this.leftDot = document.getElementById("stick-left-dot");
+                this.leftVal = document.getElementById("stick-left-val");
+                this.rightDot = document.getElementById("stick-right-dot");
+                this.rightVal = document.getElementById("stick-right-val");
+                this.ltBar = document.getElementById("lt-bar");
+                this.rtBar = document.getElementById("rt-bar");
+                this.ltVal = document.getElementById("lt-val");
+                this.rtVal = document.getElementById("rt-val");
+                this.isInit = true;
+            }
+        };
 
         function openGamepadModal() {
             const modal = document.getElementById("gamepad-modal");
             if (modal) {
                 modal.style.display = "flex";
-                refreshGamepadList();
+                refreshGamepadList(true);
                 startGamepadLoop();
             }
         }
@@ -4874,21 +5646,35 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             }
         });
 
-        function refreshGamepadList() {
+        function refreshGamepadList(force = false) {
             const select = document.getElementById("gamepad-select");
             const badge = document.getElementById("gamepad-status-badge");
             if (!select) return;
 
             const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-            select.innerHTML = "";
             let connectedCount = 0;
             let firstIndex = null;
+            let sig = "";
 
             for (let i = 0; i < gamepads.length; i++) {
                 const gp = gamepads[i];
                 if (gp) {
                     connectedCount++;
                     if (firstIndex === null) firstIndex = i;
+                    sig += `${i}:${gp.id};`;
+                }
+            }
+
+            if (!force && sig === lastGamepadSignature) {
+                return;
+            }
+            lastGamepadSignature = sig;
+
+            select.innerHTML = "";
+
+            for (let i = 0; i < gamepads.length; i++) {
+                const gp = gamepads[i];
+                if (gp) {
                     const opt = document.createElement("option");
                     opt.value = i;
                     opt.textContent = `[#${i}] ${gp.id.substring(0, 32)}`;
@@ -4929,12 +5715,12 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
         window.addEventListener("gamepadconnected", (e) => {
             console.log("Gamepad connected at index %d: %s", e.gamepad.index, e.gamepad.id);
-            refreshGamepadList();
+            refreshGamepadList(true);
         });
 
         window.addEventListener("gamepaddisconnected", (e) => {
             console.log("Gamepad disconnected from index %d: %s", e.gamepad.index, e.gamepad.id);
-            refreshGamepadList();
+            refreshGamepadList(true);
         });
 
         function startGamepadLoop() {
@@ -4948,9 +5734,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         }
 
         function updateGamepadState() {
-            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-            refreshGamepadList();
+            gpDom.init();
+            refreshGamepadList(false);
 
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
             let gp = null;
             if (selectedGamepadIndex !== null && gamepads[selectedGamepadIndex]) {
                 gp = gamepads[selectedGamepadIndex];
@@ -4966,28 +5753,26 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             if (!gp) {
                 for (let i = 0; i < 16; i++) {
-                    const btnEl = document.getElementById(`gp-btn-${i}`);
-                    if (btnEl) btnEl.classList.remove("active");
+                    if (gpDom.btns[i]) gpDom.btns[i].classList.remove("active");
                 }
-                const leftDot = document.getElementById("stick-left-dot");
-                const rightDot = document.getElementById("stick-right-dot");
-                if (leftDot) leftDot.style.transform = "translate(0px, 0px)";
-                if (rightDot) rightDot.style.transform = "translate(0px, 0px)";
-                const ltBar = document.getElementById("lt-bar");
-                const rtBar = document.getElementById("rt-bar");
-                if (ltBar) ltBar.style.width = "0%";
-                if (rtBar) rtBar.style.width = "0%";
+                if (gpDom.leftDot) gpDom.leftDot.style.transform = "translate(0px, 0px)";
+                if (gpDom.rightDot) gpDom.rightDot.style.transform = "translate(0px, 0px)";
+                if (gpDom.ltBar) gpDom.ltBar.style.width = "0%";
+                if (gpDom.rtBar) gpDom.rtBar.style.width = "0%";
+                if (gpDom.ltVal) gpDom.ltVal.innerText = "0.0% (0.00)";
+                if (gpDom.rtVal) gpDom.rtVal.innerText = "0.0% (0.00)";
                 return;
             }
 
             // Update buttons
             for (let i = 0; i < 16; i++) {
-                const btnEl = document.getElementById(`gp-btn-${i}`);
-                if (btnEl) {
-                    if (gp.buttons[i] && gp.buttons[i].pressed) {
-                        btnEl.classList.add("active");
+                const btn = gp.buttons[i];
+                const isPressed = btn ? (btn.pressed || (typeof btn.value === "number" && btn.value > 0.5)) : false;
+                if (gpDom.btns[i]) {
+                    if (isPressed) {
+                        gpDom.btns[i].classList.add("active");
                     } else {
-                        btnEl.classList.remove("active");
+                        gpDom.btns[i].classList.remove("active");
                     }
                 }
             }
@@ -4995,37 +5780,43 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             // Analog Sticks
             const lx = gp.axes[0] || 0;
             const ly = gp.axes[1] || 0;
-            const leftDot = document.getElementById("stick-left-dot");
-            const leftVal = document.getElementById("stick-left-val");
-            if (leftDot) {
-                leftDot.style.transform = `translate(${lx * 35}px, ${ly * 35}px)`;
+            if (gpDom.leftDot) {
+                gpDom.leftDot.style.transform = `translate(${lx * 35}px, ${ly * 35}px)`;
             }
-            if (leftVal) {
-                leftVal.innerText = `X: ${lx.toFixed(2)} | Y: ${ly.toFixed(2)}`;
+            if (gpDom.leftVal) {
+                gpDom.leftVal.innerText = `X: ${lx.toFixed(2)} | Y: ${ly.toFixed(2)}`;
             }
 
             const rx = gp.axes[2] || 0;
             const ry = gp.axes[3] || 0;
-            const rightDot = document.getElementById("stick-right-dot");
-            const rightVal = document.getElementById("stick-right-val");
-            if (rightDot) {
-                rightDot.style.transform = `translate(${rx * 35}px, ${ry * 35}px)`;
+            if (gpDom.rightDot) {
+                gpDom.rightDot.style.transform = `translate(${rx * 35}px, ${ry * 35}px)`;
             }
-            if (rightVal) {
-                rightVal.innerText = `X: ${rx.toFixed(2)} | Y: ${ry.toFixed(2)}`;
+            if (gpDom.rightVal) {
+                gpDom.rightVal.innerText = `X: ${rx.toFixed(2)} | Y: ${ry.toFixed(2)}`;
             }
 
-            // Analog Triggers (Button 6 LT, Button 7 RT)
-            const ltVal = gp.buttons[6] ? gp.buttons[6].value : 0;
-            const rtVal = gp.buttons[7] ? gp.buttons[7].value : 0;
-            const ltBar = document.getElementById("lt-bar");
-            const rtBar = document.getElementById("rt-bar");
-            const ltText = document.getElementById("lt-val");
-            const rtText = document.getElementById("rt-val");
-            if (ltBar) ltBar.style.width = `${Math.round(ltVal * 100)}%`;
-            if (rtBar) rtBar.style.width = `${Math.round(rtVal * 100)}%`;
-            if (ltText) ltText.innerText = `${Math.round(ltVal * 100)}%`;
-            if (rtText) rtText.innerText = `${Math.round(rtVal * 100)}%`;
+            // Analog Triggers (Button 6 LT, Button 7 RT) - Zero latency exact value reading
+            let ltRaw = 0;
+            if (gp.buttons[6]) {
+                ltRaw = typeof gp.buttons[6].value === "number" ? gp.buttons[6].value : (gp.buttons[6].pressed ? 1 : 0);
+            }
+            let rtRaw = 0;
+            if (gp.buttons[7]) {
+                rtRaw = typeof gp.buttons[7].value === "number" ? gp.buttons[7].value : (gp.buttons[7].pressed ? 1 : 0);
+            }
+
+            // Clamped exact values [0.0, 1.0]
+            const ltVal = Math.max(0, Math.min(1, ltRaw));
+            const rtVal = Math.max(0, Math.min(1, rtRaw));
+
+            const ltPercent = (ltVal * 100).toFixed(1);
+            const rtPercent = (rtVal * 100).toFixed(1);
+
+            if (gpDom.ltBar) gpDom.ltBar.style.width = `${ltPercent}%`;
+            if (gpDom.rtBar) gpDom.rtBar.style.width = `${rtPercent}%`;
+            if (gpDom.ltVal) gpDom.ltVal.innerText = `${ltPercent}% (${ltVal.toFixed(2)})`;
+            if (gpDom.rtVal) gpDom.rtVal.innerText = `${rtPercent}% (${rtVal.toFixed(2)})`;
         }
 
         function testGamepadVibration(durationMs = 1000) {
@@ -5110,6 +5901,186 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 }
             }
         }
+
+        /**
+         * Advanced Car Damage UX Updater
+         * Computes vehicle health index, aero loss, pit penalty, and drives the interactive SVG schematic
+         */
+        function updateDamageUX(damage, car) {
+            if (!damage) return;
+
+            function getDmgColor(val) {
+                if (val > 60) return '#FF1E00';
+                if (val > 30) return '#FF8000';
+                if (val > 10) return '#FFD100';
+                return '#00E676';
+            }
+
+            function setComponentDmg(idPrefix, val, isWear = false) {
+                const pVal = Math.round(val || 0);
+                const textEl = document.getElementById(`${idPrefix}-val`);
+                const barEl = document.getElementById(`${idPrefix}-bar`);
+                const col = getDmgColor(pVal);
+
+                if (textEl) {
+                    textEl.textContent = `${pVal}%`;
+                    textEl.style.color = col;
+                }
+                if (barEl) {
+                    barEl.style.width = `${Math.min(100, Math.max(0, pVal))}%`;
+                    barEl.style.backgroundColor = col;
+                }
+
+                const svgPartId = idPrefix.replace('dmg-', 'svg-');
+                const svgEl = document.getElementById(svgPartId);
+                if (svgEl) {
+                    svgEl.setAttribute('fill', pVal > 5 ? col : '#1E293B');
+                    svgEl.setAttribute('stroke', col);
+                    if (pVal > 25) {
+                        svgEl.style.filter = `drop-shadow(0 0 6px ${col})`;
+                    } else {
+                        svgEl.style.filter = 'none';
+                    }
+                }
+                return pVal;
+            }
+
+            const flWing = setComponentDmg('dmg-fl-wing', damage.m_frontLeftWingDamage);
+            const frWing = setComponentDmg('dmg-fr-wing', damage.m_frontRightWingDamage);
+            const rWing = setComponentDmg('dmg-r-wing', damage.m_rearWingDamage);
+            const floor = setComponentDmg('dmg-floor', damage.m_floorDamage);
+            const diffuser = setComponentDmg('dmg-diffuser', damage.m_diffuserDamage);
+            const sidepod = setComponentDmg('dmg-sidepod', damage.m_sidepodDamage);
+
+            // Brakes
+            const bFl = setComponentDmg('dmg-brakes-fl', damage.m_brakesDamage ? damage.m_brakesDamage[0] : 0, true);
+            const bFr = setComponentDmg('dmg-brakes-fr', damage.m_brakesDamage ? damage.m_brakesDamage[1] : 0, true);
+            const bRl = setComponentDmg('dmg-brakes-rl', damage.m_brakesDamage ? damage.m_brakesDamage[2] : 0, true);
+            const bRr = setComponentDmg('dmg-brakes-rr', damage.m_brakesDamage ? damage.m_brakesDamage[3] : 0, true);
+
+            // Tyres
+            const tFl = setComponentDmg('dmg-tyres-fl', damage.m_tyresWear ? damage.m_tyresWear[0] : (car?.wear?.fl || 0), true);
+            const tFr = setComponentDmg('dmg-tyres-fr', damage.m_tyresWear ? damage.m_tyresWear[1] : (car?.wear?.fr || 0), true);
+            const tRl = setComponentDmg('dmg-tyres-rl', damage.m_tyresWear ? damage.m_tyresWear[2] : (car?.wear?.rl || 0), true);
+            const tRr = setComponentDmg('dmg-tyres-rr', damage.m_tyresWear ? damage.m_tyresWear[3] : (car?.wear?.rr || 0), true);
+
+            // Powertrain & Gearbox
+            const gearbox = setComponentDmg('dmg-gearbox', damage.m_gearBoxDamage);
+            const ice = setComponentDmg('dmg-engine-ice', damage.m_engineICEWear);
+            const mguh = setComponentDmg('dmg-engine-mguh', damage.m_engineMGUHWear);
+            const mguk = setComponentDmg('dmg-engine-mguk', damage.m_engineMGUKWear);
+            const tc = setComponentDmg('dmg-engine-tc', damage.m_engineTCWear);
+            const es = setComponentDmg('dmg-engine-es', damage.m_engineESWear);
+
+            // Fault Badges
+            function setFaultBadge(elId, hasFault, faultText) {
+                const el = document.getElementById(elId);
+                if (el) {
+                    el.textContent = hasFault ? faultText : elId.replace('dmg-', '').replace('-fault', '').toUpperCase() + ' OK';
+                    el.className = hasFault ? 'dmg-fault-badge dmg-fault-err' : 'dmg-fault-badge dmg-fault-ok';
+                }
+            }
+            setFaultBadge('dmg-drs-fault', Boolean(damage.m_drsFault), 'DRS FAULT');
+            setFaultBadge('dmg-ers-fault', Boolean(damage.m_ersFault), 'ERS FAULT');
+            setFaultBadge('dmg-engine-blown', Boolean(damage.m_engineBlown || damage.m_engineSeized), 'PU BLOWN');
+
+            // KPI 1: Overall Vehicle Health Index %
+            const aeroComponents = [flWing, frWing, rWing, floor, diffuser, sidepod];
+            const puComponents = [gearbox, ice, mguh, mguk, tc, es];
+            const allDmg = [...aeroComponents, ...puComponents];
+            const avgDmg = allDmg.reduce((acc, v) => acc + v, 0) / allDmg.length;
+            const healthPct = Math.max(0, Math.round(100 - avgDmg));
+            const healthEl = document.getElementById('dmg-health-index');
+            if (healthEl) {
+                healthEl.textContent = `${healthPct}%`;
+                healthEl.style.color = healthPct > 80 ? 'var(--fia-green)' : (healthPct > 50 ? 'var(--fia-yellow)' : 'var(--f1-red)');
+            }
+
+            // KPI 2: Aero Downforce Loss %
+            const aeroLoss = ((flWing * 0.25) + (frWing * 0.25) + (rWing * 0.3) + (floor * 0.2)).toFixed(1);
+            const aeroEl = document.getElementById('dmg-aero-loss');
+            if (aeroEl) {
+                aeroEl.textContent = aeroLoss > 0 ? `-${aeroLoss}%` : '0.0%';
+                aeroEl.style.color = aeroLoss > 5 ? 'var(--f1-red)' : (aeroLoss > 1 ? 'var(--fia-yellow)' : 'var(--fia-green)');
+            }
+
+            // KPI 3: Pit Repair Time Added
+            const repairEl = document.getElementById('dmg-pit-repair');
+            if (repairEl) {
+                if (flWing > 30 || frWing > 30) {
+                    repairEl.textContent = '+7.5s (Wing Swap)';
+                    repairEl.style.color = 'var(--fia-yellow)';
+                } else if (flWing > 0 || frWing > 0) {
+                    repairEl.textContent = 'Minor (No swap)';
+                    repairEl.style.color = 'var(--text-muted)';
+                } else {
+                    repairEl.textContent = '0.0s (Nominal)';
+                    repairEl.style.color = 'var(--fia-green)';
+                }
+            }
+
+            // KPI 4: Powertrain Wear
+            const puWear = Math.round(puComponents.reduce((a, b) => a + b, 0) / puComponents.length);
+            const puEl = document.getElementById('dmg-pu-wear');
+            if (puEl) {
+                puEl.textContent = `${Math.max(0, 100 - puWear)}% Life`;
+                puEl.style.color = puWear > 40 ? 'var(--f1-red)' : (puWear > 20 ? 'var(--fia-yellow)' : 'var(--fia-green)');
+            }
+        }
+
+        // ── Toast notification helper ──────────────────────────────────────────
+        function showToast(msg, type = 'info', duration = 3500) {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+                document.body.appendChild(container);
+            }
+            const t = document.createElement('div');
+            const colors = { info: '#0066FF', success: '#00E676', warning: '#FFD100', error: '#FF1E00' };
+            t.style.cssText = `background:rgba(5,12,26,0.95);border:1px solid ${colors[type]||colors.info};border-radius:10px;padding:12px 18px;color:#fff;font-family:'Roboto Mono',monospace;font-size:0.82rem;font-weight:600;letter-spacing:0.5px;box-shadow:0 4px 20px rgba(0,0,0,0.6);pointer-events:all;opacity:0;transform:translateY(10px);transition:all 0.3s ease;white-space:nowrap;`;
+            t.textContent = msg;
+            container.appendChild(t);
+            requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateY(0)'; });
+            setTimeout(() => {
+                t.style.opacity = '0'; t.style.transform = 'translateY(10px)';
+                setTimeout(() => t.remove(), 350);
+            }, duration);
+        }
+
+        // ── Session JSON Download ──────────────────────────────────────────────
+        async function downloadSessionJson() {
+            showToast('⬇ Preparing session export...', 'info', 2000);
+            try {
+                const res = await fetch('/api/session/export');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const blob = await res.blob();
+                const disposition = res.headers.get('Content-Disposition') || '';
+                const match = disposition.match(/filename="?([^"\s]+)"?/);
+                const filename = match ? match[1] : `f1_session_${Date.now()}.json`;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                showToast(`✅ Downloaded: ${filename}`, 'success', 4000);
+            } catch (err) {
+                console.error('Session export error:', err);
+                showToast(`❌ Export failed: ${err.message}`, 'error', 4000);
+            }
+        }
+
+        // Global hotkey shortcut: Ctrl+S or Ctrl+E to export session JSON instantly
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'e' || e.key === 'S' || e.key === 'E')) {
+                e.preventDefault();
+                downloadSessionJson();
+            }
+        });
     </script>
     <div id="sector-modal" style="
         display: none;
@@ -5305,13 +6276,19 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
                         <!-- LT / RT Analog Triggers -->
                         <div style="margin-top: 10px;">
-                            <div class="label" style="font-size: 0.7rem;">LT Trigger: <span id="lt-val" style="color: var(--text-main);">0%</span></div>
-                            <div class="bar-bg" style="height: 4px; margin: 2px 0 6px 0;">
-                                <div id="lt-bar" class="fill-bar" style="background: var(--fia-green); width: 0%;"></div>
+                            <div class="label" style="font-size: 0.7rem; display: flex; justify-content: space-between; align-items: center;">
+                                <span>LT Trigger (Brake):</span>
+                                <span id="lt-val" style="color: var(--fia-green); font-family: 'Roboto Mono', monospace; font-weight: 700;">0.0% (0.00)</span>
                             </div>
-                            <div class="label" style="font-size: 0.7rem;">RT Trigger: <span id="rt-val" style="color: var(--text-main);">0%</span></div>
-                            <div class="bar-bg" style="height: 4px; margin: 2px 0;">
-                                <div id="rt-bar" class="fill-bar" style="background: var(--f1-red); width: 0%;"></div>
+                            <div class="bar-bg" style="height: 5px; margin: 2px 0 6px 0;">
+                                <div id="lt-bar" class="fill-bar" style="background: var(--fia-green); width: 0%; transition: none !important;"></div>
+                            </div>
+                            <div class="label" style="font-size: 0.7rem; display: flex; justify-content: space-between; align-items: center;">
+                                <span>RT Trigger (Throttle):</span>
+                                <span id="rt-val" style="color: var(--f1-red); font-family: 'Roboto Mono', monospace; font-weight: 700;">0.0% (0.00)</span>
+                            </div>
+                            <div class="bar-bg" style="height: 5px; margin: 2px 0;">
+                                <div id="rt-bar" class="fill-bar" style="background: var(--f1-red); width: 0%; transition: none !important;"></div>
                             </div>
                         </div>
                     </div>
