@@ -1,21 +1,21 @@
 [
   {
     "lapNum": 1,
-    "time": 77946,
+    "time": 82020,
     "setup": {
       "wingF": 34,
       "wingR": 29,
-      "diffOn": 70,
+      "diffOn": 65,
       "diffOff": 30,
       "camberF": -3.5,
       "camberR": -2,
       "toeF": 0,
       "toeR": 0.10000000149011612,
-      "bBias": 55,
-      "fuel": 9.594762802124023,
-      "fuelLaps": 2.5923147201538086
+      "bBias": 56,
+      "fuel": 28.311992645263672,
+      "fuelLaps": 2.591024398803711
     },
-    "timestamp": 1786816147027
+    "timestamp": 1786817959306
   },
   {
     "lapNum": 2,

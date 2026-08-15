@@ -1519,7 +1519,340 @@
             }
         }
 
-        /* ══════════ GAMEPAD MODAL & TESTING UI ══════════ */
+        /* ══════════ MINI TYRE HEADER WIDGET ══════════ */
+        .hdr-tyre-widget {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-left: 1px solid var(--f1-border);
+            padding-left: 12px;
+        }
+        .hdr-tyre-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3px;
+        }
+        .hdr-tyre-cell {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            border: 1.5px solid rgba(255,255,255,0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.55rem;
+            font-weight: 700;
+            background: rgba(0,0,0,0.4);
+            transition: border-color 0.3s;
+        }
+        .hdr-tyre-letter {
+            font-size: 0.75rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+        .hdr-tyre-pct {
+            font-size: 0.5rem;
+            color: rgba(255,255,255,0.6);
+            margin-top: 1px;
+        }
+        .hdr-tyre-label {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+        }
+
+        /* ══════════ PB BADGE ══════════ */
+        #pb-badge {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: linear-gradient(135deg, rgba(187,0,255,0.95), rgba(100,0,200,0.95));
+            border: 1px solid var(--fia-purple);
+            border-radius: 12px;
+            padding: 10px 24px;
+            font-family: 'Titillium Web', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            box-shadow: 0 0 40px rgba(187,0,255,0.6);
+            z-index: 9998;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease, transform 0.35s ease;
+            white-space: nowrap;
+        }
+        #pb-badge.pb-show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ══════════ PACE CHART ══════════ */
+        .pace-chart-container {
+            position: relative;
+            width: 100%;
+            height: 160px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            border: 1px solid var(--f1-border);
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        #pace-chart-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .pace-chart-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: 'Roboto Mono', monospace;
+            margin-bottom: 8px;
+        }
+        .pace-legend-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+
+        /* ══════════ TYRE LIFE PREDICTOR ══════════ */
+        .tyre-predict-card {
+            background: linear-gradient(135deg, rgba(10,20,40,0.9), rgba(5,12,26,0.95));
+            border: 1px solid var(--f1-border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-top: 12px;
+        }
+        .tyre-predict-header {
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .tyre-predict-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .tyre-predict-stat {
+            background: rgba(255,255,255,0.04);
+            border-radius: 8px;
+            padding: 8px 10px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .tyre-predict-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .tyre-predict-value {
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Roboto Mono', monospace;
+            margin-top: 3px;
+        }
+        .tyre-pit-window {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            text-align: center;
+            border: 1px solid;
+        }
+
+        /* ══════════ FUEL BURN RATE ══════════ */
+        .fuel-burn-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .fuel-stat-chip {
+            flex: 1;
+            min-width: 90px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 8px 10px;
+            text-align: center;
+        }
+        .fuel-stat-chip-lbl {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .fuel-stat-chip-val {
+            font-size: 0.9rem;
+            font-weight: 700;
+            font-family: 'Roboto Mono', monospace;
+            margin-top: 3px;
+        }
+
+        /* ══════════ LIVE INPUT TRACE ══════════ */
+        .input-trace-container {
+            margin-top: 12px;
+        }
+        .input-trace-header {
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .input-trace-legend {
+            display: flex;
+            gap: 12px;
+        }
+        .input-trace-legend-item {
+            font-size: 0.65rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .input-trace-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+        #input-trace-canvas {
+            width: 100%;
+            height: 80px;
+            background: rgba(0,0,0,0.35);
+            border-radius: 8px;
+            border: 1px solid var(--f1-border);
+            display: block;
+        }
+
+        /* ══════════ RIVAL PANEL ══════════ */
+        .rival-panel {
+            background: linear-gradient(135deg, rgba(10,20,40,0.9), rgba(5,12,26,0.95));
+            border: 1px solid var(--f1-border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-top: 12px;
+        }
+        .rival-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .rival-title {
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .rival-select {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--f1-border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.75rem;
+            font-family: 'Roboto Mono', monospace;
+            padding: 3px 8px;
+            cursor: pointer;
+        }
+        .rival-comparison {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 8px;
+            align-items: center;
+        }
+        .rival-driver-col {
+            text-align: center;
+        }
+        .rival-driver-name {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+        .rival-driver-val {
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Roboto Mono', monospace;
+            margin-top: 4px;
+        }
+        .rival-vs-badge {
+            background: rgba(255,255,255,0.08);
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        .rival-recent-laps {
+            display: flex;
+            gap: 4px;
+            margin-top: 10px;
+        }
+        .rival-lap-chip {
+            flex: 1;
+            background: rgba(255,255,255,0.04);
+            border-radius: 6px;
+            padding: 5px;
+            text-align: center;
+            font-size: 0.65rem;
+            font-family: 'Roboto Mono', monospace;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .rival-lap-chip-label {
+            color: var(--text-muted);
+            font-size: 0.55rem;
+        }
+
+        /* ══════════ GAP TREND ARROWS ══════════ */
+        .gap-trend-arrow {
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: 3px;
+        }
+        .gap-closing { color: var(--f1-red); }
+        .gap-growing { color: var(--fia-green); }
+        .gap-stable  { color: var(--text-muted); }
+
+        /* ══════════ MOBILE NAV — ICON ONLY ══════════ */
+        @media (max-width: 480px) {
+            .nav-btn span.nav-label { display: none; }
+            .nav-btn {
+                padding: 6px 8px;
+                gap: 0;
+                min-width: 40px;
+                justify-content: center;
+            }
+            .hdr-tyre-widget { display: none; }
+            #pb-badge { font-size: 0.9rem; padding: 8px 16px; }
+        }
+        @media (max-width: 360px) {
+            .nav-bar { gap: 2px; padding: 4px; }
+            .nav-btn { padding: 5px 6px; }
+        }
+
+
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -1812,8 +2145,33 @@
                 <span class="rbr-pulse-dot"></span>
                 LIVE TELEMETRY 20Hz
             </div>
+            <!-- Mini Tyre Status Widget -->
+            <div class="hdr-tyre-widget" id="hdr-tyre-widget">
+                <span class="hdr-tyre-label">TYRES</span>
+                <div class="hdr-tyre-grid">
+                    <div class="hdr-tyre-cell" id="hdr-tyre-fl">
+                        <span class="hdr-tyre-letter" id="hdr-tyre-letter-fl">-</span>
+                        <span class="hdr-tyre-pct" id="hdr-tyre-pct-fl">--%</span>
+                    </div>
+                    <div class="hdr-tyre-cell" id="hdr-tyre-fr">
+                        <span class="hdr-tyre-letter" id="hdr-tyre-letter-fr">-</span>
+                        <span class="hdr-tyre-pct" id="hdr-tyre-pct-fr">--%</span>
+                    </div>
+                    <div class="hdr-tyre-cell" id="hdr-tyre-rl">
+                        <span class="hdr-tyre-letter" id="hdr-tyre-letter-rl">-</span>
+                        <span class="hdr-tyre-pct" id="hdr-tyre-pct-rl">--%</span>
+                    </div>
+                    <div class="hdr-tyre-cell" id="hdr-tyre-rr">
+                        <span class="hdr-tyre-letter" id="hdr-tyre-letter-rr">-</span>
+                        <span class="hdr-tyre-pct" id="hdr-tyre-pct-rr">--%</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- PB Badge Overlay -->
+    <div id="pb-badge">🏆 NEW PERSONAL BEST!</div>
 
     <div class="header-bar">
         <div class="header-item">
@@ -1857,56 +2215,52 @@
     <div class="nav-bar">
         <button class="nav-btn active" onclick="switchTab('tab-radar', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path
-                    d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45V7h1.5v7.5l3.5 2.05-.76 1.45z" />
+                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45V7h1.5v7.5l3.5 2.05-.76 1.45z" />
             </svg>
-            Timing & Radar
+            <span class="nav-label">Timing &amp; Radar</span>
         </button>
         <button class="nav-btn" onclick="switchTab('tab-telemetry', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M3.5 18.5l6-6 4 4L22 6.92 20.59 5.5l-7.09 7.09-4-4L2 17.09l1.5 1.41z" />
             </svg>
-            Telemetry
+            <span class="nav-label">Telemetry</span>
         </button>
         <button class="nav-btn" onclick="switchTab('tab-tyres', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path
-                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
             </svg>
-            Tyre Data
+            <span class="nav-label">Tyre Data</span>
         </button>
         <button class="nav-btn" onclick="switchTab('tab-engineering', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path
-                    d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.73 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.73 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
             </svg>
-            Engineering
+            <span class="nav-label">Engineering</span>
         </button>
         <button class="nav-btn" onclick="switchTab('tab-leaderboard', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
             </svg>
-            Classification
+            <span class="nav-label">Classification</span>
         </button>
         <button class="nav-btn" onclick="switchTab('tab-history', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path
-                    d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
+                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
             </svg>
-            Lap Analysis
+            <span class="nav-label">Lap Analysis</span>
         </button>
         <button class="nav-btn" onclick="switchTab('tab-damage', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M12 2L1 21h22L12 2zm1 16h-2v-2h2v2zm0-4h-2v-4h2v4z" />
             </svg>
-            Car Damage
+            <span class="nav-label">Car Damage</span>
         </button>
         <button class="nav-btn" onclick="switchTab('tab-weather', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path
                     d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z" />
             </svg>
-            Weather
+            <span class="nav-label">Weather</span>
         </button>
         <button class="nav-btn" id="gamepad-nav-btn" onclick="openGamepadModal()" title="Test Gamepad &amp; Vibration">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -2326,6 +2680,18 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Live Input Trace Canvas -->
+                <div class="input-trace-container">
+                    <div class="input-trace-header">
+                        <span>Live Input Trace (10s)</span>
+                        <div class="input-trace-legend">
+                            <div class="input-trace-legend-item"><span class="input-trace-dot" style="background:var(--fia-green);"></span>Throttle</div>
+                            <div class="input-trace-legend-item"><span class="input-trace-dot" style="background:var(--f1-red);"></span>Brake</div>
+                        </div>
+                    </div>
+                    <canvas id="input-trace-canvas"></canvas>
+                </div>
             </div>
         </div>
 
@@ -2548,6 +2914,33 @@
                     </div>
 
                 </div><!-- end tyre-grid-4 -->
+
+                <!-- Tyre Life & Strategy Predictor Card -->
+                <div class="tyre-predict-card">
+                    <div class="tyre-predict-header">🛞 Tyre Wear &amp; Strategy Predictor</div>
+                    <div class="tyre-predict-grid">
+                        <div class="tyre-predict-stat">
+                            <div class="tyre-predict-label">Wear Rate / Lap</div>
+                            <div class="tyre-predict-value" id="tyre-wear-rate">0.0% / lap</div>
+                        </div>
+                        <div class="tyre-predict-stat">
+                            <div class="tyre-predict-label">Est. Laps to 70%</div>
+                            <div class="tyre-predict-value" id="tyre-laps-remain">-- laps</div>
+                        </div>
+                        <div class="tyre-predict-stat">
+                            <div class="tyre-predict-label">Most Worn Corner</div>
+                            <div class="tyre-predict-value" id="tyre-worst-corner">--</div>
+                        </div>
+                        <div class="tyre-predict-stat">
+                            <div class="tyre-predict-label">Pace Drop Warning</div>
+                            <div class="tyre-predict-value" id="tyre-cliff-warning" style="color:var(--fia-green);">OPTIMAL</div>
+                        </div>
+                    </div>
+                    <div class="tyre-pit-window" id="tyre-pit-window-msg" style="border-color:var(--fia-green); color:var(--fia-green); background:rgba(0,230,118,0.08);">
+                        Pit Window: Optimal Pace
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -2575,6 +2968,22 @@
                 <div class="data-row">
                     <span class="label">Fuel Laps</span>
                     <span class="val val-xlarge" id="fuel-laps">0.00</span>
+                </div>
+
+                <!-- Fuel Burn Rate Calculator Chips -->
+                <div class="fuel-burn-row">
+                    <div class="fuel-stat-chip">
+                        <div class="fuel-stat-chip-lbl">Burn Rate</div>
+                        <div class="fuel-stat-chip-val" id="fuel-burn-rate">0.00 kg/lap</div>
+                    </div>
+                    <div class="fuel-stat-chip">
+                        <div class="fuel-stat-chip-lbl">Delta vs Target</div>
+                        <div class="fuel-stat-chip-val" id="fuel-target-delta" style="color:var(--fia-green);">+0.00 kg</div>
+                    </div>
+                    <div class="fuel-stat-chip">
+                        <div class="fuel-stat-chip-lbl">True Laps Empty</div>
+                        <div class="fuel-stat-chip-val" id="fuel-calc-laps">--</div>
+                    </div>
                 </div>
                 <div class="data-row">
                     <span class="label">Pit Limit</span>
@@ -2673,6 +3082,44 @@
                         </svg>
                         Export Session JSON
                     </button>
+                </div>
+
+                <!-- Pace Chart Canvas Section -->
+                <div style="padding: 12px 15px 0 15px;">
+                    <div class="pace-chart-legend">
+                        <div><span class="pace-legend-dot" style="background:#FFF;"></span>Your Pace</div>
+                        <div><span class="pace-legend-dot" style="background:var(--fia-purple);"></span>Session Best</div>
+                        <div><span class="pace-legend-dot" style="background:var(--fia-yellow);"></span>Rival Pace</div>
+                    </div>
+                    <div class="pace-chart-container">
+                        <canvas id="pace-chart-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Rival Head-to-Head Comparison Panel -->
+                <div class="rival-panel" style="margin: 0 15px 10px 15px;">
+                    <div class="rival-header">
+                        <span class="rival-title">🏎️ Rival Head-to-Head Comparison</span>
+                        <select id="rival-selector" class="rival-select" onchange="onRivalSelected(this.value)">
+                            <option value="-1">Select Rival Driver...</option>
+                        </select>
+                    </div>
+                    <div class="rival-comparison">
+                        <div class="rival-driver-col">
+                            <div class="rival-driver-name" id="rival-p-name">YOU</div>
+                            <div class="rival-driver-val" id="rival-p-best">--:--.---</div>
+                        </div>
+                        <div class="rival-vs-badge">VS</div>
+                        <div class="rival-driver-col">
+                            <div class="rival-driver-name" id="rival-t-name">RIVAL</div>
+                            <div class="rival-driver-val" id="rival-t-best" style="color:var(--fia-yellow);">--:--.---</div>
+                        </div>
+                    </div>
+                    <div class="rival-recent-laps" id="rival-recent-chips">
+                        <div class="rival-lap-chip"><div class="rival-lap-chip-label">Gap to Rival</div><div id="rival-gap-val">--</div></div>
+                        <div class="rival-lap-chip"><div class="rival-lap-chip-label">Pace Delta</div><div id="rival-pace-delta">--</div></div>
+                        <div class="rival-lap-chip"><div class="rival-lap-chip-label">Rival Tyre</div><div id="rival-tyre-val">--</div></div>
+                    </div>
                 </div>
                 <div style="
               overflow-x: auto;
@@ -3941,6 +4388,18 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const mwEl = document.getElementById('tyre-max-wear');
             if (mwEl) mwEl.textContent = `${maxWear}%`;
 
+            // Mini Tyre Header Widget (always visible)
+            ['fl', 'fr', 'rl', 'rr'].forEach((c) => {
+                const w = Math.round(wearData[c] || 0);
+                const col = getWearColor(w);
+                const cell = document.getElementById(`hdr-tyre-${c}`);
+                const ltr = document.getElementById(`hdr-tyre-letter-${c}`);
+                const pct = document.getElementById(`hdr-tyre-pct-${c}`);
+                if (cell) cell.style.borderColor = col;
+                if (ltr) { ltr.textContent = cLetter; ltr.style.color = cColor; }
+                if (pct) { pct.textContent = `${w}%`; pct.style.color = col; }
+            });
+
             // Legacy compound value on SVG car schematic
             const compVal = document.getElementById('car-compound-value');
             if (compVal) compVal.textContent = (compound || '--').toUpperCase();
@@ -3984,6 +4443,441 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 }
             });
         }
+
+        /* ══════════ NEW DASHBOARD FEATURE MODULES ══════════ */
+
+        // ── PB Badge Notification ──────────────────────────────────────────────
+        let lastObservedPB = 0;
+        let pbBadgeTimeout = null;
+
+        function checkPBNotification(currentBestMs) {
+            if (!currentBestMs || currentBestMs <= 0 || currentBestMs === Infinity) return;
+            if (lastObservedPB > 0 && currentBestMs < lastObservedPB) {
+                const diffSec = ((lastObservedPB - currentBestMs) / 1000).toFixed(3);
+                const badge = document.getElementById('pb-badge');
+                if (badge) {
+                    badge.innerHTML = `🏆 NEW PERSONAL BEST! <b>${formatMs(currentBestMs)}</b> <span style="color:#00E676;font-size:0.85em;margin-left:6px;">(-${diffSec}s)</span>`;
+                    badge.classList.add('pb-show');
+                    if (pbBadgeTimeout) clearTimeout(pbBadgeTimeout);
+                    pbBadgeTimeout = setTimeout(() => {
+                        badge.classList.remove('pb-show');
+                    }, 4500);
+                }
+            }
+            lastObservedPB = currentBestMs;
+        }
+
+        // ── Live Input Trace (10s rolling canvas) ──────────────────────────────
+        const inputTraceHistory = [];
+        const MAX_INPUT_HISTORY = 200;
+
+        function drawInputTrace(throttle, brake) {
+            const canvas = document.getElementById('input-trace-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.clientWidth || 300;
+            const h = canvas.clientHeight || 80;
+            
+            if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+                canvas.width = Math.floor(w * dpr);
+                canvas.height = Math.floor(h * dpr);
+            }
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, w, h);
+
+            inputTraceHistory.push({
+                thr: Math.max(0, Math.min(100, Number(throttle) || 0)),
+                brk: Math.max(0, Math.min(100, Number(brake) || 0))
+            });
+            if (inputTraceHistory.length > MAX_INPUT_HISTORY) {
+                inputTraceHistory.shift();
+            }
+            if (inputTraceHistory.length < 2) return;
+
+            // Grid lines (25%, 50%, 75%)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            [0.25, 0.5, 0.75].forEach(pct => {
+                const y = h - (pct * h);
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            });
+
+            const step = w / (MAX_INPUT_HISTORY - 1);
+            const offset = (MAX_INPUT_HISTORY - inputTraceHistory.length) * step;
+
+            // Throttle Line (Green)
+            ctx.beginPath();
+            ctx.strokeStyle = '#00E676';
+            ctx.lineWidth = 2;
+            inputTraceHistory.forEach((pt, i) => {
+                const x = offset + (i * step);
+                const y = h - ((pt.thr / 100) * (h - 6)) - 3;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // Brake Line (Red)
+            ctx.beginPath();
+            ctx.strokeStyle = '#FF1E00';
+            ctx.lineWidth = 2;
+            inputTraceHistory.forEach((pt, i) => {
+                const x = offset + (i * step);
+                const y = h - ((pt.brk / 100) * (h - 6)) - 3;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        }
+
+        // ── Tyre Life & Strategy Predictor ─────────────────────────────────────
+        function updateTyrePredictor(wearData, stintAge, compound) {
+            if (!wearData) return;
+            const age = Number(stintAge) || 0;
+            const corners = ['fl', 'fr', 'rl', 'rr'];
+            let worstCorner = 'FL';
+            let maxWear = 0;
+            
+            corners.forEach(c => {
+                const w = Number(wearData[c]) || 0;
+                if (w > maxWear) {
+                    maxWear = w;
+                    worstCorner = c.toUpperCase();
+                }
+            });
+
+            const wearRate = age > 0 ? (maxWear / age) : (maxWear > 0 ? maxWear : 0);
+            const lapsRemain = wearRate > 0 ? Math.max(0, Math.floor((70 - maxWear) / wearRate)) : '--';
+
+            setText('tyre-wear-rate', wearRate > 0 ? `${wearRate.toFixed(1)}% / lap` : '--');
+            setText('tyre-laps-remain', typeof lapsRemain === 'number' ? `${lapsRemain} laps` : '--');
+            setText('tyre-worst-corner', worstCorner);
+
+            const cliffEl = document.getElementById('tyre-cliff-warning');
+            const pitMsgEl = document.getElementById('tyre-pit-window-msg');
+
+            if (maxWear >= 70) {
+                if (cliffEl) { cliffEl.textContent = 'CLIFF (OVERHEATING)'; cliffEl.style.color = 'var(--f1-red)'; }
+                if (pitMsgEl) {
+                    pitMsgEl.textContent = 'BOX THIS LAP: Tyres in Critical Wear Zone (>70%)';
+                    pitMsgEl.style.color = 'var(--f1-red)';
+                    pitMsgEl.style.borderColor = 'var(--f1-red)';
+                    pitMsgEl.style.background = 'rgba(255,30,0,0.12)';
+                }
+            } else if (maxWear >= 50 || (typeof lapsRemain === 'number' && lapsRemain <= 3)) {
+                if (cliffEl) { cliffEl.textContent = 'HIGH WEAR (PIT SOON)'; cliffEl.style.color = 'var(--fia-yellow)'; }
+                if (pitMsgEl) {
+                    pitMsgEl.textContent = `PIT WINDOW OPEN: ~${lapsRemain} laps until performance cliff`;
+                    pitMsgEl.style.color = 'var(--fia-yellow)';
+                    pitMsgEl.style.borderColor = 'var(--fia-yellow)';
+                    pitMsgEl.style.background = 'rgba(255,209,0,0.1)';
+                }
+            } else {
+                if (cliffEl) { cliffEl.textContent = 'OPTIMAL PACE'; cliffEl.style.color = 'var(--fia-green)'; }
+                if (pitMsgEl) {
+                    pitMsgEl.textContent = `Pace Stable: ~${lapsRemain} laps of tyre life remaining`;
+                    pitMsgEl.style.color = 'var(--fia-green)';
+                    pitMsgEl.style.borderColor = 'var(--fia-green)';
+                    pitMsgEl.style.background = 'rgba(0,230,118,0.08)';
+                }
+            }
+        }
+
+        // ── Fuel Burn Rate Calculator ──────────────────────────────────────────
+        let initialFuel = null;
+        let lastRecordedLap = 0;
+
+        function updateFuelBurn(fuelKg, fuelLaps, currentLap) {
+            const fuel = Number(fuelKg) || 0;
+            const laps = Number(currentLap) || 0;
+
+            if (initialFuel === null && fuel > 0 && laps > 0) {
+                initialFuel = fuel;
+                lastRecordedLap = laps;
+            }
+
+            let burnRate = 0;
+            if (initialFuel !== null && laps > lastRecordedLap) {
+                const lapsDone = laps - lastRecordedLap;
+                const fuelUsed = initialFuel - fuel;
+                if (fuelUsed > 0 && lapsDone > 0) {
+                    burnRate = fuelUsed / lapsDone;
+                }
+            }
+
+            if (burnRate > 0) {
+                setText('fuel-burn-rate', `${burnRate.toFixed(2)} kg/lap`);
+                const trueLaps = burnRate > 0 ? (fuel / burnRate).toFixed(1) : '--';
+                setText('fuel-calc-laps', `${trueLaps} Laps`);
+            } else if (fuelLaps !== undefined) {
+                const estimatedBurn = fuelLaps > 0 ? (fuel / fuelLaps) : 0;
+                if (estimatedBurn > 0) {
+                    setText('fuel-burn-rate', `${estimatedBurn.toFixed(2)} kg/lap`);
+                    setText('fuel-calc-laps', `${fuelLaps.toFixed(1)} Laps`);
+                }
+            }
+
+            if (fuelLaps !== undefined) {
+                const deltaTarget = fuelLaps >= 0 ? `+${fuelLaps.toFixed(2)} laps` : `${fuelLaps.toFixed(2)} laps`;
+                const deltaEl = document.getElementById('fuel-target-delta');
+                if (deltaEl) {
+                    deltaEl.textContent = deltaTarget;
+                    deltaEl.style.color = fuelLaps >= 0 ? 'var(--fia-green)' : 'var(--f1-red)';
+                }
+            }
+        }
+
+        // ── Pace Chart (Lap Evolution Line Chart) ──────────────────────────────
+        function drawPaceChart(data) {
+            const canvas = document.getElementById('pace-chart-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.clientWidth || 400;
+            const h = canvas.clientHeight || 160;
+
+            if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+                canvas.width = Math.floor(w * dpr);
+                canvas.height = Math.floor(h * dpr);
+            }
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, w, h);
+
+            const pIdx = data.playerIndex || 0;
+            const playerLaps = (data.allLapHistories && data.allLapHistories[pIdx]) ? data.allLapHistories[pIdx] : [];
+            
+            const playerTimes = playerLaps
+                .map(l => (typeof l === 'object' ? l.lapTime : l) || 0)
+                .filter(t => t > 30000 && t < 240000);
+
+            if (playerTimes.length < 2) {
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.font = '12px "Roboto Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('Complete 2+ laps to render pace evolution chart', w / 2, h / 2);
+                return;
+            }
+
+            let rivalTimes = [];
+            if (selectedRivalCarIndex >= 0 && data.allLapHistories && data.allLapHistories[selectedRivalCarIndex]) {
+                rivalTimes = data.allLapHistories[selectedRivalCarIndex]
+                    .map(l => (typeof l === 'object' ? l.lapTime : l) || 0)
+                    .filter(t => t > 30000 && t < 240000);
+            }
+
+            const allTimes = [...playerTimes, ...rivalTimes];
+            const minTime = Math.min(...allTimes);
+            const maxTime = Math.max(...allTimes);
+            const timeRange = (maxTime - minTime) || 1;
+
+            const padX = 45;
+            const padY = 20;
+            const plotW = w - padX - 15;
+            const plotH = h - (padY * 2);
+
+            // Horizontal Grid lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+            ctx.lineWidth = 1;
+            [0, 0.5, 1].forEach(pct => {
+                const y = padY + (pct * plotH);
+                ctx.beginPath();
+                ctx.moveTo(padX, y);
+                ctx.lineTo(w - 15, y);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.font = '9px "Roboto Mono", monospace';
+                ctx.textAlign = 'right';
+                const tVal = maxTime - (pct * timeRange);
+                ctx.fillText(formatMs(Math.round(tVal)).substring(0, 7), padX - 5, y + 3);
+            });
+
+            const maxLapCount = Math.max(playerTimes.length, rivalTimes.length);
+            const stepX = plotW / Math.max(1, maxLapCount - 1);
+
+            // Session Best Reference Line (Purple dashed)
+            const sessionBestMs = (data.session && data.session.sessionFastestLapMs && data.session.sessionFastestLapMs !== Infinity)
+                ? data.session.sessionFastestLapMs : minTime;
+            if (sessionBestMs >= minTime && sessionBestMs <= maxTime) {
+                const sbY = padY + ((maxTime - sessionBestMs) / timeRange) * plotH;
+                ctx.strokeStyle = 'rgba(187, 0, 255, 0.7)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(padX, sbY);
+                ctx.lineTo(w - 15, sbY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Rival Pace Line (Yellow)
+            if (rivalTimes.length >= 2) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#FFD100';
+                ctx.lineWidth = 2;
+                rivalTimes.forEach((t, i) => {
+                    const x = padX + (i * stepX);
+                    const y = padY + ((maxTime - t) / timeRange) * plotH;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            }
+
+            // Player Pace Line (White)
+            ctx.beginPath();
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2.5;
+            playerTimes.forEach((t, i) => {
+                const x = padX + (i * stepX);
+                const y = padY + ((maxTime - t) / timeRange) * plotH;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // Player Points
+            playerTimes.forEach((t, i) => {
+                const x = padX + (i * stepX);
+                const y = padY + ((maxTime - t) / timeRange) * plotH;
+                const isPB = t === minTime;
+
+                ctx.fillStyle = isPB ? 'var(--fia-purple)' : '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(x, y, isPB ? 5 : 3, 0, Math.PI * 2);
+                ctx.fill();
+                if (isPB) {
+                    ctx.strokeStyle = '#FFF';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        // ── Rival Head-to-Head Comparison ──────────────────────────────────────
+        let selectedRivalCarIndex = -1;
+
+        function onRivalSelected(val) {
+            selectedRivalCarIndex = parseInt(val, 10);
+        }
+
+        function updateRivalComparison(data) {
+            const sel = document.getElementById('rival-selector');
+            if (!sel || !data.leaderboard) return;
+
+            if (sel.options.length <= 1 && data.participants) {
+                data.leaderboard.forEach(driver => {
+                    if (driver.carIndex === data.playerIndex) return;
+                    const name = data.participants[driver.carIndex] || `Car ${driver.carIndex}`;
+                    const opt = document.createElement('option');
+                    opt.value = driver.carIndex;
+                    opt.textContent = `P${driver.pos || '--'} • ${name}`;
+                    sel.appendChild(opt);
+                });
+            }
+
+            const pIdx = data.playerIndex || 0;
+            const pDriver = (data.leaderboard || []).find(d => d.carIndex === pIdx);
+            const pName = (data.participants && data.participants[pIdx]) ? data.participants[pIdx].toUpperCase() : 'YOU';
+            setText('rival-p-name', pName);
+            setText('rival-p-best', pDriver?.bestLapMs > 0 ? formatMs(pDriver.bestLapMs) : '--:--.---');
+
+            if (selectedRivalCarIndex >= 0) {
+                const rDriver = (data.leaderboard || []).find(d => d.carIndex === selectedRivalCarIndex);
+                const rName = (data.participants && data.participants[selectedRivalCarIndex]) ? data.participants[selectedRivalCarIndex].toUpperCase() : `CAR ${selectedRivalCarIndex}`;
+                setText('rival-t-name', rName);
+                setText('rival-t-best', rDriver?.bestLapMs > 0 ? formatMs(rDriver.bestLapMs) : '--:--.---');
+                setText('rival-tyre-val', rDriver?.tyre || '--');
+
+                if (pDriver && rDriver && pDriver.bestLapMs > 0 && rDriver.bestLapMs > 0) {
+                    const deltaMs = pDriver.bestLapMs - rDriver.bestLapMs;
+                    const deltaSec = (Math.abs(deltaMs) / 1000).toFixed(3);
+                    const deltaEl = document.getElementById('rival-pace-delta');
+                    if (deltaEl) {
+                        deltaEl.textContent = deltaMs <= 0 ? `-${deltaSec}s (Faster)` : `+${deltaSec}s (Slower)`;
+                        deltaEl.style.color = deltaMs <= 0 ? 'var(--fia-green)' : 'var(--f1-red)';
+                    }
+                } else {
+                    setText('rival-pace-delta', '--');
+                }
+
+                setText('rival-gap-val', rDriver?.gapText || '--');
+            } else {
+                setText('rival-t-name', 'RIVAL (SELECT ABOVE)');
+                setText('rival-t-best', '--:--.---');
+                setText('rival-gap-val', '--');
+                setText('rival-pace-delta', '--');
+                setText('rival-tyre-val', '--');
+            }
+        }
+
+        // ── Leaderboard Gap Trend Arrows ───────────────────────────────────────
+        const previousGapsMap = {};
+
+        function getGapTrendBadge(carIndex, currentGapText) {
+            if (!currentGapText || currentGapText === '--' || currentGapText.includes('LEAD') || currentGapText.includes('LAP')) {
+                return '';
+            }
+            const numGap = parseFloat(String(currentGapText).replace(/[^0-9.]/g, ''));
+            if (isNaN(numGap)) return '';
+
+            const prev = previousGapsMap[carIndex];
+            previousGapsMap[carIndex] = numGap;
+
+            if (prev === undefined) return '';
+
+            const diff = numGap - prev;
+            if (diff < -0.05) {
+                return `<span class="gap-trend-arrow gap-closing" title="Gap Closing (-${Math.abs(diff).toFixed(2)}s)">↓</span>`;
+            } else if (diff > 0.05) {
+                return `<span class="gap-trend-arrow gap-growing" title="Gap Growing (+${diff.toFixed(2)}s)">↑</span>`;
+            } else {
+                return `<span class="gap-trend-arrow gap-stable">→</span>`;
+            }
+        }
+
+        // ── Mobile Swipe Gesture Navigation ────────────────────────────────────
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            if (!e.changedTouches || !e.changedTouches[0]) return;
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+            if (!e.changedTouches || !e.changedTouches[0]) return;
+            const touchEndX = e.changedTouches[0].screenX;
+            const touchEndY = e.changedTouches[0].screenY;
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+
+            if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+                const tabs = ['tab-radar', 'tab-telemetry', 'tab-tyres', 'tab-engineering', 'tab-leaderboard', 'tab-history', 'tab-damage', 'tab-weather'];
+                const activeTabEl = document.querySelector('.tab-content.active');
+                if (!activeTabEl) return;
+                const currentIdx = tabs.indexOf(activeTabEl.id);
+                if (currentIdx === -1) return;
+
+                let nextIdx = currentIdx;
+                if (dx < 0) {
+                    nextIdx = (currentIdx + 1) % tabs.length;
+                } else {
+                    nextIdx = (currentIdx - 1 + tabs.length) % tabs.length;
+                }
+
+                const nextTabId = tabs[nextIdx];
+                const nextBtn = document.querySelector(`.nav-btn[onclick*="${nextTabId}"]`);
+                if (nextBtn) {
+                    switchTab(nextTabId, nextBtn);
+                }
+            }
+        }, { passive: true });
 
         /**
          * Renders the G-Force history graph onto the HTML5 Canvas.
@@ -5205,6 +6099,13 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             updateTyreTemps(data.car.surfTemp, data.car.inTemp);
             setText("tyre-age-display", `${data.car.tyreAge} Laps`);
 
+            // ── Update New Modules ──
+            drawInputTrace(data.inputs.throttle, data.inputs.brake);
+            updateTyrePredictor(data.car.wear, data.car.tyreAge, data.car.compound);
+            updateFuelBurn(data.setup.fuel, data.setup.fuelLaps, data.lap.num);
+            checkPBNotification(data.lap.bestMs || (data.leaderboard && data.leaderboard.find(d => d.carIndex === data.playerIndex)?.bestLapMs));
+            drawPaceChart(data);
+            updateRivalComparison(data);
 
             setText("ers-mode", data.ers.mode);
             setStyleById(
@@ -5376,6 +6277,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     } else if (isRace) {
                         let compound = (driver.tyre || "-").split(" ")[0];
                         let intStr = index === 0 ? "LEAD" : driver.gapText || "--";
+                        let trendBadge = getGapTrendBadge(driver.carIndex, intStr);
 
                         let gapToLeader = "LEAD";
                         if (index > 0) {
@@ -5406,7 +6308,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
                         rowHtml += `<span class="val col-tyre" style="color: ${driver.tyreClass || "#FFF"};">${compound}</span>
                                     <span class="val col-gap">${gapToLeader}</span>
-                                    <span class="val col-int">${intStr}</span>
+                                    <span class="val col-int">${intStr}${trendBadge}</span>
                                     <span class="val col-best ${bestClass}">${bestStr}</span>
                                     <span class="val col-laps">${lapStr}</span>`;
                     } else {
@@ -5416,6 +6318,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     rowHtml += `</div>`;
                     lbHtml += rowHtml;
                 });
+
                 animateClassificationSwap(
                     document.getElementById("leaderboard-container"),
                     lbHtml,

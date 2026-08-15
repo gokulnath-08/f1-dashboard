@@ -1,3 +1,12 @@
+// --- Process Crash Guards ---
+process.on('uncaughtException', (err, origin) => {
+    console.error('🛡️ [Process Guard] Uncaught Exception:', err?.message || err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('🛡️ [Process Guard] Unhandled Rejection:', reason);
+});
+
 // --- Imports and Configuration ---
 const { F1TelemetryClient } = require('@deltazeroproduction/f1-udp-parser');
 const WebSocket = require('ws');
@@ -531,13 +540,18 @@ function handleWsConnection(ws) {
             console.error('Error parsing WS message:', e);
         }
     });
+    ws.on('error', (err) => {
+        clients = clients.filter(client => client !== ws);
+    });
     ws.on('close', () => { clients = clients.filter(client => client !== ws); });
 }
 
 const wss = new WebSocket.Server({ server });
+wss.on('error', (err) => { console.error('🛡️ [WSS Error]:', err.message); });
 wss.on('connection', handleWsConnection);
 
 const legacyWss = new WebSocket.Server({ port: 8085, host: '0.0.0.0' });
+legacyWss.on('error', (err) => { console.error('🛡️ [Legacy WSS Error]:', err.message); });
 legacyWss.on('connection', handleWsConnection);
 
 
@@ -788,6 +802,11 @@ function buildApproxPitLane(trackPoints) {
 
 // Initialize the F1 Telemetry UDP Listener on standard port 20777
 const f1Client = new F1TelemetryClient({ port: 20777, format: 2025 });
+if (f1Client && typeof f1Client.on === 'function') {
+    f1Client.on('error', (err) => {
+        console.error('🛡️ [F1 UDP Client Error]:', err?.message || err);
+    });
+}
 
 /**
  * Robust helper function to extract sector times from the F1 UDP packet.
@@ -1171,11 +1190,7 @@ f1Client.on('event', (data) => {
             state.session.sessionFastestDriver = (state.participants && state.participants[vIdx]) ? state.participants[vIdx] : `Car ${vIdx}`;
         }
     } else if (eventCode === 'PENA' && data.m_eventDetails) {
-        const d = data.m_eventDetails;
-        const penType = penaltyMap[d.penaltyType] || `Type ${d.penaltyType}`;
-        const infType = infringementMap[d.infringementType] || `Infringement ${d.infringementType}`;
-        const driverName = (state.participants && state.participants[d.vehicleIdx]) ? state.participants[d.vehicleIdx] : `Car ${d.vehicleIdx}`;
-        console.log(`⚠️ STEWARDS PENALTY EVENT: ${driverName} received ${penType} (${d.time}s) for ${infType} on Lap ${d.lapNum}`);
+        // Penalty recorded into state quietly (console log removed)
     }
 });
 
@@ -1934,6 +1949,10 @@ function displayAllLocalIPv4() {
     console.log(`➡️ http://localhost:${PORT}`);
     console.log('--------------------------------------\n');
 }
+
+server.on('error', (err) => {
+    console.error('🛡️ [HTTP Server Error]:', err?.message || err);
+});
 
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on all IPs at port ${PORT}`);
