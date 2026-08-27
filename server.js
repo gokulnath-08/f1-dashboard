@@ -96,10 +96,435 @@ function processServerGForce(gLat, gLong, gVert) {
     }
 }
 
+// --- HTML File Discovery & Static Assets Handler ---
+const IGNORED_SCAN_DIRS = new Set(['node_modules', '.git', '.agents', 'telemetry', 'track_maps', 'laptime', 'setups']);
+
+const MIME_TYPES = {
+    ".html": "text/html; charset=utf-8",
+    ".htm": "text/html; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".mjs": "application/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
+    ".webp": "image/webp",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+    ".ttf": "font/ttf",
+    ".otf": "font/otf",
+    ".mp3": "audio/mpeg",
+    ".wav": "audio/wav",
+    ".ogg": "audio/ogg",
+    ".mp4": "video/mp4",
+    ".webm": "video/webm",
+    ".txt": "text/plain; charset=utf-8",
+    ".csv": "text/csv; charset=utf-8",
+    ".xml": "application/xml; charset=utf-8",
+    ".pdf": "application/pdf",
+    ".wasm": "application/wasm"
+};
+
+/**
+ * Extracts document <title> if present, or formats a clean human-readable name.
+ */
+function extractHtmlTitle(filePath) {
+    try {
+        const content = fs.readFileSync(filePath, 'utf8');
+        const match = content.match(/<title[^>]*>([^<]+)<\/title>/i);
+        if (match && match[1] && match[1].trim()) {
+            return match[1].trim();
+        }
+    } catch (e) { }
+    const base = path.basename(filePath, '.html');
+    return base.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/**
+ * Recursively scans project directories for all .html files.
+ */
+function getAllHtmlFiles(dir = __dirname, relPrefix = '') {
+    let results = [];
+    try {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+            if (entry.isDirectory()) {
+                if (IGNORED_SCAN_DIRS.has(entry.name) || entry.name.startsWith('.')) continue;
+                const subDir = path.join(dir, entry.name);
+                const subPrefix = relPrefix ? `${relPrefix}/${entry.name}` : entry.name;
+                results = results.concat(getAllHtmlFiles(subDir, subPrefix));
+            } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.html')) {
+                const relPath = relPrefix ? `${relPrefix}/${entry.name}` : entry.name;
+                const fullPath = path.join(dir, entry.name);
+                const urlPath = '/' + relPath.replace(/\\/g, '/');
+                results.push({
+                    name: entry.name,
+                    title: extractHtmlTitle(fullPath),
+                    relPath: relPath.replace(/\\/g, '/'),
+                    urlPath: urlPath,
+                    fullPath: fullPath,
+                    isRoot: !relPrefix
+                });
+            }
+        }
+    } catch (e) {
+        console.error('⚠️ [HTML Scanner Error]:', e.message);
+    }
+    return results;
+}
+
+/**
+ * Resolves any incoming request URL to a concrete file on disk:
+ * 1. Direct path / subfolder path (/ghost_car/f1_ghost_sim.html)
+ * 2. Extensionless path (/training -> training.html)
+ * 3. Folder request (/ghost_car/ -> ghost_car/f1_ghost_sim.html)
+ * 4. Basename search anywhere in project (/f1_ghost_sim.html -> ghost_car/f1_ghost_sim.html)
+ */
+function resolveRequestedFile(reqUrl) {
+    let cleanUrl = reqUrl.split('?')[0];
+    try {
+        cleanUrl = decodeURIComponent(cleanUrl);
+    } catch (e) { }
+
+    if (cleanUrl === '/' || cleanUrl === '') {
+        const indexPath = path.join(__dirname, 'index.html');
+        return fs.existsSync(indexPath) ? indexPath : null;
+    }
+
+    const relPath = cleanUrl.startsWith('/') ? cleanUrl.slice(1) : cleanUrl;
+    const directPath = path.resolve(__dirname, relPath);
+
+    // Security: Do not allow directory traversal outside project root
+    if (!directPath.startsWith(__dirname)) return null;
+
+    // 1. Direct file match
+    if (fs.existsSync(directPath)) {
+        try {
+            const stat = fs.statSync(directPath);
+            if (stat.isFile()) return directPath;
+            if (stat.isDirectory()) {
+                const indexCandidate = path.join(directPath, 'index.html');
+                if (fs.existsSync(indexCandidate)) return indexCandidate;
+                const dirFiles = fs.readdirSync(directPath);
+                const htmlInDir = dirFiles.find(f => f.toLowerCase().endsWith('.html'));
+                if (htmlInDir) return path.join(directPath, htmlInDir);
+            }
+        } catch (e) { }
+    }
+
+    // 2. Extensionless .html match (e.g., /training -> training.html)
+    const withHtmlExt = directPath + '.html';
+    if (fs.existsSync(withHtmlExt)) {
+        try {
+            if (fs.statSync(withHtmlExt).isFile()) return withHtmlExt;
+        } catch (e) { }
+    }
+
+    // 3. Global Project HTML Search (by basename or slug anywhere in subfolders)
+    const reqBase = path.basename(cleanUrl).toLowerCase();
+    const reqBaseNoExt = reqBase.replace(/\.html$/i, '');
+    const allHtml = getAllHtmlFiles();
+    const match = allHtml.find(f => {
+        const fBase = f.name.toLowerCase();
+        const fBaseNoExt = fBase.replace(/\.html$/i, '');
+        return fBase === reqBase || fBaseNoExt === reqBaseNoExt;
+    });
+
+    if (match) return match.fullPath;
+
+    return null;
+}
+
+/**
+ * Generates an interactive, dark-themed F1 Telemetry Hub page listing all available HTML dashboards.
+ */
+function renderHtmlDirectoryPage(statusTitle = "F1 Telemetry Dashboard Hub", statusCode = 200) {
+    const allPages = getAllHtmlFiles();
+    const itemsHtml = allPages.map(page => `
+        <div class="card">
+            <div class="card-header">
+                <div class="badge ${page.isRoot ? 'badge-root' : 'badge-sub'}">${page.isRoot ? 'ROOT' : page.relPath.split('/')[0].toUpperCase()}</div>
+                <span class="file-name">${page.name}</span>
+            </div>
+            <h2 class="page-title">${page.title}</h2>
+            <div class="path-info"><code>${page.urlPath}</code></div>
+            <a href="${page.urlPath}" class="launch-btn">
+                <span>Launch Dashboard</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    `).join('');
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${statusTitle}</title>
+    <style>
+        :root {
+            --bg-main: #0a0c10;
+            --bg-card: #121620;
+            --bg-card-hover: #181e2b;
+            --border-color: #242c3d;
+            --accent-red: #e10600;
+            --accent-glow: rgba(225, 6, 0, 0.35);
+            --text-main: #f0f4f8;
+            --text-muted: #8c9ba5;
+            --accent-cyan: #00d2be;
+            --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 960px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .logo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(225, 6, 0, 0.15);
+            border: 1px solid var(--accent-red);
+            color: #ff4d4d;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffffff 40%, #8c9ba5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+        .search-bar {
+            margin-bottom: 28px;
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 1rem;
+            color: #fff;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 210, 190, 0.2);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent-red);
+            background: var(--bg-card-hover);
+            box-shadow: 0 8px 24px var(--accent-glow);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+        }
+        .badge-root {
+            background: rgba(0, 210, 190, 0.15);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 210, 190, 0.4);
+        }
+        .badge-sub {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.4);
+        }
+        .file-name {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+        .page-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+            line-height: 1.35;
+        }
+        .path-info {
+            margin-bottom: 20px;
+        }
+        .path-info code {
+            font-size: 0.82rem;
+            background: rgba(0,0,0,0.35);
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: #79c0ff;
+            word-break: break-all;
+        }
+        .launch-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--accent-red), #b30000);
+            color: #fff;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            padding: 10px 16px;
+            border-radius: 8px;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .launch-btn:hover {
+            opacity: 0.92;
+            transform: scale(1.02);
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-badge">🏎️ F1 UDP Telemetry Hub</div>
+            <h1>${statusTitle}</h1>
+            <p class="subtitle">Select and run any HTML dashboard or simulation page in this workspace.</p>
+        </div>
+        <div class="search-bar">
+            <input type="text" class="search-input" id="filterInput" placeholder="Filter dashboards (e.g., training, ghost, index)..." oninput="filterCards()">
+        </div>
+        <div class="grid" id="cardsGrid">
+            ${itemsHtml}
+        </div>
+        <div class="footer">
+            F1 Unified Command Center &bull; Port ${PORT} (${hz}Hz Live Feed)
+        </div>
+    </div>
+    <script>
+        function filterCards() {
+            const query = document.getElementById('filterInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                card.style.display = text.includes(query) ? 'flex' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>`;
+}
+
+/**
+ * Scans the telemetry directory and laptime records to return a list of all available tracks.
+ */
+function getAvailableTelemetryTracks() {
+    let tracks = [];
+    try {
+        if (fs.existsSync(telemetryDir)) {
+            const files = fs.readdirSync(telemetryDir);
+            for (const file of files) {
+                const match = file.match(/^telemetry_(\d+)\.json$/i);
+                if (match) {
+                    const trackId = parseInt(match[1], 10);
+                    const record = allTimeFastest[trackId] || null;
+                    const filePath = path.join(telemetryDir, file);
+                    const stat = fs.statSync(filePath);
+                    const name = trackMap[trackId] || `Track ${trackId}`;
+                    
+                    let lapTimeMs = record ? record.time : null;
+                    let driver = record ? record.driver : 'Unknown';
+                    let points = 0;
+
+                    try {
+                        const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                        if (Array.isArray(content)) {
+                            points = content.length;
+                            if (!lapTimeMs && points > 0) {
+                                lapTimeMs = content[points - 1].t;
+                            }
+                        }
+                    } catch (e) {}
+
+                    tracks.push({
+                        id: trackId,
+                        name: name,
+                        file: file,
+                        url: `/telemetry/${file}`,
+                        sizeBytes: stat.size,
+                        points: points,
+                        lapTimeMs: lapTimeMs,
+                        driver: driver
+                    });
+                }
+            }
+        }
+    } catch (e) {
+        console.error('⚠️ [Telemetry Tracks Error]:', e.message);
+    }
+
+    tracks.sort((a, b) => a.name.localeCompare(b.name));
+    return tracks;
+}
+
 // --- HTTP Server ---
-// Serves static files for the dashboard and training UI, plus JSON session export endpoints
+// Serves any HTML file, static assets, dynamic hub page, and JSON session export endpoints
 const server = http.createServer((req, res) => {
-    const reqUrl = req.url.split('?')[0];
+    const rawUrl = req.url || "/";
+    const reqUrl = rawUrl.split('?')[0];
 
     // Export complete session data in JSON format
     if (reqUrl === "/api/session/export" || reqUrl === "/api/session-data" || reqUrl === "/download-session-json") {
@@ -117,26 +542,66 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    let filePath = path.join(__dirname, req.url === "/" ? "index.html" : req.url);
+    // API endpoint returning all available telemetry track recordings
+    if (reqUrl === "/api/tracks" || reqUrl === "/api/telemetry/tracks" || reqUrl === "/api/telemetry-tracks") {
+        const trackList = getAvailableTelemetryTracks();
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        });
+        res.end(JSON.stringify({ count: trackList.length, tracks: trackList }, null, 2));
+        return;
+    }
 
-    const ext = path.extname(filePath);
+    // API endpoint returning all discovered HTML dashboards and pages
+    if (reqUrl === "/api/pages" || reqUrl === "/api/html-files" || reqUrl === "/api/dashboards") {
+        const pages = getAllHtmlFiles();
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        });
+        res.end(JSON.stringify({ count: pages.length, pages: pages }, null, 2));
+        return;
+    }
 
-    const contentTypes = {
-        ".html": "text/html",
-        ".css": "text/css",
-        ".js": "application/javascript",
-        ".json": "application/json"
-    };
+    // Dashboard Hub Page listing all available HTML files
+    if (reqUrl === "/pages" || reqUrl === "/hub" || reqUrl === "/dashboards" || reqUrl === "/list") {
+        const hubHtml = renderHtmlDirectoryPage("F1 Telemetry Dashboard Hub", 200);
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        res.end(hubHtml);
+        return;
+    }
 
-    fs.readFile(filePath, (err, data) => {
+    // Resolve any requested path to a matching file in root or subdirectories
+    const targetFilePath = resolveRequestedFile(rawUrl);
+
+    if (!targetFilePath) {
+        // If an HTML client navigated to a non-existent page, show the hub directory
+        const accept = req.headers['accept'] || '';
+        if (accept.includes('text/html') || !path.extname(reqUrl)) {
+            const notFoundHtml = renderHtmlDirectoryPage("404 - Page Not Found", 404);
+            res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
+            res.end(notFoundHtml);
+            return;
+        }
+
+        res.writeHead(404, { "Content-Type": "text/plain" });
+        res.end("File not found");
+        return;
+    }
+
+    const ext = path.extname(targetFilePath).toLowerCase();
+
+    fs.readFile(targetFilePath, (err, data) => {
         if (err) {
-            res.writeHead(404);
+            res.writeHead(404, { "Content-Type": "text/plain" });
             res.end("File not found");
             return;
         }
 
         let responseData = data;
-        if (req.url === "/" || req.url === "/index.html") {
+        // User customization check for index.html
+        if (targetFilePath.endsWith("index.html")) {
             try {
                 if (os.userInfo().username === "gokul") {
                     let htmlContent = data.toString("utf8");
@@ -147,7 +612,8 @@ const server = http.createServer((req, res) => {
         }
 
         res.writeHead(200, {
-            "Content-Type": contentTypes[ext] || "text/plain"
+            "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
+            "Access-Control-Allow-Origin": "*"
         });
 
         res.end(responseData);
@@ -563,21 +1029,47 @@ const visualTyreColors = { 16: '#E10600', 17: '#FFC72C', 18: '#FFFFFF', 7: '#00E
 const fallbackTyreNames = { 7: 'INTER', 8: 'WET', 9: 'DRY', 10: 'WET', 11: 'SUPER SOFT', 12: 'SOFT', 13: 'MEDIUM', 14: 'HARD', 15: 'WET' };
 
 const gameModeMap = {
-    4: 'Grand Prix ‘23', 5: 'Time Trial', 6: 'Splitscreen', 7: 'Online Custom',
-    15: 'Online Weekly Event', 17: 'Story Mode (Braking Point)', 27: 'My Team Career ‘25',
-    28: 'Driver Career ‘25', 29: 'Career ’25 Online', 30: 'Challenge Career ‘25',
-    75: 'Story Mode (APXGP)', 127: 'Benchmark'
+    4: 'Grand Prix ‘23',
+    5: 'Time Trial',
+    6: 'Splitscreen',
+    7: 'Online Custom',
+    15: 'Online Weekly Event',
+    17: 'Story Mode (Braking Point)',
+    27: 'My Team Career ‘25',
+    28: 'Driver Career ‘25',
+    29: 'Career ’25 Online',
+    30: 'Challenge Career ‘25',
+    75: 'Story Mode (APXGP)',
+    127: 'Benchmark'
 };
 
 const sessionMap = {
-    0: 'Unknown', 1: 'Practice 1', 2: 'Practice 2', 3: 'Practice 3', 4: 'Short Practice',
-    5: 'Qualifying 1', 6: 'Qualifying 2', 7: 'Qualifying 3', 8: 'Short Qualifying', 9: 'One-Shot Qualifying',
-    10: 'Sprint Shootout 1', 11: 'Sprint Shootout 2', 12: 'Sprint Shootout 3', 13: 'Short Sprint Shootout',
-    14: 'One-Shot Sprint Shootout', 15: 'Race', 16: 'Race 2', 17: 'Race 3', 18: 'Time Trial'
+    0: 'Unknown',
+    1: 'Practice 1',
+    2: 'Practice 2',
+    3: 'Practice 3',
+    4: 'Short Practice',
+    5: 'Qualifying 1',
+    6: 'Qualifying 2',
+    7: 'Qualifying 3',
+    8: 'Short Qualifying',
+    9: 'One-Shot Qualifying',
+    10: 'Sprint Shootout 1',
+    11: 'Sprint Shootout 2',
+    12: 'Sprint Shootout 3',
+    13: 'Short Sprint Shootout',
+    14: 'One-Shot Sprint Shootout',
+    15: 'Race',
+    16: 'Race 2',
+    17: 'Race 3',
+    18: 'Time Trial'
 };
 
 const rulesetMap = {
-    0: 'Practice & Qualifying', 1: 'Race', 2: 'Time Trial', 12: 'Elimination'
+    0: 'Practice & Qualifying',
+    1: 'Race',
+    2: 'Time Trial',
+    12: 'Elimination'
 };
 
 const surfaceMap = {
@@ -636,15 +1128,175 @@ const trackMap = {
 
 const flagMap = { '-1': 'GREEN', 0: 'GREEN', 1: 'GREEN', 2: 'BLUE', 3: 'YELLOW', 4: 'RED' };
 const pitMap = { 0: 'ON TRACK', 1: 'PITTING', 2: 'IN PIT LANE' };
+
 const teamMap = {
-    0: '#27F4D2', 1: '#E8002D', 2: '#3671C6', 3: '#64C4FF', 4: '#229971', 5: '#0093CC',
-    6: '#6692FF', 7: '#B6BABD', 8: '#FF8000', 9: '#52E252', 41: '#FFFFFF', 104: '#FFFFFF',
+    // Modern F1 Base
+    0: '#27F4D2',   // Mercedes
+    1: '#E8002D',   // Ferrari
+    2: '#3671C6',   // Red Bull Racing
+    3: '#64C4FF',   // Williams
+    4: '#229971',   // Aston Martin
+    5: '#0093CC',   // Alpine
+    6: '#6692FF',   // RB
+    7: '#B6BABD',   // Haas
+    8: '#FF8000',   // McLaren
+    9: '#52E252',   // Sauber
+    41: '#FFFFFF',  // F1 Generic
+    85: '#00D2BE',  // Mercedes 2020
+    104: '#FFFFFF', // F1 Custom Team
+    129: '#FFE600', // Konnersport
+    142: '#C5A059', // APXGP ‘24
+    154: '#C5A059', // APXGP ‘25
+    155: '#FFE600', // Konnersport ‘24
+
+    // F2 2024
+    158: '#B81B18', // Art GP ‘24
+    159: '#FA5400', // Campos ‘24
+    160: '#C8A84E', // Rodin Motorsport ‘24
+    161: '#00B894', // AIX Racing ‘24
+    162: '#0080FF', // DAMS ‘24
+    163: '#CCCCCC', // Hitech ‘24
+    164: '#FF5722', // MP Motorsport ‘24
+    165: '#EE1212', // Prema ‘24
+    166: '#004C97', // Trident ‘24
+    167: '#F58220', // Van Amersfoort Racing ‘24
+    168: '#FFE600', // Invicta ‘24
+
+    // F1 2024 (Season Pack)
+    185: '#27F4D2', // Mercedes ‘24
+    186: '#E8002D', // Ferrari ‘24
+    187: '#3671C6', // Red Bull Racing ‘24
+    188: '#64C4FF', // Williams ‘24
+    189: '#229971', // Aston Martin ‘24
+    190: '#0093CC', // Alpine ‘24
+    191: '#6692FF', // RB ‘24
+    192: '#B6BABD', // Haas ‘24
+    193: '#FF8000', // McLaren ‘24
+    194: '#52E252', // Sauber ‘24
+
+    // F2 2025
+    465: '#B81B18', // Art GP ‘25
+    466: '#FA5400', // Campos ‘25
+    467: '#C8A84E', // Rodin Motorsport ‘25
+    468: '#00B894', // AIX Racing ‘25
+    469: '#0080FF', // DAMS ‘25
+    470: '#CCCCCC', // Hitech ‘25
+    471: '#FF5722', // MP Motorsport ‘25
+    472: '#EE1212', // Prema ‘25
+    473: '#004C97', // Trident ‘25
+    474: '#F58220', // Van Amersfoort Racing ‘25
+    475: '#FFE600', // Invicta ‘25
+
+    // F1 2026 (Season Pack)
+    476: '#27F4D2', // Mercedes ‘26
+    477: '#E8002D', // Ferrari ‘26
+    478: '#3671C6', // Red Bull Racing ‘26
+    479: '#64C4FF', // Williams ‘26
+    480: '#229971', // Aston Martin ‘26
+    481: '#0093CC', // Alpine ‘26
+    482: '#6692FF', // RB ‘26
+    483: '#B6BABD', // Haas ‘26
+    484: '#FF8000', // McLaren ‘26
+    485: '#F50537', // Audi ‘26
+    486: '#FFC72C', // Cadillac ‘26
+
+    // Legacy F2 2019-2023 & Fallbacks
+    70: '#004595', 71: '#FA5400', 72: '#002C66', 73: '#002B49', 74: '#0080FF', 75: '#FFE600',
+    76: '#FF5722', 77: '#EE1212', 78: '#004C97', 79: '#FF69B4',
+    106: '#EE1212', 107: '#FFE600', 108: '#002C66', 109: '#CCCCCC', 110: '#004595', 111: '#FF5722',
+    112: '#002B49', 113: '#0080FF', 114: '#FA5400', 115: '#FF69B4', 116: '#004C97',
+    118: '#EE1212', 119: '#FFE600', 120: '#002C66', 121: '#CCCCCC', 122: '#004595', 123: '#FF5722',
+    124: '#002B49', 125: '#0080FF', 126: '#FA5400', 127: '#004C97',
+    128: '#EE1212', 129: '#FFE600', 130: '#002C66', 131: '#CCCCCC', 132: '#004595', 133: '#FF5722',
+    134: '#FA5400', 135: '#0080FF', 136: '#004C97', 137: '#002B49', 138: '#F58220',
+    143: '#004595', 144: '#FA5400', 145: '#002C66', 146: '#00B894', 147: '#0080FF', 148: '#CCCCCC',
+    149: '#FF5722', 150: '#EE1212', 151: '#004C97', 152: '#F58220', 153: '#FFE600',
     220: '#27F4D2', 221: '#E8002D', 222: '#3671C6', 223: '#64C4FF', 224: '#229971', 225: '#0093CC',
     226: '#6692FF', 227: '#B6BABD', 228: '#FF8000', 229: '#52E252', 230: '#FFFFFF', 255: '#FFFFFF'
 };
+
 const teamNameMap = {
-    0: 'Mercedes', 1: 'Ferrari', 2: 'Red Bull Racing', 3: 'Williams', 4: 'Aston Martin', 5: 'Alpine',
-    6: 'RB', 7: 'Haas', 8: 'McLaren', 9: 'Kick Sauber', 41: 'F1 Generic', 104: 'My Team',
+    // Modern F1 Base
+    0: 'Mercedes',
+    1: 'Ferrari',
+    2: 'Red Bull Racing',
+    3: 'Williams',
+    4: 'Aston Martin',
+    5: 'Alpine',
+    6: 'RB',
+    7: 'Haas',
+    8: 'McLaren',
+    9: 'Sauber',
+    41: 'F1 Generic',
+    85: 'Mercedes 2020',
+    104: 'F1 Custom Team',
+    129: 'Konnersport',
+    142: 'APXGP ‘24',
+    154: 'APXGP ‘25',
+    155: 'Konnersport ‘24',
+
+    // F2 2024
+    158: 'Art GP ‘24',
+    159: 'Campos ‘24',
+    160: 'Rodin Motorsport ‘24',
+    161: 'AIX Racing ‘24',
+    162: 'DAMS ‘24',
+    163: 'Hitech ‘24',
+    164: 'MP Motorsport ‘24',
+    165: 'Prema ‘24',
+    166: 'Trident ‘24',
+    167: 'Van Amersfoort Racing ‘24',
+    168: 'Invicta ‘24',
+
+    // F1 2024 (Season Pack)
+    185: 'Mercedes ‘24',
+    186: 'Ferrari ‘24',
+    187: 'Red Bull Racing ‘24',
+    188: 'Williams ‘24',
+    189: 'Aston Martin ‘24',
+    190: 'Alpine ‘24',
+    191: 'RB ‘24',
+    192: 'Haas ‘24',
+    193: 'McLaren ‘24',
+    194: 'Sauber ‘24',
+
+    // F2 2025
+    465: 'Art GP ‘25',
+    466: 'Campos ‘25',
+    467: 'Rodin Motorsport ‘25',
+    468: 'AIX Racing ‘25',
+    469: 'DAMS ‘25',
+    470: 'Hitech ‘25',
+    471: 'MP Motorsport ‘25',
+    472: 'Prema ‘25',
+    473: 'Trident ‘25',
+    474: 'Van Amersfoort Racing ‘25',
+    475: 'Invicta ‘25',
+
+    // F1 2026 (Season Pack)
+    476: 'Mercedes ‘26',
+    477: 'Ferrari ‘26',
+    478: 'Red Bull Racing ‘26',
+    479: 'Williams ‘26',
+    480: 'Aston Martin ‘26',
+    481: 'Alpine ‘26',
+    482: 'RB ‘26',
+    483: 'Haas ‘26',
+    484: 'McLaren ‘26',
+    485: 'Audi ‘26',
+    486: 'Cadillac ‘26',
+
+    // Legacy F2 2019-2023 & Fallbacks
+    70: 'ART Grand Prix', 71: 'Campos Racing', 72: 'Carlin', 73: 'Sauber Junior Team by Charouz', 74: 'DAMS', 75: 'UNI-Virtuosi Racing',
+    76: 'MP Motorsport', 77: 'PREMA Racing', 78: 'Trident', 79: 'BWT Arden',
+    106: 'PREMA Racing', 107: 'UNI-Virtuosi Racing', 108: 'Carlin', 109: 'Hitech Grand Prix', 110: 'ART Grand Prix', 111: 'MP Motorsport',
+    112: 'Charouz Racing System', 113: 'DAMS', 114: 'Campos Racing', 115: 'BWT HWA RACELAB', 116: 'Trident',
+    118: 'PREMA Racing', 119: 'UNI-Virtuosi Racing', 120: 'Carlin', 121: 'Hitech Grand Prix', 122: 'ART Grand Prix', 123: 'MP Motorsport',
+    124: 'Charouz Racing System', 125: 'DAMS', 126: 'Campos Racing', 127: 'Trident',
+    128: 'PREMA Racing', 129: 'Virtuosi Racing', 130: 'Carlin', 131: 'Hitech Grand Prix', 132: 'ART Grand Prix', 133: 'MP Motorsport',
+    134: 'Campos Racing', 135: 'DAMS', 136: 'Trident', 137: 'Charouz Racing System', 138: 'Van Amersfoort Racing',
+    143: 'ART Grand Prix', 144: 'Campos Racing', 145: 'Carlin', 146: 'PHM Racing by Charouz', 147: 'DAMS', 148: 'Hitech Pulse-Eight',
+    149: 'MP Motorsport', 150: 'PREMA Racing', 151: 'Trident', 152: 'Van Amersfoort Racing', 153: 'Virtuosi Racing',
     220: 'Mercedes', 221: 'Ferrari', 222: 'Red Bull Racing', 223: 'Williams', 224: 'Aston Martin', 225: 'Alpine',
     226: 'RB', 227: 'Haas', 228: 'McLaren', 229: 'Kick Sauber', 230: 'F1 Generic', 255: 'Network/Spectator'
 };
@@ -688,13 +1340,17 @@ let state = {
     session: {
         trackName: 'Unknown', trackLength: 0, raceDistance: 0, lapsLeft: 0, type: 'Unknown', weather: '--',
         trackTemp: 0, airTemp: 0, sc: 'Clear', lapsTotal: 0, pitLimit: 80, fastestLapCarIndex: -1,
-        sessionFastestLapMs: Infinity, sessionFastestDriver: 'None', sessionBestS1: 0, trackId: 0, timeRemaining: 0, timeTotal: 0, safetyCarStatus: 'NONE', sessionType: 'NONE', sessionCategory: 'Race', allTimeFastestLapMs: Infinity, allTimeFastestDriver: 'Unknown', sector2Distance: 0, sector3Distance: 0
+        sessionFastestLapMs: Infinity, sessionFastestDriver: 'None', sessionBestS1: 0, sessionBestS2: 0, sessionBestS3: 0,
+        referenceS1: 0, referenceS2: 0, referenceS3: 0, allTimeBestS1: 0, allTimeBestS2: 0, allTimeBestS3: 0,
+        trackId: 0, timeRemaining: 0, timeTotal: 0, safetyCarStatus: 'NONE', sessionType: 'NONE', sessionCategory: 'Race', allTimeFastestLapMs: Infinity, allTimeFastestDriver: 'Unknown', sector2Distance: 0, sector3Distance: 0,
+        gamePaused: false
     },
     weatherForecast: [],
     damage: null,
     penalties: { timePenalties: 0, warnings: 0, cornerCuts: 0, driveThrough: 0, stopGo: 0, invalidLap: 0 },
     lap: {
         currentMs: 0, lastMs: 0, bestMs: 0, s1: 0, s2: 0, s3: 0, liveS1: 0, liveS2: 0, liveS3: 0,
+        bestS1: 0, bestS2: 0, bestS3: 0, s1Status: 'pending', s2Status: 'pending', s3Status: 'pending',
         s1State: 'pending', s2State: 'pending', s3State: 'pending', pos: 0, lapNum: 0, gapFront: '+0.000',
         driverAhead: 'LEADER', driverAheadCarIndex: -1, driverAheadTyre: '', driverAheadTeamColor: '#FFD700',
         driverBehind: 'NONE', driverBehindCarIndex: -1, gapBehind: '--', driverBehindTyre: '', driverBehindTeamColor: '#888888',
@@ -705,7 +1361,22 @@ let state = {
     motion: { pitch: 0, roll: 0, gLat: 0, gLong: 0, gVert: 0, susp: { fl: 0, fr: 0, rl: 0, rr: 0 }, gEnvelopeArray: gForceData.envelopeArray, gHistory: gForceData.history, maxGSeen: gForceData.maxGSeen },
     inputs: { speed: 0, gear: 'N', rpm: 0, throttle: 0, brake: 0, clutch: 0, steer: 0, drs: 'CLOSED' },
     ers: { mode: 'None', battery: 0 },
-    setup: { wingF: 0, wingR: 0, diffOn: 0, diffOff: 0, camberF: 0, camberR: 0, toeF: 0, toeR: 0, bBias: 50, fuel: 0, fuelLaps: 0 },
+    setup: {
+        // Aerodynamics
+        wingF: 0, wingR: 0,
+        // Transmission
+        diffOn: 50, diffOff: 50, engineBraking: 100,
+        // Suspension Geometry
+        camberF: 0, camberR: 0, toeF: 0, toeR: 0,
+        // Suspension
+        suspF: 0, suspR: 0, arbF: 0, arbR: 0, heightF: 0, heightR: 0,
+        // Brakes
+        bPressure: 100, bBias: 50,
+        // Tyre Setup Pressures (PSI)
+        pressFLeft: 0, pressFRight: 0, pressRLeft: 0, pressRRight: 0,
+        // Ballast & Fuel
+        ballast: 0, fuel: 0, fuelLaps: 0
+    },
     car: { tyreAge: 0, flag: 'GREEN', compound: 'Unknown', engineTemp: 0, wear: { fl: 0, fr: 0, rl: 0, rr: 0 }, surfTemp: { fl: 0, fr: 0, rl: 0, rr: 0 }, inTemp: { fl: 0, fr: 0, rl: 0, rr: 0 }, press: { fl: 0, fr: 0, rl: 0, rr: 0 }, brakeTemp: { fl: 0, fr: 0, rl: 0, rr: 0 } }
 };
 
@@ -714,10 +1385,15 @@ let state = {
  * when a new session is detected, session type changes, session is restarted, or track changes.
  */
 function resetSessionData() {
-    //console.log('🔄 Wiping old session telemetry data and resetting state...');
+    // Keep reference sectors if previously loaded
+    const refS1 = state.session.referenceS1 || 0;
+    const refS2 = state.session.referenceS2 || 0;
+    const refS3 = state.session.referenceS3 || 0;
+
     carDataTracker = Array.from({ length: 22 }, () => ({
         pos: 0, lapNum: 0, pitStatus: 0, driverStatus: 0, bestLapMs: 0, gapText: '', maxSpeed: 0, tyre: 'UNK', tyreClass: '#FFFFFF', teamColor: '#FFFFFF', teamName: 'Unknown',
-        s1: 0, s2: 0, s3: 0, bestS1: 0, bestS2: 0, bestS3: 0,
+        s1: 0, s2: 0, s3: 0, bestS1: refS1, bestS2: refS2, bestS3: refS3,
+        s1Status: 'pending', s2Status: 'pending', s3Status: 'pending',
         penalties: 0, warnings: 0, cornerCutting: 0, unservedDT: 0, unservedSG: 0, invalidLap: false
     }));
     carPhysics = Array.from({ length: 22 }, () => ({ speed: 0, lapDistance: 0, lapNum: 0, officialDelta: 0, sector: 0 }));
@@ -727,7 +1403,6 @@ function resetSessionData() {
         currentLapTelemetry[i] = [];
         lastLapTelemetry[i] = [];
     }
-    fastestLapGhostData = [];
     gForceData.maxGSeen = 0;
     gForceData.envelopeArray.length = 0;
     gForceData.history.length = 0;
@@ -743,6 +1418,7 @@ function resetSessionData() {
     state.penalties = { timePenalties: 0, warnings: 0, cornerCuts: 0, driveThrough: 0, stopGo: 0, invalidLap: 0 };
     state.lap = {
         currentMs: 0, lastMs: 0, bestMs: 0, s1: 0, s2: 0, s3: 0, liveS1: 0, liveS2: 0, liveS3: 0,
+        bestS1: refS1, bestS2: refS2, bestS3: refS3, s1Status: 'pending', s2Status: 'pending', s3Status: 'pending',
         s1State: 'pending', s2State: 'pending', s3State: 'pending', pos: 0, lapNum: 0, gapFront: '+0.000',
         driverAhead: 'LEADER', driverAheadCarIndex: -1, driverAheadTyre: '', driverAheadTeamColor: '#FFD700',
         driverBehind: 'NONE', driverBehindCarIndex: -1, gapBehind: '--', driverBehindTyre: '', driverBehindTeamColor: '#888888',
@@ -754,9 +1430,9 @@ function resetSessionData() {
     state.session.fastestLapCarIndex = -1;
     state.session.sessionFastestLapMs = Infinity;
     state.session.sessionFastestDriver = 'None';
-    state.session.sessionBestS1 = Infinity;
-    state.session.sessionBestS2 = Infinity;
-    state.session.sessionBestS3 = Infinity;
+    state.session.sessionBestS1 = refS1;
+    state.session.sessionBestS2 = refS2;
+    state.session.sessionBestS3 = refS3;
 
     // Immediately push reset state to all WebSocket clients
     clients = clients.filter(ws => ws.readyState === WebSocket.OPEN);
@@ -802,6 +1478,10 @@ function buildApproxPitLane(trackPoints) {
 
 // Initialize the F1 Telemetry UDP Listener on standard port 20777
 const f1Client = new F1TelemetryClient({ port: 20777, format: 2025 });
+let lastUdpPacketTime = 0;
+function touchUdpPacket() {
+    lastUdpPacketTime = Date.now();
+}
 if (f1Client && typeof f1Client.on === 'function') {
     f1Client.on('error', (err) => {
         console.error('🛡️ [F1 UDP Client Error]:', err?.message || err);
@@ -927,6 +1607,7 @@ function getAccurateSessionName(sessionType, formula) {
  * Updates 3D world coordinates (x, z, yaw) for all cars and records track map data if the circuit is unknown.
  */
 f1Client.on('motion', (data) => {
+    touchUdpPacket();
     setPlayerIndex(data.m_header);
     const pIdx = state.playerIndex;
     let newCars = [];
@@ -941,8 +1622,11 @@ f1Client.on('motion', (data) => {
 
             newCars.push({
                 x: data.m_carMotionData[i].m_worldPositionX,
+                y: data.m_carMotionData[i].m_worldPositionY || 0,
                 z: data.m_carMotionData[i].m_worldPositionZ,
                 yaw: data.m_carMotionData[i].m_yaw,
+                pitch: data.m_carMotionData[i].m_pitch || 0,
+                roll: data.m_carMotionData[i].m_roll || 0,
                 teamColor: isSC ? '#FFB000' : carDataTracker[i].teamColor,
                 teamName: isSC ? 'Safety Car' : carDataTracker[i].teamName,
                 isSafetyCar: isSC,
@@ -1020,6 +1704,7 @@ f1Client.on('motion', (data) => {
  * Updates suspension positioning for telemetry graphs.
  */
 f1Client.on('motionEx', (data) => {
+    touchUdpPacket();
     if (data.m_suspensionPosition) {
         state.motion.susp.rl = data.m_suspensionPosition[0] || 0;
         state.motion.susp.rr = data.m_suspensionPosition[1] || 0;
@@ -1035,33 +1720,98 @@ f1Client.on('motionEx', (data) => {
  */
 function loadTrackDeltaReference(trackId) {
     const record = allTimeFastest[trackId];
-    if (!record) {
-        state.session.allTimeFastestLapMs = Infinity;
-        state.session.allTimeFastestDriver = 'Unknown';
-        fastestLapGhostData = [];
-        return;
-    }
-
-    state.session.allTimeFastestLapMs = record.time;
-    state.session.allTimeFastestDriver = record.driver;
     fastestLapGhostData = [];
 
+    const telPath = path.join(telemetryDir, `telemetry_${trackId}.json`);
     const trackFastestPath = path.join(lapTimeDir, `fastest_${trackId}.json`);
-    if (!fs.existsSync(trackFastestPath)) return;
+    
+    let loadedTelemetry = [];
+    if (fs.existsSync(telPath)) {
+        try {
+            const raw = JSON.parse(fs.readFileSync(telPath, 'utf8'));
+            if (Array.isArray(raw) && raw.length > 0) {
+                loadedTelemetry = raw;
+            }
+        } catch (e) {
+            console.error(`⚠️ Error reading telemetry_${trackId}.json:`, e.message);
+        }
+    }
 
-    try {
-        const parsedData = JSON.parse(fs.readFileSync(trackFastestPath, 'utf8'));
-        fastestLapGhostData = (Array.isArray(parsedData) ? parsedData : (parsedData.telemetry || []))
+    if (loadedTelemetry.length === 0 && fs.existsSync(trackFastestPath)) {
+        try {
+            const raw = JSON.parse(fs.readFileSync(trackFastestPath, 'utf8'));
+            const pts = Array.isArray(raw) ? raw : (raw.telemetry || []);
+            if (pts.length > 0) loadedTelemetry = pts;
+        } catch (e) {
+            console.error(`⚠️ Error reading fastest_${trackId}.json:`, e.message);
+        }
+    }
+
+    if (record) {
+        state.session.allTimeFastestLapMs = record.time;
+        state.session.allTimeFastestDriver = record.driver;
+    } else if (loadedTelemetry.length > 0) {
+        const lastPt = loadedTelemetry[loadedTelemetry.length - 1];
+        if (lastPt && lastPt.t > 0) {
+            state.session.allTimeFastestLapMs = lastPt.t;
+            state.session.allTimeFastestDriver = 'Track Reference';
+        }
+    } else {
+        state.session.allTimeFastestLapMs = Infinity;
+        state.session.allTimeFastestDriver = 'Unknown';
+    }
+
+    if (loadedTelemetry.length > 0) {
+        fastestLapGhostData = loadedTelemetry
             .filter(pt => Number.isFinite(pt.d) && Number.isFinite(pt.t))
             .sort((a, b) => a.d - b.d);
 
         if (fastestLapGhostData.length > 0 && fastestLapGhostData[0].d > 0) {
-            fastestLapGhostData.unshift({ d: 0, t: 0 });
+            fastestLapGhostData.unshift({
+                d: 0,
+                t: 0,
+                x: fastestLapGhostData[0].x || 0,
+                z: fastestLapGhostData[0].z || 0,
+                yaw: fastestLapGhostData[0].yaw || 0,
+                throttle: 0, brake: 0, speed: 0, steer: 0, gear: 0
+            });
         }
 
-        console.log(`Loaded delta reference for Track ${trackId} (${fastestLapGhostData.length} points).`);
-    } catch (e) {
-        console.error(`Error reading delta reference for Track ${trackId}:`, e);
+        // Calculate reference sectors from telemetry distance markers or split points
+        const totalDist = (state.session.trackLength > 0) ? state.session.trackLength : (fastestLapGhostData[fastestLapGhostData.length - 1].d || 5000);
+        const s2Dist = (state.session.sector2Distance > 0) ? state.session.sector2Distance : Math.round(totalDist / 3);
+        const s3Dist = (state.session.sector3Distance > 0) ? state.session.sector3Distance : Math.round((totalDist / 3) * 2);
+
+        const ptS1 = fastestLapGhostData.reduce((prev, curr) => Math.abs(curr.d - s2Dist) < Math.abs(prev.d - s2Dist) ? curr : prev, fastestLapGhostData[0]);
+        const ptS2 = fastestLapGhostData.reduce((prev, curr) => Math.abs(curr.d - s3Dist) < Math.abs(prev.d - s3Dist) ? curr : prev, fastestLapGhostData[0]);
+        const finalTime = fastestLapGhostData[fastestLapGhostData.length - 1].t;
+
+        const refS1 = ptS1 ? ptS1.t : Math.round(finalTime / 3);
+        const refS2 = (ptS2 && ptS1) ? Math.max(0, ptS2.t - ptS1.t) : Math.round(finalTime / 3);
+        const refS3 = ptS2 ? Math.max(0, finalTime - ptS2.t) : Math.max(0, finalTime - (refS1 + refS2));
+
+        if (refS1 > 0 && refS2 > 0 && refS3 > 0) {
+            state.session.referenceS1 = refS1;
+            state.session.referenceS2 = refS2;
+            state.session.referenceS3 = refS3;
+            state.session.allTimeBestS1 = refS1;
+            state.session.allTimeBestS2 = refS2;
+            state.session.allTimeBestS3 = refS3;
+
+            if (state.session.sessionBestS1 === Infinity || state.session.sessionBestS1 === 0) state.session.sessionBestS1 = refS1;
+            if (state.session.sessionBestS2 === Infinity || state.session.sessionBestS2 === 0) state.session.sessionBestS2 = refS2;
+            if (state.session.sessionBestS3 === Infinity || state.session.sessionBestS3 === 0) state.session.sessionBestS3 = refS3;
+
+            const pIdx = state.playerIndex || 0;
+            if (!carDataTracker[pIdx].bestS1 || carDataTracker[pIdx].bestS1 === 0) carDataTracker[pIdx].bestS1 = refS1;
+            if (!carDataTracker[pIdx].bestS2 || carDataTracker[pIdx].bestS2 === 0) carDataTracker[pIdx].bestS2 = refS2;
+            if (!carDataTracker[pIdx].bestS3 || carDataTracker[pIdx].bestS3 === 0) carDataTracker[pIdx].bestS3 = refS3;
+            if (!state.lap.bestS1) state.lap.bestS1 = refS1;
+            if (!state.lap.bestS2) state.lap.bestS2 = refS2;
+            if (!state.lap.bestS3) state.lap.bestS3 = refS3;
+        }
+
+        console.log(`Loaded delta reference for Track ${trackId} (${fastestLapGhostData.length} points, S1: ${refS1}ms, S2: ${refS2}ms, S3: ${refS3}ms).`);
     }
 }
 
@@ -1072,6 +1822,7 @@ function loadTrackDeltaReference(trackId) {
  * and updates session environment details (weather, temp, safety car status).
  */
 f1Client.on('session', (data) => {
+    touchUdpPacket();
     const uid = data.m_header ? data.m_header.m_sessionUID : data.m_sessionUID;
     const newSessionUID = typeof uid === 'bigint' ? uid.toString() : String(uid || '');
     const sessionTime = (data.m_header && data.m_header.m_sessionTime !== undefined) ? data.m_header.m_sessionTime : (data.m_sessionTime || 0);
@@ -1159,6 +1910,7 @@ f1Client.on('session', (data) => {
     state.session.trackName = trackMap[data.m_trackId] || `TRACK NOT FOUND`;
     state.session.pitLimit = data.m_pitSpeedLimit;
     state.session.sc = scMap[data.m_safetyCarStatus] || 'Clear';
+    state.session.gamePaused = Boolean(data.m_gamePaused !== undefined ? data.m_gamePaused : data.gamePaused);
 });
 
 /**
@@ -1166,6 +1918,7 @@ f1Client.on('session', (data) => {
  * Listens for game events like 'SSTA' (Session Started) to wipe old telemetry.
  */
 f1Client.on('event', (data) => {
+    touchUdpPacket();
     let eventCode = '';
     if (data.m_eventStringCode) {
         if (typeof data.m_eventStringCode === 'string') {
@@ -1200,6 +1953,7 @@ f1Client.on('event', (data) => {
  * Parses past lap times and sector times for the given car to populate classification tables and track records.
  */
 f1Client.on('sessionHistory', (data) => {
+    touchUdpPacket();
     const carIndex = data.m_carIdx !== undefined ? data.m_carIdx : data.carIdx;
     const numLaps = data.m_numLaps !== undefined ? data.m_numLaps : data.numLaps;
     const historyArray = data.m_lapHistoryData || data.lapHistoryData || [];
@@ -1336,6 +2090,7 @@ function lockOfficialSectorLinesFromTelemetry(carIndex, sector1Ms, sector2Ms, te
  * and extracts critical timing data (current lap time, sectors, delta to leader).
  */
 f1Client.on('lapData', (data) => {
+    touchUdpPacket();
     setPlayerIndex(data.m_header);
     const pIdx = state.playerIndex;
     let sessionFastestLapMs = Infinity;
@@ -1346,15 +2101,33 @@ f1Client.on('lapData', (data) => {
 
         // Lap Transition Logic
         if (lap.m_currentLapNum > carPhysics[i].lapNum) {
-            // Crossed the line - copy lightweight primitive properties
+            // Crossed the line - copy full rich telemetry trace including throttle, brake, steer, speed, gear, y elevation, pitch, roll
             lastLapTelemetry[i] = (currentLapTelemetry[i] || []).map(pt => ({
-                d: pt.d, t: pt.t, x: pt.x, z: pt.z, yaw: pt.yaw
+                d: pt.d,
+                t: pt.t,
+                x: pt.x,
+                y: pt.y !== undefined ? pt.y : 0,
+                z: pt.z,
+                yaw: pt.yaw,
+                pitch: pt.pitch || 0,
+                roll: pt.roll || 0,
+                throttle: pt.throttle !== undefined ? pt.throttle : 0,
+                brake: pt.brake !== undefined ? pt.brake : 0,
+                speed: pt.speed !== undefined ? pt.speed : 0,
+                steer: pt.steer !== undefined ? pt.steer : 0,
+                gear: pt.gear !== undefined ? pt.gear : 0
             }));
             currentLapTelemetry[i] = [];
 
-            // Capture ghost telemetry upon lap completion
+            // Capture ghost telemetry upon lap completion with full lap validation
             const lastTime = lap.m_lastLapTimeInMS || (lap.m_lastLapTime * 1000) || 0;
-            if (lastTime > 0 && currentTrackId !== -1 && lastLapTelemetry[i] && lastLapTelemetry[i].length > 50) {
+            const tLen = state.session.trackLength > 0 ? state.session.trackLength : 4000;
+            const isFullLap = lastLapTelemetry[i] &&
+                              lastLapTelemetry[i].length >= 120 &&
+                              (lastLapTelemetry[i][0].d || 0) < 300 &&
+                              (lastLapTelemetry[i][lastLapTelemetry[i].length - 1].d || 0) >= (tLen * 0.85);
+
+            if (lastTime > 50000 && currentTrackId !== -1 && isFullLap) {
 
                 // FORCE the final point of the telemetry array to perfectly match the official lap time
                 const lastPoint = lastLapTelemetry[i][lastLapTelemetry[i].length - 1];
@@ -1364,33 +2137,34 @@ f1Client.on('lapData', (data) => {
                 }
 
                 let record = allTimeFastest[currentTrackId];
-
-                const isFaster = record && lastTime < record.time;
+                const isFaster = !record || lastTime < record.time;
                 // Only capture missing ghosts if the lap time is within 5 seconds of the record to prevent out-lap corruption
                 const needsGhost = record && !record.hasTelemetry && Math.abs(lastTime - record.time) < 5000;
 
-                if (!record || isFaster) {
+                if (isFaster) {
                     allTimeFastest[currentTrackId] = {
                         time: lastTime,
-                        driver: state.participants[i] || carDataTracker[i].teamName,
+                        driver: (state.participants && state.participants[i]) || carDataTracker[i].teamName || 'Unknown',
                         hasTelemetry: true
                     };
                     fastestLapGhostData = lastLapTelemetry[i];
                     fs.writeFileSync(fastestJsonPath, JSON.stringify(allTimeFastest, null, 2), 'utf8');
                     const trackFastestPath = path.join(lapTimeDir, `fastest_${currentTrackId}.json`);
                     fs.writeFileSync(trackFastestPath, JSON.stringify(lastLapTelemetry[i].map(pt => ({ d: pt.d, t: pt.t }))), 'utf8');
-                    fs.writeFileSync(path.join(telemetryDir, `telemetry_${currentTrackId}.json`), JSON.stringify(fastestLapGhostData), 'utf8');
+                    const trackTelemetryPath = path.join(telemetryDir, `telemetry_${currentTrackId}.json`);
+                    fs.writeFileSync(trackTelemetryPath, JSON.stringify(fastestLapGhostData, null, 2), 'utf8');
                     state.session.allTimeFastestLapMs = lastTime;
                     state.session.allTimeFastestDriver = allTimeFastest[currentTrackId].driver;
-                    console.log(`🏆 NEW TRACK RECORD! Track ${currentTrackId}: ${state.session.allTimeFastestDriver} - ${lastTime}ms`);
+                    console.log(`🏆 NEW TRACK RECORD & FULL TELEMETRY SAVED! Track ${currentTrackId}: ${state.session.allTimeFastestDriver} - ${lastTime}ms`);
                 } else if (needsGhost) {
                     allTimeFastest[currentTrackId].hasTelemetry = true;
                     fastestLapGhostData = lastLapTelemetry[i];
                     fs.writeFileSync(fastestJsonPath, JSON.stringify(allTimeFastest, null, 2), 'utf8');
                     const trackFastestPath = path.join(lapTimeDir, `fastest_${currentTrackId}.json`);
                     fs.writeFileSync(trackFastestPath, JSON.stringify(lastLapTelemetry[i].map(pt => ({ d: pt.d, t: pt.t }))), 'utf8');
-                    fs.writeFileSync(path.join(telemetryDir, `telemetry_${currentTrackId}.json`), JSON.stringify(fastestLapGhostData), 'utf8');
-                    console.log(`👻 REFERENCE GHOST CAPTURED! Track ${currentTrackId} - ${lastTime}ms (Track Record remains ${record.time}ms)`);
+                    const trackTelemetryPath = path.join(telemetryDir, `telemetry_${currentTrackId}.json`);
+                    fs.writeFileSync(trackTelemetryPath, JSON.stringify(fastestLapGhostData, null, 2), 'utf8');
+                    console.log(`👻 REFERENCE GHOST & TELEMETRY SAVED! Track ${currentTrackId} - ${lastTime}ms (Track Record remains ${record.time}ms)`);
                 }
 
                 lockOfficialSectorLinesFromTelemetry(i, carDataTracker[i].s1, carDataTracker[i].s2, lastLapTelemetry[i]);
@@ -1461,8 +2235,11 @@ f1Client.on('lapData', (data) => {
                     d: Math.round(lap.m_lapDistance * 10) / 10,
                     t: curMs,
                     x: Math.round((carObj.x || 0) * 100) / 100,
+                    y: Math.round((carObj.y || 0) * 100) / 100,
                     z: Math.round((carObj.z || 0) * 100) / 100,
                     yaw: Math.round((carObj.yaw || 0) * 1000) / 1000,
+                    pitch: Math.round((carObj.pitch || 0) * 1000) / 1000,
+                    roll: Math.round((carObj.roll || 0) * 1000) / 1000,
                     throttle: 0, brake: 0, speed: Math.round(carObj.speed || 0), steer: 0, gear: 0
                 };
                 if (i === state.playerIndex) {
@@ -1482,10 +2259,79 @@ f1Client.on('lapData', (data) => {
         const liveS1 = getSectorTime(lap, 1);
         const liveS2 = getSectorTime(lap, 2);
         const liveS3 = getSectorTime(lap, 3);
+        const curSector = lap.m_sector !== undefined ? lap.m_sector : (lap.sector || 0);
+        carDataTracker[i].currentSector = curSector;
 
-        if (liveS1 > 0) carDataTracker[i].s1 = liveS1;
-        if (liveS2 > 0) carDataTracker[i].s2 = liveS2;
-        if (liveS3 > 0) carDataTracker[i].s3 = liveS3;
+        if (liveS1 > 0) {
+            const priorBestS1 = carDataTracker[i].bestS1 || 0;
+            const sb1 = (state.session.sessionBestS1 && state.session.sessionBestS1 !== Infinity) ? state.session.sessionBestS1 : 0;
+            carDataTracker[i].s1 = liveS1;
+
+            // Evaluate if this sector is SB (purple), PB (green), or Slower (yellow)
+            if (sb1 > 0 && liveS1 <= sb1) {
+                carDataTracker[i].s1Status = 'sb';
+            } else if (priorBestS1 > 0 && liveS1 < priorBestS1) {
+                carDataTracker[i].s1Status = 'pb';
+            } else if (priorBestS1 === 0) {
+                carDataTracker[i].s1Status = (sb1 > 0 && liveS1 <= sb1) ? 'sb' : 'pb';
+            } else {
+                carDataTracker[i].s1Status = 'yellow';
+            }
+
+            if (!carDataTracker[i].bestS1 || liveS1 < carDataTracker[i].bestS1) {
+                carDataTracker[i].bestS1 = liveS1;
+            }
+            if (state.session.sessionBestS1 === Infinity || state.session.sessionBestS1 === 0 || liveS1 < state.session.sessionBestS1) {
+                state.session.sessionBestS1 = liveS1;
+                state.session.sessionBestS1Driver = (state.participants && state.participants[i]) ? state.participants[i] : `Car ${i}`;
+            }
+        }
+        if (liveS2 > 0) {
+            const priorBestS2 = carDataTracker[i].bestS2 || 0;
+            const sb2 = (state.session.sessionBestS2 && state.session.sessionBestS2 !== Infinity) ? state.session.sessionBestS2 : 0;
+            carDataTracker[i].s2 = liveS2;
+
+            if (sb2 > 0 && liveS2 <= sb2) {
+                carDataTracker[i].s2Status = 'sb';
+            } else if (priorBestS2 > 0 && liveS2 < priorBestS2) {
+                carDataTracker[i].s2Status = 'pb';
+            } else if (priorBestS2 === 0) {
+                carDataTracker[i].s2Status = (sb2 > 0 && liveS2 <= sb2) ? 'sb' : 'pb';
+            } else {
+                carDataTracker[i].s2Status = 'yellow';
+            }
+
+            if (!carDataTracker[i].bestS2 || liveS2 < carDataTracker[i].bestS2) {
+                carDataTracker[i].bestS2 = liveS2;
+            }
+            if (state.session.sessionBestS2 === Infinity || state.session.sessionBestS2 === 0 || liveS2 < state.session.sessionBestS2) {
+                state.session.sessionBestS2 = liveS2;
+                state.session.sessionBestS2Driver = (state.participants && state.participants[i]) ? state.participants[i] : `Car ${i}`;
+            }
+        }
+        if (liveS3 > 0) {
+            const priorBestS3 = carDataTracker[i].bestS3 || 0;
+            const sb3 = (state.session.sessionBestS3 && state.session.sessionBestS3 !== Infinity) ? state.session.sessionBestS3 : 0;
+            carDataTracker[i].s3 = liveS3;
+
+            if (sb3 > 0 && liveS3 <= sb3) {
+                carDataTracker[i].s3Status = 'sb';
+            } else if (priorBestS3 > 0 && liveS3 < priorBestS3) {
+                carDataTracker[i].s3Status = 'pb';
+            } else if (priorBestS3 === 0) {
+                carDataTracker[i].s3Status = (sb3 > 0 && liveS3 <= sb3) ? 'sb' : 'pb';
+            } else {
+                carDataTracker[i].s3Status = 'yellow';
+            }
+
+            if (!carDataTracker[i].bestS3 || liveS3 < carDataTracker[i].bestS3) {
+                carDataTracker[i].bestS3 = liveS3;
+            }
+            if (state.session.sessionBestS3 === Infinity || state.session.sessionBestS3 === 0 || liveS3 < state.session.sessionBestS3) {
+                state.session.sessionBestS3 = liveS3;
+                state.session.sessionBestS3Driver = (state.participants && state.participants[i]) ? state.participants[i] : `Car ${i}`;
+            }
+        }
 
         if ((liveS1 > 0 || liveS2 > 0) && currentLapTelemetry[i].length > 5) {
             lockOfficialSectorLinesFromTelemetry(i, liveS1 || carDataTracker[i].s1, liveS2 || carDataTracker[i].s2, currentLapTelemetry[i]);
@@ -1540,6 +2386,14 @@ f1Client.on('lapData', (data) => {
             if (liveS2 > 0) state.lap.s2 = liveS2;
             if (liveS3 > 0) state.lap.s3 = liveS3;
 
+            state.lap.bestS1 = carDataTracker[pIdx].bestS1 || state.session.referenceS1 || 0;
+            state.lap.bestS2 = carDataTracker[pIdx].bestS2 || state.session.referenceS2 || 0;
+            state.lap.bestS3 = carDataTracker[pIdx].bestS3 || state.session.referenceS3 || 0;
+
+            state.lap.s1Status = carDataTracker[pIdx].s1Status || 'pending';
+            state.lap.s2Status = carDataTracker[pIdx].s2Status || 'pending';
+            state.lap.s3Status = carDataTracker[pIdx].s3Status || 'pending';
+
             const liveSectorTiming = getLiveSectorTiming(
                 state.lap.currentMs,
                 state.lap.currentSector,
@@ -1593,6 +2447,7 @@ f1Client.on('lapData', (data) => {
  * Updates driver names and resolves team colors from the team IDs.
  */
 f1Client.on('participants', (data) => {
+    touchUdpPacket();
     setPlayerIndex(data.m_header);
     let newNames = [];
     for (let i = 0; i < 22; i++) {
@@ -1625,15 +2480,33 @@ f1Client.on('participants', (data) => {
  * Reads the player's current car setup including aero, differential, geometry, and fuel load.
  */
 f1Client.on('carSetups', (data) => {
+    touchUdpPacket();
     setPlayerIndex(data.m_header);
     const setup = data.m_carSetups[state.playerIndex];
     if (setup) {
-        state.setup.wingF = setup.m_frontWing; state.setup.wingR = setup.m_rearWing;
-        state.setup.diffOn = setup.m_onThrottle; state.setup.diffOff = setup.m_offThrottle;
-        state.setup.camberF = setup.m_frontCamber; state.setup.camberR = setup.m_rearCamber;
-        state.setup.toeF = setup.m_frontToe; state.setup.toeR = setup.m_rearToe;
-        state.setup.bBias = setup.m_brakeBias;
-        state.setup.fuel = setup.m_fuelLoad || state.setup.fuel;
+        state.setup.wingF = setup.m_frontWing !== undefined ? setup.m_frontWing : state.setup.wingF;
+        state.setup.wingR = setup.m_rearWing !== undefined ? setup.m_rearWing : state.setup.wingR;
+        state.setup.diffOn = setup.m_onThrottle !== undefined ? setup.m_onThrottle : state.setup.diffOn;
+        state.setup.diffOff = setup.m_offThrottle !== undefined ? setup.m_offThrottle : state.setup.diffOff;
+        state.setup.engineBraking = setup.m_engineBraking !== undefined ? setup.m_engineBraking : state.setup.engineBraking;
+        state.setup.camberF = setup.m_frontCamber !== undefined ? setup.m_frontCamber : state.setup.camberF;
+        state.setup.camberR = setup.m_rearCamber !== undefined ? setup.m_rearCamber : state.setup.camberR;
+        state.setup.toeF = setup.m_frontToe !== undefined ? setup.m_frontToe : state.setup.toeF;
+        state.setup.toeR = setup.m_rearToe !== undefined ? setup.m_rearToe : state.setup.toeR;
+        state.setup.suspF = setup.m_frontSuspension !== undefined ? setup.m_frontSuspension : state.setup.suspF;
+        state.setup.suspR = setup.m_rearSuspension !== undefined ? setup.m_rearSuspension : state.setup.suspR;
+        state.setup.arbF = setup.m_frontAntiRollBar !== undefined ? setup.m_frontAntiRollBar : state.setup.arbF;
+        state.setup.arbR = setup.m_rearAntiRollBar !== undefined ? setup.m_rearAntiRollBar : state.setup.arbR;
+        state.setup.heightF = setup.m_frontSuspensionHeight !== undefined ? setup.m_frontSuspensionHeight : state.setup.heightF;
+        state.setup.heightR = setup.m_rearSuspensionHeight !== undefined ? setup.m_rearSuspensionHeight : state.setup.heightR;
+        state.setup.bPressure = setup.m_brakePressure !== undefined ? setup.m_brakePressure : state.setup.bPressure;
+        state.setup.bBias = setup.m_brakeBias !== undefined ? setup.m_brakeBias : state.setup.bBias;
+        state.setup.pressFLeft = setup.m_frontLeftTyrePressure !== undefined ? setup.m_frontLeftTyrePressure : state.setup.pressFLeft;
+        state.setup.pressFRight = setup.m_frontRightTyrePressure !== undefined ? setup.m_frontRightTyrePressure : state.setup.pressFRight;
+        state.setup.pressRLeft = setup.m_rearLeftTyrePressure !== undefined ? setup.m_rearLeftTyrePressure : state.setup.pressRLeft;
+        state.setup.pressRRight = setup.m_rearRightTyrePressure !== undefined ? setup.m_rearRightTyrePressure : state.setup.pressRRight;
+        state.setup.ballast = setup.m_ballast !== undefined ? setup.m_ballast : state.setup.ballast;
+        state.setup.fuel = setup.m_fuelLoad !== undefined ? setup.m_fuelLoad : state.setup.fuel;
     }
 });
 
@@ -1643,6 +2516,7 @@ f1Client.on('carSetups', (data) => {
  * Updates real-time car metrics (speed, throttle, brake, gears, DRS, temps, and pressures) for all cars.
  */
 f1Client.on('carTelemetry', (data) => {
+    touchUdpPacket();
     setPlayerIndex(data.m_header);
     const pIdx = state.playerIndex;
 
@@ -1678,6 +2552,7 @@ f1Client.on('carTelemetry', (data) => {
  * Parses tyre compounds, FIA flags, ERS battery levels, and fuel remaining.
  */
 f1Client.on('carStatus', (data) => {
+    touchUdpPacket();
     setPlayerIndex(data.m_header);
     const pIdx = state.playerIndex;
 
@@ -1706,6 +2581,7 @@ f1Client.on('carStatus', (data) => {
  * Tracks tyre wear percentages for the player's car to feed the pit stop strategy engine.
  */
 f1Client.on('carDamage', (data) => {
+    touchUdpPacket();
     setPlayerIndex(data.m_header);
     const dmg = data.m_carDamageData[state.playerIndex];
     state.car.wear.rl = dmg.m_tyresWear[0]; state.car.wear.rr = dmg.m_tyresWear[1];
@@ -1824,18 +2700,24 @@ setInterval(() => {
     if (playerLbInfo) {
         state.lap.gapFront = playerLbInfo.gapText || '+0.000';
         
-        // Driver Ahead Info
+        // Driver Ahead Info (Race Interval or Quali Target)
         if (playerLbIndex > 0) {
             const carAhead = state.leaderboard[playerLbIndex - 1];
             state.lap.driverAhead = (state.participants && state.participants[carAhead.carIndex]) ? state.participants[carAhead.carIndex] : (carAhead.teamName || `Car ${carAhead.carIndex}`);
             state.lap.driverAheadCarIndex = carAhead.carIndex;
             state.lap.driverAheadTyre = carAhead.tyre || 'UNK';
             state.lap.driverAheadTeamColor = carAhead.teamColor || '#FFF';
+            state.lap.targetAheadDriver = state.lap.driverAhead;
+            state.lap.targetAheadBestMs = carAhead.bestLapMs || 0;
+            state.lap.targetAheadDeltaMs = (playerLbInfo.bestLapMs > 0 && carAhead.bestLapMs > 0) ? (playerLbInfo.bestLapMs - carAhead.bestLapMs) : null;
         } else {
             state.lap.driverAhead = 'LEADER';
             state.lap.driverAheadCarIndex = -1;
             state.lap.driverAheadTyre = '';
             state.lap.driverAheadTeamColor = '#FFD700';
+            state.lap.targetAheadDriver = 'PROVISIONAL POLE';
+            state.lap.targetAheadBestMs = playerLbInfo.bestLapMs || 0;
+            state.lap.targetAheadDeltaMs = 0;
         }
 
         // Driver Behind Info & DRS Threat Calculation
@@ -1866,9 +2748,57 @@ setInterval(() => {
         }
     }
 
-    // Delta vs Session Fastest Lap Calculation
-    const sessFastest = state.session.sessionFastestLapMs;
-    if (sessFastest > 0 && sessFastest !== Infinity) {
+    // Physical On-Track Proximity (Traffic / Clean Air Radar in meters)
+    let nearestAheadDist = Infinity;
+    let nearestAheadDriver = 'CLEAR AIR';
+    let nearestBehindDist = Infinity;
+    let nearestBehindDriver = 'CLEAR';
+    const playerDist = carPhysics[pIdx]?.lapDistance || 0;
+    const tLen = state.session.trackLength || 5000;
+
+    if (playerDist > 0 && tLen > 0) {
+        for (let cIdx = 0; cIdx < 22; cIdx++) {
+            if (cIdx === pIdx || carDataTracker[cIdx].driverStatus === 0) continue;
+            const otherDist = carPhysics[cIdx]?.lapDistance || 0;
+            if (otherDist <= 0) continue;
+            const dName = (state.participants && state.participants[cIdx]) ? state.participants[cIdx] : `Car ${cIdx}`;
+
+            // Distance ahead on circuit
+            let distAhead = otherDist - playerDist;
+            if (distAhead < 0) distAhead += tLen;
+            if (distAhead > 0 && distAhead < nearestAheadDist) {
+                nearestAheadDist = distAhead;
+                nearestAheadDriver = dName;
+            }
+
+            // Distance behind on circuit
+            let distBehind = playerDist - otherDist;
+            if (distBehind < 0) distBehind += tLen;
+            if (distBehind > 0 && distBehind < nearestBehindDist) {
+                nearestBehindDist = distBehind;
+                nearestBehindDriver = dName;
+            }
+        }
+    }
+
+    state.lap.trafficAheadDist = Number.isFinite(nearestAheadDist) && nearestAheadDist < tLen ? Math.round(nearestAheadDist) : null;
+    state.lap.trafficAheadDriver = nearestAheadDriver;
+    state.lap.trafficBehindDist = Number.isFinite(nearestBehindDist) && nearestBehindDist < tLen ? Math.round(nearestBehindDist) : null;
+    state.lap.trafficBehindDriver = nearestBehindDriver;
+
+    // Delta vs Session Fastest Lap Calculation (Quali Pole Delta)
+    const sessFastest = (state.session.sessionFastestLapMs !== Infinity && state.session.sessionFastestLapMs > 0) ? state.session.sessionFastestLapMs : 0;
+    state.session.sessionFastestLapMs = sessFastest;
+
+    const sb1 = (state.session.sessionBestS1 !== Infinity && state.session.sessionBestS1 > 0) ? state.session.sessionBestS1 : (state.session.referenceS1 || 0);
+    const sb2 = (state.session.sessionBestS2 !== Infinity && state.session.sessionBestS2 > 0) ? state.session.sessionBestS2 : (state.session.referenceS2 || 0);
+    const sb3 = (state.session.sessionBestS3 !== Infinity && state.session.sessionBestS3 > 0) ? state.session.sessionBestS3 : (state.session.referenceS3 || 0);
+    state.session.sessionBestS1 = sb1;
+    state.session.sessionBestS2 = sb2;
+    state.session.sessionBestS3 = sb3;
+    state.session.theoreticalBestLapMs = (sb1 > 0 && sb2 > 0 && sb3 > 0) ? (sb1 + sb2 + sb3) : 0;
+
+    if (sessFastest > 0) {
         state.lap.deltaToSessionFastest = state.lap.bestMs > 0 ? (state.lap.bestMs - sessFastest) : null;
         state.lap.lastLapDeltaToSessionFastest = state.lap.lastMs > 0 ? (state.lap.lastMs - sessFastest) : null;
         state.lap.isSessionFastest = (state.lap.bestMs > 0 && state.lap.bestMs <= sessFastest);
@@ -1913,6 +2843,21 @@ setInterval(() => {
         }
     }
 
+    // Check if telemetry packets are actively being received from F1 24/25 UDP
+    const now = Date.now();
+    const isGameActive = (lastUdpPacketTime > 0) && (now - lastUdpPacketTime < 2500);
+    state.isGameActive = isGameActive;
+    state.lastUdpAgeMs = lastUdpPacketTime > 0 ? (now - lastUdpPacketTime) : null;
+
+    if (!isGameActive) {
+        state.inputs.throttle = 0;
+        state.inputs.brake = 0;
+        state.inputs.clutch = 0;
+        state.inputs.steer = 0;
+        state.inputs.speed = 0;
+        state.inputs.rpm = 0;
+    }
+
     clients = clients.filter(ws => ws.readyState === WebSocket.OPEN);
     const payload = JSON.stringify(state);
     clients.forEach((ws) => {
@@ -1947,8 +2892,23 @@ function displayAllLocalIPv4() {
             }
         }
     }
-    console.log(`➡️ http://localhost:${PORT}`);
-    console.log('--------------------------------------\n');
+    console.log(`➡️  Localhost: http://localhost:${PORT}`);
+    console.log('--------------------------------------');
+
+    /*try {
+        const htmlPages = getAllHtmlFiles();
+        if (htmlPages.length > 0) {
+            console.log('📄 Available HTML Pages & Dashboards:');
+            for (const page of htmlPages) {
+                const titleStr = `🏁 ${page.title}`;
+                console.log(`   ${titleStr.padEnd(46)} -> http://localhost:${PORT}${page.urlPath}`);
+            }
+            console.log(`   📑 Dashboards Hub & Directory:                 -> http://localhost:${PORT}/pages`);
+            console.log('--------------------------------------\n');
+        }
+    } catch (e) {
+        console.log('--------------------------------------\n');
+    }*/
 }
 
 server.on('error', (err) => {
