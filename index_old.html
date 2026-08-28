@@ -6014,6 +6014,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
                 if (
                     mapDataToUse.trackPoints &&
+                    mapDataToUse.trackPoints.length > 0 &&
                     mapDataToUse.trackPoints.length !== window.lastTrackPointsLength
                 ) {
                     window.lastTrackPointsLength = mapDataToUse.trackPoints.length;

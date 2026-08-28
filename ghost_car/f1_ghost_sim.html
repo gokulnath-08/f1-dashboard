@@ -177,6 +177,52 @@
     .track-btn:active {
       transform: translateY(0);
     }
+    .track-btn.btn-gold {
+      background: rgba(255, 215, 0, 0.15);
+      border-color: rgba(255, 215, 0, 0.5);
+      color: var(--f1-yellow);
+    }
+    .track-btn.btn-gold:hover {
+      background: rgba(255, 215, 0, 0.28);
+      border-color: #ffd700;
+      box-shadow: 0 0 14px rgba(255, 215, 0, 0.45);
+    }
+    .track-btn.btn-purple {
+      background: rgba(181, 55, 242, 0.15);
+      border-color: rgba(181, 55, 242, 0.5);
+      color: #e08aff;
+    }
+    .track-btn.btn-purple:hover {
+      background: rgba(181, 55, 242, 0.28);
+      border-color: #b537f2;
+      box-shadow: 0 0 14px rgba(181, 55, 242, 0.45);
+    }
+    .sector-badge-pill {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .sector-badge-pill.s1 {
+      background: rgba(239, 68, 68, 0.18);
+      color: #ff5555;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .sector-badge-pill.s2 {
+      background: rgba(59, 130, 246, 0.18);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+    .sector-badge-pill.s3 {
+      background: rgba(234, 179, 8, 0.18);
+      color: #facc15;
+      border: 1px solid rgba(234, 179, 8, 0.4);
+    }
 
     #drop-overlay {
       position: absolute;
@@ -686,6 +732,21 @@
         📁 Open JSON
       </button>
       <input type="file" id="file-input" accept=".json" style="display:none;">
+
+      <!-- Sync Sector Lines from Telemetry Button -->
+      <button id="btn-sync-sectors" class="track-btn btn-gold" title="Recalculate & save official sector lines from telemetry">
+        ⚡ Sync Sectors
+      </button>
+    </div>
+
+    <!-- Official Track Record Lap Time & Driver Card -->
+    <div class="broadcast-card" id="card-record" style="min-width: 140px; display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
+      <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+        <span style="font-size: 9px; font-weight:800; color:var(--f1-yellow); text-transform:uppercase; letter-spacing:0.05em;">Track Record</span>
+        <span id="hud-record-badge" style="font-size: 9px; font-weight:700; color:var(--f1-cyan); text-transform:uppercase;">FASTEST</span>
+      </div>
+      <span class="lap-counter" id="hud-record-time" style="font-size: 15px; color:#ffd700;">--:--.---</span>
+      <span id="hud-record-driver" style="font-size: 11px; font-weight:600; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 130px;">--</span>
     </div>
 
     <div class="broadcast-card">
@@ -752,6 +813,18 @@
       </div>
     </div>
 
+    <!-- Live Sector & Split Times -->
+    <div class="elev-row" style="margin-top: 8px;">
+      <div class="elev-card" id="card-sector" style="border-left: 3px solid #ef4444;">
+        <span class="elev-label">Current Sector</span>
+        <span class="elev-val" id="hud-sector-badge" style="color:#ff5555; font-size:13px; font-weight:800;">SECTOR 1</span>
+      </div>
+      <div class="elev-card">
+        <span class="elev-label">Sector Split</span>
+        <span class="elev-val" id="hud-sector-split" style="font-size: 11px; font-family:'JetBrains Mono', monospace;">S1: 0.000s</span>
+      </div>
+    </div>
+
     <div class="track-meta-row">
       <span>DISTANCE</span>
       <span class="val" id="hud-dist">0 m</span>
@@ -759,6 +832,10 @@
     <div class="track-meta-row" style="border:none; padding-top:0;">
       <span>TOTAL RELIEF</span>
       <span class="val" id="hud-relief">Δ 0.0 m</span>
+    </div>
+    <div class="track-meta-row" style="border:none; padding-top:0;">
+      <span>DATA POINTS</span>
+      <span class="val" id="hud-points" style="color:var(--f1-cyan);">0 pts</span>
     </div>
   </div>
 
@@ -849,6 +926,15 @@
         <div class="swatch" style="background: #39ff14;" data-color="#39ff14"></div>
         <div class="swatch" style="background: #ffd700;" data-color="#ffd700"></div>
         <div class="swatch" style="background: #ffffff;" data-color="#ffffff"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-section-title">Racing Line Trajectory</div>
+      <div class="btn-group" id="line-style-group">
+        <button class="group-btn active" data-traj="sectors">🚦 FIA Sectors</button>
+        <button class="group-btn" data-traj="elevation">⛰️ Elevation</button>
+        <button class="group-btn" data-traj="team">🏎️ Livery</button>
       </div>
     </div>
 
@@ -1161,6 +1247,54 @@
       minY: 0, maxY: 1, spanY: 0,
       centerX: 0, centerZ: 0, spanX: 1, spanZ: 1, maxSpan: 100
     };
+
+    // Global Circuit Records & Sector State
+    let allTimeFastestMap = {};
+    let currentTrackId = 27;
+    let currentStartLine = null;
+    let currentSector1 = null;
+    let currentSector2 = null;
+    let s1Dist = 0;
+    let s2Dist = 0;
+    let s1Time = 0;
+    let s2Time = 0;
+    let trajectoryStyle = 'sectors'; // 'sectors' | 'elevation' | 'team'
+
+    // Generates high-res 3D billboard text sprites for overhead sector markers
+    function makeTextSprite(message, colorHex) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, 512, 128);
+
+      const colorStr = '#' + (colorHex.toString(16).padStart(6, '0'));
+      // Semi-transparent HUD pill container
+      ctx.fillStyle = 'rgba(6, 11, 25, 0.88)';
+      ctx.strokeStyle = colorStr;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(8, 8, 496, 112, 28);
+      else ctx.rect(8, 8, 496, 112);
+      ctx.fill();
+      ctx.stroke();
+
+      // Glowing text
+      ctx.fillStyle = colorStr;
+      ctx.font = 'bold 50px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = colorStr;
+      ctx.shadowBlur = 12;
+      ctx.fillText(message, 256, 64);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(13, 3.25, 1);
+      return sprite;
+    }
 
     function showToast(msg, isBusy = false) {
       const toast = document.getElementById('loading-toast');
@@ -1528,48 +1662,133 @@
       rightBorderGeom.setIndex(indices);
       trackSceneGroup.add(new THREE.Mesh(rightBorderGeom, borderMat));
 
-      // 3. Glowing Racing Line Ribbon
+      // 3. Glowing Racing Line Ribbon with FIA Sector / Elevation coloring
       const raceGeom = new THREE.BufferGeometry();
       raceGeom.setAttribute('position', new THREE.Float32BufferAttribute(raceLinePos, 3));
       raceGeom.setIndex(indices);
 
-      const team = F1_TEAMS[currentTeamKey] || F1_TEAMS.ferrari;
-      const raceColor = team.accentColor || team.mainColor || 0x00f0ff;
+      // Helper to find the closest sample index on 3D curve for a given target coordinate
+      function getSampleIndexForCoord(targetCoord, fallbackRatio) {
+        if (!targetCoord || !Number.isFinite(targetCoord.x) || !Number.isFinite(targetCoord.z)) {
+          return Math.floor(samples.length * fallbackRatio);
+        }
+        const tx = targetCoord.x - orig.x;
+        const tz = targetCoord.z - orig.z;
+        let bestIdx = 0;
+        let minD = Infinity;
+        for (let i = 0; i < samples.length; i++) {
+          const d = Math.hypot(samples[i].x - tx, samples[i].z - tz);
+          if (d < minD) {
+            minD = d;
+            bestIdx = i;
+          }
+        }
+        return bestIdx;
+      }
 
+      const startIdx = getSampleIndexForCoord(currentStartLine, 0);
+      const s1Idx = getSampleIndexForCoord(currentSector1, 0.33);
+      const s2Idx = getSampleIndexForCoord(currentSector2, 0.66);
+
+      // Generate vertex colors for racing line
+      const raceColors = [];
+      const team = F1_TEAMS[currentTeamKey] || F1_TEAMS.ferrari;
+      const teamColor = new THREE.Color(team.accentColor || team.mainColor || 0x00f0ff);
+
+      for (let i = 0; i < samples.length; i++) {
+        let r = 0.937, g = 0.267, b = 0.267; // Default S1 Red
+
+        if (trajectoryStyle === 'sectors') {
+          // Wrap-aware sector indexing
+          let inS1 = false, inS2 = false;
+          if (s1Idx > startIdx) inS1 = (i >= startIdx && i < s1Idx);
+          else inS1 = (i >= startIdx || i < s1Idx);
+
+          if (s2Idx > s1Idx) inS2 = (i >= s1Idx && i < s2Idx);
+          else inS2 = (i >= s1Idx || i < s2Idx);
+
+          if (inS1) {
+            r = 0.937; g = 0.267; b = 0.267; // Sector 1: Red (#ef4444)
+          } else if (inS2) {
+            r = 0.231; g = 0.510; b = 0.965; // Sector 2: Blue (#3b82f6)
+          } else {
+            r = 0.918; g = 0.702; b = 0.031; // Sector 3: Yellow (#eab308)
+          }
+        } else if (trajectoryStyle === 'elevation') {
+          const normY = trackBounds.spanY > 0 ? (((samples[i].y || 0) - trackBounds.minY) / trackBounds.spanY) : 0.5;
+          const hue = (195 - normY * 180 + 360) % 360;
+          const col = new THREE.Color(`hsl(${hue}, 100%, 55%)`);
+          r = col.r; g = col.g; b = col.b;
+        } else {
+          r = teamColor.r; g = teamColor.g; b = teamColor.b;
+        }
+
+        // Two vertices per sample along ribbon width
+        raceColors.push(r, g, b, r, g, b);
+      }
+
+      raceGeom.setAttribute('color', new THREE.Float32BufferAttribute(raceColors, 3));
       const raceMat = new THREE.MeshBasicMaterial({
-        color: raceColor,
+        vertexColors: true,
         transparent: true,
-        opacity: 0.9,
+        opacity: 0.95,
         side: THREE.DoubleSide
       });
       raceMesh = new THREE.Mesh(raceGeom, raceMat);
       trackSceneGroup.add(raceMesh);
 
-      // 4. Volumetric Trajectory Glow Tube (Visible from high altitude)
+      // 4. Volumetric Trajectory Glow Tube (Visible from orbit / high cameras)
       const tubeGeom = new THREE.TubeGeometry(curve, Math.min(numSamples, 1200), 0.32, 8, isClosedLoop);
       const tubeMat = new THREE.MeshBasicMaterial({
-        color: raceColor,
+        color: trajectoryStyle === 'team' ? (team.accentColor || 0x00f0ff) : 0x00f0ff,
         transparent: true,
-        opacity: 0.6
+        opacity: 0.45
       });
       tubeMesh = new THREE.Mesh(tubeGeom, tubeMat);
       trackSceneGroup.add(tubeMesh);
 
-      // 5. Start / Finish Line Marker
-      if (samples.length > 0) {
-        const s0 = samples[0];
-        const s1 = samples[1];
-        const sPrev = samples[samples.length - 1];
-        const t0 = new THREE.Vector3().subVectors(s1, sPrev).normalize();
-        
-        const sfGeom = new THREE.PlaneGeometry(roadWidth, 2.4);
-        sfGeom.rotateX(-Math.PI / 2);
-        const sfMat = new THREE.MeshBasicMaterial({ color: 0xffd700, side: THREE.DoubleSide });
-        const sfMesh = new THREE.Mesh(sfGeom, sfMat);
-        sfMesh.position.copy(s0).add(new THREE.Vector3(0, 0.09, 0));
-        sfMesh.rotation.y = Math.atan2(t0.x, t0.z) + Math.PI / 2;
-        trackSceneGroup.add(sfMesh);
+      // 5. Build 3D Official Sector Lines, Neon Pylons & Overhead Holographic World Sprites
+      function build3DSectorGate(idx, colorHex, labelText) {
+        if (idx < 0 || idx >= samples.length) return;
+        const curr = samples[idx];
+        const next = samples[(idx + 1) % samples.length];
+        const prev = samples[(idx - 1 + samples.length) % samples.length];
+        const tangent = new THREE.Vector3().subVectors(next, prev).normalize();
+        const side = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
+
+        // 1. Surface line across asphalt
+        const lineGeom = new THREE.PlaneGeometry(roadWidth + 1.2, 3.2);
+        lineGeom.rotateX(-Math.PI / 2);
+        const lineMat = new THREE.MeshBasicMaterial({
+          color: colorHex,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.92
+        });
+        const lineMesh = new THREE.Mesh(lineGeom, lineMat);
+        lineMesh.position.copy(curr).add(new THREE.Vector3(0, 0.12, 0));
+        lineMesh.rotation.y = Math.atan2(tangent.x, tangent.z) + Math.PI / 2;
+        trackSceneGroup.add(lineMesh);
+
+        // 2. High-Tech Neon Pylons on road borders
+        const postGeom = new THREE.CylinderGeometry(0.18, 0.18, 4.5, 8);
+        const postMat = new THREE.MeshBasicMaterial({ color: colorHex });
+        const leftPost = new THREE.Mesh(postGeom, postMat);
+        leftPost.position.copy(curr).addScaledVector(side, -(halfW + 0.6)).add(new THREE.Vector3(0, 2.25, 0));
+        const rightPost = new THREE.Mesh(postGeom, postMat);
+        rightPost.position.copy(curr).addScaledVector(side, (halfW + 0.6)).add(new THREE.Vector3(0, 2.25, 0));
+        trackSceneGroup.add(leftPost);
+        trackSceneGroup.add(rightPost);
+
+        // 3. Overhead floating label billboard
+        const sprite = makeTextSprite(labelText, colorHex);
+        sprite.position.copy(curr).add(new THREE.Vector3(0, 5.5, 0));
+        trackSceneGroup.add(sprite);
       }
+
+      build3DSectorGate(startIdx, 0xffd700, '🏁 START / FINISH');
+      build3DSectorGate(s1Idx, 0xff00ff, '🟣 SECTOR 1');
+      build3DSectorGate(s2Idx, 0x00ffff, '🔵 SECTOR 2');
 
       scene.add(trackSceneGroup);
     }
@@ -1672,32 +1891,60 @@
       minimapCtx.lineWidth = 5;
       minimapCtx.stroke();
 
-      // 2. Draw Elevation-Colored Apex Trajectory
+      // 2. Draw Apex Trajectory with FIA Sector Colors / Elevation
       for (let i = 0; i < dataset.length - 1; i++) {
         const p1 = dataset[i];
         const p2 = dataset[i + 1];
         const pt1 = toCanvas(p1.x, p1.z);
         const pt2 = toCanvas(p2.x, p2.z);
 
-        const normY = trackBounds.spanY > 0 ? (((p1.y || 0) - trackBounds.minY) / trackBounds.spanY) : 0.5;
-        const hue = (195 - normY * 180 + 360) % 360;
+        let strokeCol = 'rgba(0, 240, 255, 0.8)';
+        if (trajectoryStyle === 'sectors') {
+          if (p1.d < s1Dist || s1Dist === 0) strokeCol = '#ef4444'; // Sector 1: Red
+          else if (p1.d < s2Dist) strokeCol = '#3b82f6'; // Sector 2: Blue
+          else strokeCol = '#eab308'; // Sector 3: Yellow
+        } else if (trajectoryStyle === 'elevation') {
+          const normY = trackBounds.spanY > 0 ? (((p1.y || 0) - trackBounds.minY) / trackBounds.spanY) : 0.5;
+          const hue = (195 - normY * 180 + 360) % 360;
+          strokeCol = `hsl(${hue}, 100%, 55%)`;
+        } else {
+          const team = F1_TEAMS[currentTeamKey] || F1_TEAMS.ferrari;
+          const hex = team.accentColor || team.mainColor || 0x00f0ff;
+          strokeCol = '#' + hex.toString(16).padStart(6, '0');
+        }
 
         minimapCtx.beginPath();
         minimapCtx.moveTo(pt1.cx, pt1.cy);
         minimapCtx.lineTo(pt2.cx, pt2.cy);
-        minimapCtx.strokeStyle = `hsl(${hue}, 100%, 55%)`;
-        minimapCtx.lineWidth = 3;
+        minimapCtx.strokeStyle = strokeCol;
+        minimapCtx.lineWidth = 3.5;
         minimapCtx.stroke();
       }
 
-      // 3. Start / Finish Line Marker
-      if (dataset.length > 0) {
-        const startPt = toCanvas(dataset[0].x, dataset[0].z);
-        minimapCtx.fillStyle = '#ffd700';
+      // 3. Draw Official Start/Finish, Sector 1, and Sector 2 Gate Markers on Minimap
+      function drawMinimapMarker(coord, color, label) {
+        if (!coord || !Number.isFinite(coord.x) || !Number.isFinite(coord.z)) return;
+        const pt = toCanvas(coord.x, coord.z);
+        
+        // Gate dot
         minimapCtx.beginPath();
-        minimapCtx.arc(startPt.cx, startPt.cy, 5, 0, Math.PI * 2);
+        minimapCtx.arc(pt.cx, pt.cy, 5, 0, Math.PI * 2);
+        minimapCtx.fillStyle = color;
+        minimapCtx.shadowColor = color;
+        minimapCtx.shadowBlur = 8;
         minimapCtx.fill();
+        minimapCtx.shadowBlur = 0;
+
+        // Label pill
+        minimapCtx.font = 'bold 9px "JetBrains Mono", monospace';
+        minimapCtx.fillStyle = color;
+        minimapCtx.fillText(label, pt.cx + 7, pt.cy + 3);
       }
+
+      const sfPoint = currentStartLine || (dataset[0] ? { x: dataset[0].x, z: dataset[0].z } : null);
+      drawMinimapMarker(sfPoint, '#ffd700', 'S/F');
+      drawMinimapMarker(currentSector1, '#ff00ff', 'S1');
+      drawMinimapMarker(currentSector2, '#00ffff', 'S2');
 
       // 4. Moving Live Car Blip
       if (currentFrame && Number.isFinite(currentFrame.x)) {
@@ -1733,8 +1980,11 @@
       }
 
       const pct = duration > 0 ? (((playhead - startTime) / duration) * 100).toFixed(1) : 0;
+      let secPrefix = 'S1';
+      if (currentFrame && currentFrame.d >= s2Dist && s2Dist > 0) secPrefix = 'S3';
+      else if (currentFrame && currentFrame.d >= s1Dist && s1Dist > 0) secPrefix = 'S2';
       const progEl = document.getElementById('minimap-progress');
-      if (progEl) progEl.innerText = `${pct}%`;
+      if (progEl) progEl.innerText = `${secPrefix} • ${pct}%`;
     }
 
     function drawElevationProfile(currentFrame) {
@@ -1868,6 +2118,43 @@
         const gradeText = isClimb ? `+${gradeVal.toFixed(1)}% Climb` : (isDesc ? `${gradeVal.toFixed(1)}% Descent` : `0.0% Flat`);
         gradeEl.innerText = gradeText;
         gradeEl.style.color = isClimb ? 'var(--f1-green)' : (isDesc ? 'var(--f1-red)' : '#fff');
+      }
+
+      // Live Sector Detection & Split Display
+      let curSector = 1;
+      let sectorName = 'SECTOR 1';
+      let sectorColor = '#ff5555';
+      if (frame.d >= s2Dist && s2Dist > 0) {
+        curSector = 3;
+        sectorName = 'SECTOR 3';
+        sectorColor = '#facc15';
+      } else if (frame.d >= s1Dist && s1Dist > 0) {
+        curSector = 2;
+        sectorName = 'SECTOR 2';
+        sectorColor = '#60a5fa';
+      }
+
+      const secBadge = document.getElementById('hud-sector-badge');
+      if (secBadge) {
+        secBadge.innerText = sectorName;
+        secBadge.style.color = sectorColor;
+      }
+      const secCard = document.getElementById('card-sector');
+      if (secCard) {
+        secCard.style.borderLeftColor = sectorColor;
+      }
+
+      const splitEl = document.getElementById('hud-sector-split');
+      if (splitEl) {
+        const s1Sec = (s1Time / 1000).toFixed(3);
+        const s2Sec = (s2Time / 1000).toFixed(3);
+        if (curSector === 1) {
+          splitEl.innerText = `S1: ${(elapsed / 1000).toFixed(3)}s`;
+        } else if (curSector === 2) {
+          splitEl.innerText = `S1: ${s1Sec}s | S2: ${Math.max(0, (elapsed - s1Time) / 1000).toFixed(3)}s`;
+        } else {
+          splitEl.innerText = `S1: ${s1Sec}s | S2: ${s2Sec}s | S3: ${Math.max(0, (elapsed - s1Time - s2Time) / 1000).toFixed(3)}s`;
+        }
       }
 
       if (duration > 0) {
@@ -2094,10 +2381,14 @@
         maxSpan: Math.max(spanX, spanZ)
       };
 
-      document.getElementById('hud-relief').innerText = `Δ ${spanY.toFixed(1)} m`;
-      document.getElementById('profile-range').innerText = `${minY.toFixed(0)}m - ${maxY.toFixed(0)}m`;
-      document.getElementById('hud-points').innerText = `${dataset.length} pts`;
-      document.getElementById('scrubber-rail').value = 0;
+      const reliefEl = document.getElementById('hud-relief');
+      if (reliefEl) reliefEl.innerText = `Δ ${spanY.toFixed(1)} m`;
+      const prRangeEl = document.getElementById('profile-range');
+      if (prRangeEl) prRangeEl.innerText = `${minY.toFixed(0)}m - ${maxY.toFixed(0)}m`;
+      const ptsEl = document.getElementById('hud-points');
+      if (ptsEl) ptsEl.innerText = `${dataset.length} pts`;
+      const scrubberEl = document.getElementById('scrubber-rail');
+      if (scrubberEl) scrubberEl.value = 0;
 
       // Immediately Build High-Visibility 3D Asphalt Road & Racing Line
       build3DTrackSystem(dataset, origin, elevMultiplier);
@@ -2120,43 +2411,277 @@
       showToast(`🏁 Loaded ${trackName} (${dataset.length} pts, Δ${spanY.toFixed(1)}m elevation)`);
     }
 
-    // Multi-Path Telemetry Loader Supporting All Endpoints and Fallbacks
+    // ── MULTI-SOURCE CIRCUIT LOADER & SECTOR SYSTEM ──
+
+    // Combine 2D/3D Track Map Coordinates with Laptime Timing Progression { d, t }
+    function combineTrackWithLaptime(trackData, laptimeData) {
+      if (!trackData) return null;
+      let pts = trackData.trackPoints || (Array.isArray(trackData) ? trackData : []);
+      if (!pts || pts.length < 5) return null;
+
+      let cleanPts = pts.map(p => ({
+        x: Number(p.x),
+        z: Number(p.z),
+        y: Number.isFinite(Number(p.y)) ? Number(p.y) : undefined
+      }));
+
+      // Reorder starting point to match startLine if specified
+      if (trackData.startLine && Number.isFinite(trackData.startLine.x)) {
+        let bestIdx = 0;
+        let minD = Infinity;
+        for (let i = 0; i < cleanPts.length; i++) {
+          const d = Math.hypot(cleanPts[i].x - trackData.startLine.x, cleanPts[i].z - trackData.startLine.z);
+          if (d < minD) {
+            minD = d;
+            bestIdx = i;
+          }
+        }
+        if (bestIdx > 0) {
+          cleanPts = cleanPts.slice(bestIdx).concat(cleanPts.slice(0, bestIdx));
+        }
+      }
+
+      // Calculate cumulative distance along path
+      let cumD = 0;
+      cleanPts[0].d = 0;
+      for (let i = 1; i < cleanPts.length; i++) {
+        const dx = cleanPts[i].x - cleanPts[i - 1].x;
+        const dz = cleanPts[i].z - cleanPts[i - 1].z;
+        cumD += Math.hypot(dx, dz);
+        cleanPts[i].d = Math.round(cumD * 10) / 10;
+      }
+      const totalLen = cleanPts[cleanPts.length - 1].d || 4800;
+
+      // Extract lap timing array if present
+      let lapArr = Array.isArray(laptimeData) ? laptimeData : (laptimeData?.telemetry || []);
+      const maxLapD = lapArr.length > 0 ? (lapArr[lapArr.length - 1].d || totalLen) : totalLen;
+      const maxLapT = lapArr.length > 0 ? (lapArr[lapArr.length - 1].t || 82000) : 82000;
+
+      for (let i = 0; i < cleanPts.length; i++) {
+        const norm = cleanPts[i].d / totalLen;
+        const targetD = norm * maxLapD;
+
+        if (lapArr.length > 0) {
+          let lIdx = lapArr.findIndex(lp => (lp.d || 0) >= targetD);
+          if (lIdx <= 0) {
+            cleanPts[i].t = lapArr[0].t || 0;
+          } else {
+            const p1 = lapArr[lIdx - 1];
+            const p2 = lapArr[lIdx];
+            const spanD = (p2.d || 0) - (p1.d || 0);
+            const frac = spanD > 0 ? (targetD - (p1.d || 0)) / spanD : 0;
+            cleanPts[i].t = Math.round((p1.t || 0) + ((p2.t || 0) - (p1.t || 0)) * frac);
+          }
+        } else {
+          cleanPts[i].t = Math.round(norm * maxLapT);
+        }
+      }
+
+      const t0 = cleanPts[0].t || 0;
+      cleanPts.forEach(p => { p.t = Math.max(0, p.t - t0); });
+      cleanPts.sort((a, b) => (a.t || 0) - (b.t || 0));
+
+      return cleanPts;
+    }
+
+    // Set up or re-derive official sector gate positions from dataset
+    function setupSectorLinesFromDataset(pts) {
+      if (!pts || pts.length < 5) return;
+      const totalD = pts[pts.length - 1].d || 5000;
+      const totalT = pts[pts.length - 1].t || 80000;
+
+      if (!currentStartLine || !Number.isFinite(currentStartLine.x)) {
+        const s0 = pts.reduce((prev, curr) => Math.abs(curr.d) < Math.abs(prev.d) ? curr : prev);
+        currentStartLine = { x: s0.x, z: s0.z, yaw: s0.yaw || 0, d: s0.d || 0 };
+      }
+
+      if (!currentSector1 || !Number.isFinite(currentSector1.x)) {
+        const s1TargetD = totalD / 3;
+        const pt1 = pts.reduce((prev, curr) => Math.abs(curr.d - s1TargetD) < Math.abs(prev.d - s1TargetD) ? curr : prev);
+        currentSector1 = { x: pt1.x, z: pt1.z, yaw: pt1.yaw || 0, d: pt1.d || s1TargetD };
+      }
+
+      if (!currentSector2 || !Number.isFinite(currentSector2.x)) {
+        const s2TargetD = (totalD * 2) / 3;
+        const pt2 = pts.reduce((prev, curr) => Math.abs(curr.d - s2TargetD) < Math.abs(prev.d - s2TargetD) ? curr : prev);
+        currentSector2 = { x: pt2.x, z: pt2.z, yaw: pt2.yaw || 0, d: pt2.d || s2TargetD };
+      }
+
+      s1Dist = currentSector1.d || (totalD / 3);
+      s2Dist = currentSector2.d || ((totalD * 2) / 3);
+
+      const ptS1 = pts.find(p => (p.d || 0) >= s1Dist);
+      const ptS2 = pts.find(p => (p.d || 0) >= s2Dist);
+      s1Time = ptS1 ? ptS1.t : Math.round(totalT / 3);
+      s2Time = ptS2 ? Math.round(ptS2.t - s1Time) : Math.round(totalT / 3);
+    }
+
+    // Fetches all track records from laptime folder or API
+    async function fetchTrackRecords() {
+      const endpoints = [
+        'http://localhost:3000/api/laptimes',
+        'http://127.0.0.1:3000/api/laptimes',
+        '/api/laptimes',
+        '/f1-dashboard/api/laptimes',
+        '../laptime/fastest.json',
+        'laptime/fastest.json',
+        '/f1-dashboard/laptime/fastest.json',
+        '/laptime/fastest.json'
+      ];
+
+      for (const ep of endpoints) {
+        try {
+          const res = await fetch(ep);
+          if (res.ok) {
+            const json = await res.json();
+            const recs = json.records || json;
+            if (recs && typeof recs === 'object' && Object.keys(recs).length > 0) {
+              allTimeFastestMap = recs;
+              break;
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    // Action: Recalculate and Lock Sector Lines from Telemetry
+    async function syncSectorLinesAction() {
+      if (!dataset || dataset.length < 5) {
+        showToast('⚠️ No active dataset to sync sector lines from');
+        return;
+      }
+      showToast('⚡ Recalculating official sector lines...', true);
+
+      currentStartLine = null;
+      currentSector1 = null;
+      currentSector2 = null;
+      setupSectorLinesFromDataset(dataset);
+
+      build3DTrackSystem(dataset, origin, elevMultiplier);
+      draw2DMinimap(interpolate(playhead));
+
+      // Attempt server sync
+      try {
+        const res = await fetch(`/api/sync-track-lines?trackId=${currentTrackId}`);
+        if (res.ok) {
+          const json = await res.json();
+          showToast(`✅ Sector lines locked & saved to Track ${currentTrackId}`);
+          return;
+        }
+      } catch (e) {}
+
+      showToast(`✅ Sector lines updated locally for Track ${currentTrackId}`);
+    }
+
+    // Comprehensive Multi-Source Circuit Telemetry Loader
     async function loadTrackTelemetry(trackId, trackName) {
       showToast(`Loading ${trackName} circuit...`, true);
+      currentTrackId = trackId;
 
-      const paths = [
+      // Update Track Record Card immediately from records map
+      const rec = allTimeFastestMap[trackId];
+      const recTimeEl = document.getElementById('hud-record-time');
+      const recDriverEl = document.getElementById('hud-record-driver');
+      if (rec && rec.time > 0) {
+        if (recTimeEl) recTimeEl.innerText = formatTimeMs(rec.time);
+        if (recDriverEl) recDriverEl.innerText = `${rec.driver || 'All-Time Best'}`;
+      } else {
+        if (recTimeEl) recTimeEl.innerText = '--:--.---';
+        if (recDriverEl) recDriverEl.innerText = 'No Record Set';
+      }
+
+      // 1. Try fetching full telemetry from telemetry folder
+      const telPaths = [
         `http://localhost:3000/telemetry/telemetry_${trackId}.json`,
         `http://127.0.0.1:3000/telemetry/telemetry_${trackId}.json`,
         `../telemetry/telemetry_${trackId}.json`,
         `telemetry/telemetry_${trackId}.json`,
         `/f1-dashboard/telemetry/telemetry_${trackId}.json`,
-        `/telemetry/telemetry_${trackId}.json`,
-        `http://localhost:3000/track_maps/track_${trackId}.json`,
-        `http://127.0.0.1:3000/track_maps/track_${trackId}.json`,
-        `../track_maps/track_${trackId}.json`,
-        `track_maps/track_${trackId}.json`,
-        `/f1-dashboard/track_maps/track_${trackId}.json`,
-        `/laptime/fastest_${trackId}.json`
+        `/telemetry/telemetry_${trackId}.json`
       ];
 
-      let loaded = false;
-      for (const p of paths) {
+      let rawTelemetry = null;
+      for (const p of telPaths) {
         try {
-          const response = await fetch(p);
-          if (response.ok) {
-            const data = await response.json();
-            const normalized = normalizeTelemetry(data);
-            if (normalized && normalized.length > 5) {
-              applyTelemetryData(normalized, trackName);
-              loaded = true;
+          const res = await fetch(p);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 5) {
+              rawTelemetry = data;
               break;
             }
           }
         } catch (e) {}
       }
 
-      if (!loaded) {
+      // 2. Try fetching track map from track_maps folder
+      const mapPaths = [
+        `http://localhost:3000/track_maps/track_${trackId}.json`,
+        `http://127.0.0.1:3000/track_maps/track_${trackId}.json`,
+        `../track_maps/track_${trackId}.json`,
+        `track_maps/track_${trackId}.json`,
+        `/f1-dashboard/track_maps/track_${trackId}.json`,
+        `/track_maps/track_${trackId}.json`
+      ];
+
+      let rawMap = null;
+      for (const p of mapPaths) {
+        try {
+          const res = await fetch(p);
+          if (res.ok) {
+            rawMap = await res.json();
+            if (rawMap && (rawMap.trackPoints || Array.isArray(rawMap))) break;
+          }
+        } catch (e) {}
+      }
+
+      // 3. Try fetching laptime progression from laptime folder
+      const lapPaths = [
+        `http://localhost:3000/laptime/fastest_${trackId}.json`,
+        `http://127.0.0.1:3000/laptime/fastest_${trackId}.json`,
+        `../laptime/fastest_${trackId}.json`,
+        `laptime/fastest_${trackId}.json`,
+        `/f1-dashboard/laptime/fastest_${trackId}.json`,
+        `/laptime/fastest_${trackId}.json`
+      ];
+
+      let rawLaptime = null;
+      for (const p of lapPaths) {
+        try {
+          const res = await fetch(p);
+          if (res.ok) {
+            rawLaptime = await res.json();
+            if (Array.isArray(rawLaptime) && rawLaptime.length > 5) break;
+          }
+        } catch (e) {}
+      }
+
+      // Extract official sector markers if available in track map
+      if (rawMap && typeof rawMap === 'object' && !Array.isArray(rawMap)) {
+        currentStartLine = rawMap.startLine || null;
+        currentSector1 = rawMap.sector1 || null;
+        currentSector2 = rawMap.sector2 || null;
+      } else {
+        currentStartLine = null;
+        currentSector1 = null;
+        currentSector2 = null;
+      }
+
+      let finalPoints = null;
+      if (rawTelemetry && Array.isArray(rawTelemetry) && rawTelemetry.length > 5) {
+        finalPoints = normalizeTelemetry(rawTelemetry);
+      } else if (rawMap) {
+        const combined = combineTrackWithLaptime(rawMap, rawLaptime);
+        if (combined) finalPoints = normalizeTelemetry(combined);
+      }
+
+      if (finalPoints && finalPoints.length > 5) {
+        setupSectorLinesFromDataset(finalPoints);
+        applyTelemetryData(finalPoints, trackName);
+        showToast(`🏁 Loaded ${trackName} (${finalPoints.length} pts)`);
+      } else {
         console.warn(`Could not fetch online telemetry for Track ${trackId}, using embedded fallback dataset.`);
+        setupSectorLinesFromDataset(fallbackTelemetry);
         applyTelemetryData(fallbackTelemetry, `${trackName} [Offline Reference]`);
       }
 
@@ -2166,8 +2691,9 @@
     // Populate track dropdown and bind events
     async function initTrackDropdown() {
       const select = document.getElementById('track-select');
-      let tracks = [];
+      await fetchTrackRecords();
 
+      let tracks = [];
       const endpoints = [
         'http://localhost:3000/api/tracks',
         'http://127.0.0.1:3000/api/tracks',
@@ -2195,10 +2721,13 @@
 
       allKnownIds.forEach(id => {
         if (!trackMapById.has(id)) {
+          const rec = allTimeFastestMap[id];
           trackMapById.set(id, {
             id: id,
             name: KNOWN_TRACKS[id] || `Track ${id}`,
-            file: `telemetry_${id}.json`
+            file: `telemetry_${id}.json`,
+            lapTimeMs: rec ? rec.time : null,
+            driver: rec ? rec.driver : 'Unknown'
           });
         }
       });
@@ -2211,7 +2740,10 @@
 
       select.innerHTML = finalTrackList.map(t => {
         const friendlyName = KNOWN_TRACKS[t.id] || t.name || `Track ${t.id}`;
-        const lapInfo = t.lapTimeMs ? ` (${formatTimeMs(t.lapTimeMs)})` : '';
+        const rec = allTimeFastestMap[t.id];
+        const lapTime = (rec && rec.time) || t.lapTimeMs;
+        const driver = (rec && rec.driver) || t.driver || '';
+        const lapInfo = lapTime ? ` — ${formatTimeMs(lapTime)}${driver && driver !== 'Unknown' ? ` (${driver})` : ''}` : '';
         const isSelected = (t.id == 27) ? 'selected' : '';
         return `<option value="${t.id}" ${isSelected}>${friendlyName}${lapInfo}</option>`;
       }).join('');
@@ -2415,6 +2947,24 @@
       }
     });
 
+    // Racing Line Trajectory Style Switcher
+    document.querySelectorAll('[data-traj]').forEach(btn => {
+      btn.onclick = (e) => {
+        document.querySelectorAll('[data-traj]').forEach(b => b.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+        trajectoryStyle = e.currentTarget.dataset.traj;
+        build3DTrackSystem(dataset, origin, elevMultiplier);
+        draw2DMinimap(interpolate(playhead));
+        showToast(`Trajectory style: ${trajectoryStyle.toUpperCase()}`);
+      };
+    });
+
+    // Sector Sync Button Listener
+    const btnSyncSectors = document.getElementById('btn-sync-sectors');
+    if (btnSyncSectors) {
+      btnSyncSectors.onclick = syncSectorLinesAction;
+    }
+
     // File upload & Drag-and-Drop handling
     const fileInput = document.getElementById('file-input');
     const btnUpload = document.getElementById('btn-upload-file');
@@ -2426,15 +2976,73 @@
       };
     }
 
-    function loadJsonFile(file) {
+    async function loadJsonFile(file) {
       showToast(`Loading ${file.name}...`, true);
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const json = JSON.parse(e.target.result);
+          const fname = file.name.toLowerCase();
+
+          // 1. Check if fastest.json (Track Records Catalog)
+          if (fname === 'fastest.json') {
+            allTimeFastestMap = { ...allTimeFastestMap, ...json };
+            showToast('🏆 Updated Track Records from fastest.json');
+            initTrackDropdown();
+            return;
+          }
+
+          // 2. Check if fastest_${id}.json (Lap Timing Progression)
+          const fastMatch = fname.match(/fastest_(\d+)\.json/i);
+          if (fastMatch) {
+            const tId = parseInt(fastMatch[1], 10);
+            const trackName = KNOWN_TRACKS[tId] || `Track ${tId}`;
+            // Fetch track map and combine with this laptime
+            try {
+              const mapRes = await fetch(`/track_maps/track_${tId}.json`);
+              if (mapRes.ok) {
+                const mapData = await mapRes.json();
+                const combined = combineTrackWithLaptime(mapData, json);
+                if (combined) {
+                  currentTrackId = tId;
+                  if (mapData.startLine) currentStartLine = mapData.startLine;
+                  if (mapData.sector1) currentSector1 = mapData.sector1;
+                  if (mapData.sector2) currentSector2 = mapData.sector2;
+                  setupSectorLinesFromDataset(combined);
+                  applyTelemetryData(combined, trackName);
+                  showToast(`⏱️ Combined laptime & track map for ${trackName}`);
+                  return;
+                }
+              }
+            } catch (err) {}
+          }
+
+          // 3. Check if track_${id}.json (Track Geometry Map)
+          const mapMatch = fname.match(/track_(\d+)\.json/i);
+          if (mapMatch) {
+            const tId = parseInt(mapMatch[1], 10);
+            const trackName = KNOWN_TRACKS[tId] || `Track ${tId}`;
+            if (json.startLine) currentStartLine = json.startLine;
+            if (json.sector1) currentSector1 = json.sector1;
+            if (json.sector2) currentSector2 = json.sector2;
+            const combined = combineTrackWithLaptime(json, null);
+            if (combined) {
+              currentTrackId = tId;
+              setupSectorLinesFromDataset(combined);
+              applyTelemetryData(combined, trackName);
+              showToast(`🗺️ Loaded Track Map for ${trackName}`);
+              return;
+            }
+          }
+
+          // 4. Standard full telemetry array or custom JSON
           const normalized = normalizeTelemetry(json);
           if (normalized && normalized.length > 5) {
             const cleanName = file.name.replace(/\.json$/i, '');
+            currentStartLine = null;
+            currentSector1 = null;
+            currentSector2 = null;
+            setupSectorLinesFromDataset(normalized);
             applyTelemetryData(normalized, cleanName);
             showToast(`🏁 Loaded ${cleanName} (${normalized.length} pts)`);
           } else {

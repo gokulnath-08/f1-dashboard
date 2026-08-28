@@ -71,6 +71,7 @@ let gForceData = {
 };
 const gEnvelopeSetServer = new Set();
 const MAX_REASONABLE_SENSOR_G_SERVER = 8;
+const MAX_ENVELOPE_POINTS_SERVER = 30;
 
 function processServerGForce(gLat, gLong, gVert) {
     if (gLat === 0 && gLong === 0 && gVert === 0) return;
@@ -88,10 +89,14 @@ function processServerGForce(gLat, gLong, gVert) {
     if (!gEnvelopeSetServer.has(key)) {
         gEnvelopeSetServer.add(key);
         gForceData.envelopeArray.push({ lat: qLat, long: qLong });
+        if (gForceData.envelopeArray.length > MAX_ENVELOPE_POINTS_SERVER) {
+            const removed = gForceData.envelopeArray.shift();
+            if (removed) gEnvelopeSetServer.delete(`${removed.lat},${removed.long}`);
+        }
     }
 
     gForceData.history.push({ lat: gLat, long: gLong, total: sensorG });
-    if (gForceData.history.length > 60) {
+    if (gForceData.history.length > 30) {
         gForceData.history.shift();
     }
 }
@@ -469,10 +474,35 @@ function renderHtmlDirectoryPage(statusTitle = "F1 Telemetry Dashboard Hub", sta
 }
 
 /**
- * Scans the telemetry directory and laptime records to return a list of all available tracks.
+ * Scans telemetry, laptime records, and track maps to return a complete list of all available circuits.
  */
 function getAvailableTelemetryTracks() {
-    let tracks = [];
+    let trackMapList = new Map();
+
+    // Helper to get or init circuit entry
+    function getOrCreate(trackId) {
+        const id = parseInt(trackId, 10);
+        if (!trackMapList.has(id)) {
+            const name = (typeof trackMap !== 'undefined' && trackMap[id]) ? trackMap[id] : `Track ${id}`;
+            const record = allTimeFastest[id] || null;
+            trackMapList.set(id, {
+                id: id,
+                name: name,
+                file: `telemetry_${id}.json`,
+                url: `/telemetry/telemetry_${id}.json`,
+                sizeBytes: 0,
+                points: 0,
+                lapTimeMs: record ? record.time : null,
+                driver: record ? record.driver : 'Unknown',
+                hasTelemetry: false,
+                hasLaptime: false,
+                hasTrackMap: false
+            });
+        }
+        return trackMapList.get(id);
+    }
+
+    // 1. Scan telemetry directory
     try {
         if (fs.existsSync(telemetryDir)) {
             const files = fs.readdirSync(telemetryDir);
@@ -480,35 +510,20 @@ function getAvailableTelemetryTracks() {
                 const match = file.match(/^telemetry_(\d+)\.json$/i);
                 if (match) {
                     const trackId = parseInt(match[1], 10);
-                    const record = allTimeFastest[trackId] || null;
+                    const item = getOrCreate(trackId);
                     const filePath = path.join(telemetryDir, file);
-                    const stat = fs.statSync(filePath);
-                    const name = trackMap[trackId] || `Track ${trackId}`;
-                    
-                    let lapTimeMs = record ? record.time : null;
-                    let driver = record ? record.driver : 'Unknown';
-                    let points = 0;
-
                     try {
+                        const stat = fs.statSync(filePath);
+                        item.sizeBytes = stat.size;
                         const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-                        if (Array.isArray(content)) {
-                            points = content.length;
-                            if (!lapTimeMs && points > 0) {
-                                lapTimeMs = content[points - 1].t;
+                        if (Array.isArray(content) && content.length > 0) {
+                            item.points = content.length;
+                            item.hasTelemetry = true;
+                            if (!item.lapTimeMs && content[content.length - 1].t > 0) {
+                                item.lapTimeMs = content[content.length - 1].t;
                             }
                         }
                     } catch (e) {}
-
-                    tracks.push({
-                        id: trackId,
-                        name: name,
-                        file: file,
-                        url: `/telemetry/${file}`,
-                        sizeBytes: stat.size,
-                        points: points,
-                        lapTimeMs: lapTimeMs,
-                        driver: driver
-                    });
                 }
             }
         }
@@ -516,6 +531,58 @@ function getAvailableTelemetryTracks() {
         console.error('⚠️ [Telemetry Tracks Error]:', e.message);
     }
 
+    // 2. Scan laptime directory
+    try {
+        if (fs.existsSync(lapTimeDir)) {
+            const files = fs.readdirSync(lapTimeDir);
+            for (const file of files) {
+                const match = file.match(/^fastest_(\d+)\.json$/i);
+                if (match) {
+                    const trackId = parseInt(match[1], 10);
+                    const item = getOrCreate(trackId);
+                    item.hasLaptime = true;
+                    item.laptimeUrl = `/laptime/${file}`;
+                    if (!item.lapTimeMs) {
+                        try {
+                            const raw = JSON.parse(fs.readFileSync(path.join(lapTimeDir, file), 'utf8'));
+                            const pts = Array.isArray(raw) ? raw : (raw.telemetry || []);
+                            if (pts.length > 0 && pts[pts.length - 1].t > 0) {
+                                item.lapTimeMs = pts[pts.length - 1].t;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+        }
+    } catch (e) {}
+
+    // 3. Scan track_maps directory
+    try {
+        if (fs.existsSync(trackMapsDir)) {
+            const files = fs.readdirSync(trackMapsDir);
+            for (const file of files) {
+                const match = file.match(/^track_(\d+)\.json$/i);
+                if (match) {
+                    const trackId = parseInt(match[1], 10);
+                    const item = getOrCreate(trackId);
+                    item.hasTrackMap = true;
+                    item.trackMapUrl = `/track_maps/${file}`;
+                }
+            }
+        }
+    } catch (e) {}
+
+    // 4. Incorporate all records from allTimeFastest
+    for (const [tIdStr, rec] of Object.entries(allTimeFastest)) {
+        const item = getOrCreate(tIdStr);
+        if (rec) {
+            item.lapTimeMs = rec.time || item.lapTimeMs;
+            item.driver = rec.driver || item.driver;
+            if (rec.hasTelemetry) item.hasTelemetry = true;
+        }
+    }
+
+    const tracks = Array.from(trackMapList.values());
     tracks.sort((a, b) => a.name.localeCompare(b.name));
     return tracks;
 }
@@ -569,6 +636,37 @@ const server = http.createServer((req, res) => {
         const hubHtml = renderHtmlDirectoryPage("F1 Telemetry Dashboard Hub", 200);
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
         res.end(hubHtml);
+        return;
+    }
+
+    // API endpoint returning all lap time records and fastest files
+    if (reqUrl === "/api/laptimes" || reqUrl === "/api/laptime/fastest" || reqUrl === "/api/records") {
+        let fastestRecords = { ...allTimeFastest };
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        });
+        res.end(JSON.stringify({ count: Object.keys(fastestRecords).length, records: fastestRecords }, null, 2));
+        return;
+    }
+
+    // API endpoint to trigger sector line sync from telemetry for a track
+    if (reqUrl.startsWith("/api/sync-track-lines") || reqUrl.startsWith("/api/sync-sectors")) {
+        const urlParams = new URL(rawUrl, `http://${req.headers.host || 'localhost'}`).searchParams;
+        const trackIdParam = urlParams.get('trackId') || urlParams.get('id');
+        const tId = trackIdParam ? parseInt(trackIdParam, 10) : currentTrackId;
+
+        const result = syncTrackLinesForTrack(tId);
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        });
+        res.end(JSON.stringify({
+            success: !!result,
+            trackId: tId,
+            data: result || null,
+            message: result ? `Track lines synced successfully for Track ${tId}` : `No telemetry found for Track ${tId}`
+        }, null, 2));
         return;
     }
 
@@ -850,6 +948,88 @@ function generateSessionExportJson() {
 function abs_diff(a, b) { return Math.abs((a || 0) - (b || 0)); }
 
 let clients = [];
+let trackPointsDirty = true;
+
+/**
+ * Re-synchronizes start line, sector 1, and sector 2 lines for a circuit from recorded telemetry.
+ * Uses official session sector markers if available; falls back to 1/3 and 2/3 distance if not.
+ */
+function syncTrackLinesForTrack(tId) {
+    if (tId === undefined || tId === null || tId === -1) return null;
+    const telPath = path.join(telemetryDir, `telemetry_${tId}.json`);
+    if (!fs.existsSync(telPath)) return null;
+
+    try {
+        const telData = JSON.parse(fs.readFileSync(telPath, 'utf8'));
+        if (!Array.isArray(telData) || telData.length === 0) return null;
+
+        let newStart = null, newS1 = null, newS2 = null;
+
+        // Start line is the point closest to d = 0
+        const startLinePt = telData.reduce((prev, curr) => Math.abs(curr.d) < Math.abs(prev.d) ? curr : prev);
+        newStart = { x: startLinePt.x, z: startLinePt.z, yaw: startLinePt.yaw || 0, d: startLinePt.d };
+
+        // If we have sector distances from session, use them; otherwise use 1/3 and 2/3 distance
+        const totalDist = (state.session.trackLength > 0) ? state.session.trackLength : (telData[telData.length - 1].d || 5000);
+        const targetS1Dist = (state.session.sector2Distance > 0) ? state.session.sector2Distance : (totalDist / 3);
+        const targetS2Dist = (state.session.sector3Distance > 0) ? state.session.sector3Distance : ((totalDist / 3) * 2);
+
+        const s1Pt = telData.reduce((prev, curr) => Math.abs(curr.d - targetS1Dist) < Math.abs(prev.d - targetS1Dist) ? curr : prev);
+        newS1 = { x: s1Pt.x, z: s1Pt.z, yaw: s1Pt.yaw || 0, d: s1Pt.d };
+
+        const s2Pt = telData.reduce((prev, curr) => Math.abs(curr.d - targetS2Dist) < Math.abs(prev.d - targetS2Dist) ? curr : prev);
+        newS2 = { x: s2Pt.x, z: s2Pt.z, yaw: s2Pt.yaw || 0, d: s2Pt.d };
+
+        if (tId === currentTrackId) {
+            state.startLine = newStart || state.startLine;
+            state.sector1 = newS1 || state.sector1;
+            state.sector2 = newS2 || state.sector2;
+        }
+
+        const mapPath = path.join(trackMapsDir, `track_${tId}.json`);
+        let trackPoints = [];
+        if (fs.existsSync(mapPath)) {
+            const mapData = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+            const isArray = Array.isArray(mapData);
+            trackPoints = isArray ? mapData : (mapData.trackPoints || []);
+        } else {
+            // Subsample from telemetry if map file doesn't exist
+            let lastD = -999;
+            for (const p of telData) {
+                if (Math.abs(p.d - lastD) >= 18) {
+                    trackPoints.push({ x: p.x, z: p.z });
+                    lastD = p.d;
+                }
+            }
+        }
+
+        const updatedData = {
+            trackPoints: trackPoints,
+            startLine: newStart,
+            sector1: newS1,
+            sector2: newS2
+        };
+        fs.writeFileSync(mapPath, JSON.stringify(updatedData));
+        console.log(`✅ Synced track lines for Map ${tId}`);
+
+        // Broadcast to clients
+        const msg = JSON.stringify({
+            type: 'trackLinesUpdated',
+            trackId: tId,
+            startLine: newStart,
+            sector1: newS1,
+            sector2: newS2
+        });
+        clients.forEach(c => {
+            if (c.readyState === WebSocket.OPEN) c.send(msg);
+        });
+
+        return { startLine: newStart, sector1: newS1, sector2: newS2 };
+    } catch (e) {
+        console.error("Error syncing track lines:", e);
+        return null;
+    }
+}
 
 /**
  * Handles incoming WebSocket connections from the front-end dashboard.
@@ -858,6 +1038,23 @@ let clients = [];
 function handleWsConnection(ws) {
     console.log('✅ Advanced Strategy Command Center Connected!');
     clients.push(ws);
+
+    // Send full 3D track map immediately on connection so the dashboard renders right away
+    if (state.trackPoints && state.trackPoints.length > 0) {
+        try {
+            ws.send(JSON.stringify({
+                type: 'trackDataResponse',
+                trackId: currentTrackId,
+                data: {
+                    trackPoints: state.trackPoints,
+                    pitLanePoints: state.pitLanePoints || [],
+                    startLine: state.startLine,
+                    sector1: state.sector1,
+                    sector2: state.sector2
+                }
+            }));
+        } catch (e) { }
+    }
     ws.on('message', (msg) => {
         try {
             const data = JSON.parse(msg);
@@ -921,50 +1118,7 @@ function handleWsConnection(ws) {
 
             if (data.action === 'syncTrackLines') {
                 const tId = data.trackId !== undefined ? data.trackId : currentTrackId;
-                const telPath = path.join(telemetryDir, `telemetry_${tId}.json`);
-                if (!fs.existsSync(telPath)) return;
-
-                try {
-                    const telData = JSON.parse(fs.readFileSync(telPath, 'utf8'));
-                    if (telData.length === 0) return;
-
-                    let newStart = null, newS1 = null, newS2 = null;
-
-                    // Start line is the point closest to d = 0
-                    const startLinePt = telData.reduce((prev, curr) => Math.abs(curr.d) < Math.abs(prev.d) ? curr : prev);
-                    newStart = { x: startLinePt.x, z: startLinePt.z, yaw: startLinePt.yaw || 0, d: startLinePt.d };
-
-                    // If we have sector distances from session, use them
-                    if (state.session.sector2Distance > 0 && state.session.sector3Distance > 0) {
-                        const s1Pt = telData.reduce((prev, curr) => Math.abs(curr.d - state.session.sector2Distance) < Math.abs(prev.d - state.session.sector2Distance) ? curr : prev);
-                        newS1 = { x: s1Pt.x, z: s1Pt.z, yaw: s1Pt.yaw || 0, d: s1Pt.d };
-
-                        const s2Pt = telData.reduce((prev, curr) => Math.abs(curr.d - state.session.sector3Distance) < Math.abs(prev.d - state.session.sector3Distance) ? curr : prev);
-                        newS2 = { x: s2Pt.x, z: s2Pt.z, yaw: s2Pt.yaw || 0, d: s2Pt.d };
-                    }
-
-                    if (tId === currentTrackId) {
-                        state.startLine = newStart || state.startLine;
-                        state.sector1 = newS1 || state.sector1;
-                        state.sector2 = newS2 || state.sector2;
-                    }
-
-                    const mapPath = path.join(trackMapsDir, `track_${tId}.json`);
-                    if (fs.existsSync(mapPath)) {
-                        const mapData = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
-                        const isArray = Array.isArray(mapData);
-                        const updatedData = {
-                            trackPoints: isArray ? mapData : mapData.trackPoints || [],
-                            startLine: newStart || (isArray ? null : mapData.startLine),
-                            sector1: newS1 || (isArray ? null : mapData.sector1),
-                            sector2: newS2 || (isArray ? null : mapData.sector2)
-                        };
-                        fs.writeFileSync(mapPath, JSON.stringify(updatedData));
-                        console.log(`✅ Synced track lines for Map ${tId}`);
-                    }
-                } catch (e) {
-                    console.error("Error syncing track lines:", e);
-                }
+                syncTrackLinesForTrack(tId);
                 return;
             }
 
@@ -1325,7 +1479,7 @@ let carDataTracker = Array.from({ length: 22 }, () => ({
 }));
 
 let carPhysics = Array.from({ length: 22 }, () => ({
-    speed: 0, lapDistance: 0, lapNum: 0, officialDelta: 0, sector: 0
+    speed: 0, lapDistance: 0, lapNum: 0, officialDelta: 0, officialLeaderDelta: 0, lastValidDelta: 0, lastValidLeaderDelta: 0, sector: 0
 }));
 
 let allLapHistories = {};
@@ -1396,7 +1550,7 @@ function resetSessionData() {
         s1Status: 'pending', s2Status: 'pending', s3Status: 'pending',
         penalties: 0, warnings: 0, cornerCutting: 0, unservedDT: 0, unservedSG: 0, invalidLap: false
     }));
-    carPhysics = Array.from({ length: 22 }, () => ({ speed: 0, lapDistance: 0, lapNum: 0, officialDelta: 0, sector: 0 }));
+    carPhysics = Array.from({ length: 22 }, () => ({ speed: 0, lapDistance: 0, lapNum: 0, officialDelta: 0, officialLeaderDelta: 0, lastValidDelta: 0, lastValidLeaderDelta: 0, sector: 0 }));
     allLapHistories = {};
     allTyreStints = {};
     for (let i = 0; i < 22; i++) {
@@ -1872,7 +2026,26 @@ f1Client.on('session', (data) => {
                     if (state.trackPoints.length > 0) isTrackMapped = true;
                 }
                 state.pitLanePoints = buildApproxPitLane(state.trackPoints);
+                trackPointsDirty = true;
                 console.log(`🗺️ Loaded Track ${currentTrackId} map (${state.trackPoints.length} points)`);
+
+                // Broadcast trackDataResponse to all clients so they immediately have the track map
+                const tMsg = JSON.stringify({
+                    type: 'trackDataResponse',
+                    trackId: currentTrackId,
+                    data: {
+                        trackPoints: state.trackPoints,
+                        pitLanePoints: state.pitLanePoints || [],
+                        startLine: state.startLine,
+                        sector1: state.sector1,
+                        sector2: state.sector2
+                    }
+                });
+                clients.forEach(c => {
+                    if (c.readyState === WebSocket.OPEN) {
+                        try { c.send(tMsg); } catch (e) { }
+                    }
+                });
             } catch (e) {
                 console.error('Error parsing track map JSON:', e);
             }
@@ -2138,8 +2311,11 @@ f1Client.on('lapData', (data) => {
 
                 let record = allTimeFastest[currentTrackId];
                 const isFaster = !record || lastTime < record.time;
-                // Only capture missing ghosts if the lap time is within 5 seconds of the record to prevent out-lap corruption
-                const needsGhost = record && !record.hasTelemetry && Math.abs(lastTime - record.time) < 5000;
+                const trackTelemetryPath = path.join(telemetryDir, `telemetry_${currentTrackId}.json`);
+                const trackFastestPath = path.join(lapTimeDir, `fastest_${currentTrackId}.json`);
+                const telMissing = !fs.existsSync(trackTelemetryPath);
+                // Capture reference telemetry if record is missing, telemetry file is missing on disk, or lap is within 10s of record
+                const needsGhost = (record && (!record.hasTelemetry || telMissing) && Math.abs(lastTime - record.time) < 10000) || (!record && isFullLap);
 
                 if (isFaster) {
                     allTimeFastest[currentTrackId] = {
@@ -2215,7 +2391,20 @@ f1Client.on('lapData', (data) => {
         const dtcMsPart = lap.m_deltaToCarInFrontMSPart !== undefined ? lap.m_deltaToCarInFrontMSPart : 0;
         const dtcMinPart = lap.m_deltaToCarInFrontMinutesPart !== undefined ? lap.m_deltaToCarInFrontMinutesPart : 0;
         const dtcMs = (dtcMinPart * 60000) + dtcMsPart;
-        carPhysics[i].officialDelta = (dtcMs || lap.m_deltaToCarInFrontInMS || 0) / 1000;
+        const officialDtc = (dtcMs || lap.m_deltaToCarInFrontInMS || 0) / 1000;
+        carPhysics[i].officialDelta = officialDtc;
+        if (officialDtc > 0 && officialDtc < 180) {
+            carPhysics[i].lastValidDelta = officialDtc;
+        }
+
+        const dtlMsPart = lap.m_deltaToRaceLeaderMSPart !== undefined ? lap.m_deltaToRaceLeaderMSPart : 0;
+        const dtlMinPart = lap.m_deltaToRaceLeaderMinutesPart !== undefined ? lap.m_deltaToRaceLeaderMinutesPart : 0;
+        const dtlMs = (dtlMinPart * 60000) + dtlMsPart;
+        const officialDtl = (dtlMs || lap.m_deltaToRaceLeaderInMS || 0) / 1000;
+        carPhysics[i].officialLeaderDelta = officialDtl;
+        if (officialDtl > 0 && officialDtl < 360) {
+            carPhysics[i].lastValidLeaderDelta = officialDtl;
+        }
 
         carPhysics[i].sector = lap.m_sector !== undefined ? lap.m_sector : (lap.sector || 0);
 
@@ -2639,52 +2828,94 @@ setInterval(() => {
         });
 
     } else {
-
-
         newLeaderboard = newLeaderboard.filter(d => d.pos > 0 && d.pos <= 22);
         newLeaderboard.sort((a, b) => a.pos - b.pos);
+
+        const leader = newLeaderboard.length > 0 ? newLeaderboard[0] : null;
+        const pLeader = leader ? carPhysics[leader.carIndex] : null;
+        const tLen = (state.session.trackLength > 0) ? state.session.trackLength : 5000;
+        const avgSpeedMs = Math.max(45, (tLen / 80)); // Circuit average racing speed (~180-230 km/h)
 
         newLeaderboard.forEach((driver, idx) => {
             if (driver.pitStatus === 1 || driver.pitStatus === 2) {
                 driver.gapText = 'PIT';
+                driver.gapInt = 'PIT';
+                driver.gapLead = 'PIT';
             } else if (idx === 0) {
                 driver.gapText = 'Interval';
+                driver.gapInt = 'LEAD';
+                driver.gapLead = 'LEAD';
             } else {
                 const driverAhead = newLeaderboard[idx - 1];
                 const pCurr = carPhysics[driver.carIndex];
                 const pAhead = carPhysics[driverAhead.carIndex];
 
-                let delta = pCurr.officialDelta;
-                let lapDiff = pAhead.lapNum - pCurr.lapNum;
+                // Calculate distance to car ahead across lap boundary
+                const lapDiffAhead = (pAhead && pAhead.lapNum !== undefined) ? (pAhead.lapNum - pCurr.lapNum) : 0;
+                let distToAhead = 0;
+                if (pAhead) {
+                    if (lapDiffAhead === 0) {
+                        distToAhead = Math.max(0, pAhead.lapDistance - pCurr.lapDistance);
+                    } else if (lapDiffAhead === 1) {
+                        distToAhead = Math.max(0, (tLen - pCurr.lapDistance) + pAhead.lapDistance);
+                    } else if (lapDiffAhead > 1) {
+                        distToAhead = Math.max(0, (tLen - pCurr.lapDistance) + pAhead.lapDistance + (tLen * (lapDiffAhead - 1)));
+                    }
+                }
 
-                if (driverAhead.pitStatus > 0) {
-                    driver.gapText = delta > 0 ? `+${delta.toFixed(3)}` : 'PIT AHEAD';
-                } else if (lapDiff >= 1 && delta === 0) {
-                    driver.gapText = `+${lapDiff} LAP${lapDiff > 1 ? 'S' : ''}`;
-                } else if (delta > 0 && delta < 150) {
-                    driver.gapText = `+${delta.toFixed(3)}`;
+                // Check if car ahead is in pit
+                if (driverAhead.pitStatus > 0 && distToAhead > 100) {
+                    driver.gapText = pCurr.lastValidDelta > 0 ? `+${pCurr.lastValidDelta.toFixed(3)}` : 'PIT AHEAD';
+                    driver.gapInt = driver.gapText;
+                } else if (lapDiffAhead >= 1 && distToAhead >= tLen * 0.75) {
+                    // Truly a lap down on the car directly ahead
+                    driver.gapText = `+${lapDiffAhead} LAP${lapDiffAhead > 1 ? 'S' : ''}`;
+                    driver.gapInt = driver.gapText;
                 } else {
-                    let distanceGap = 0;
-                    const tLen = state.session.trackLength || 5000;
-
-                    if (pAhead.lapNum === pCurr.lapNum) {
-                        distanceGap = pAhead.lapDistance - pCurr.lapDistance;
-                    } else if (pAhead.lapNum > pCurr.lapNum) {
-                        distanceGap = (tLen - pCurr.lapDistance) + pAhead.lapDistance + (tLen * (pAhead.lapNum - pCurr.lapNum - 1));
-                    }
-
-                    if (distanceGap > 0) {
-                        const speedMs = Math.max(pCurr.speed, 30) / 3.6;
-                        const timeGap = distanceGap / speedMs;
-
-                        if (lapDiff >= 1 && timeGap > 80) {
-                            driver.gapText = `+${lapDiff} LAP${lapDiff > 1 ? 'S' : ''}`;
-                        } else {
-                            driver.gapText = `+${timeGap.toFixed(3)}*`;
-                        }
+                    // Same race lap or just crossed the finish line earlier
+                    let intervalSec = 0;
+                    if (pCurr.officialDelta > 0 && pCurr.officialDelta < 150) {
+                        intervalSec = pCurr.officialDelta;
+                        pCurr.lastValidDelta = intervalSec;
+                    } else if (pCurr.lastValidDelta > 0 && Math.abs(lapDiffAhead) <= 1) {
+                        // Smoothly hold last valid delta across finish line until next sector beacon
+                        intervalSec = pCurr.lastValidDelta;
                     } else {
-                        driver.gapText = '+0.000';
+                        // Smooth fallback using circuit average speed (no jitter when braking)
+                        intervalSec = Math.max(0.001, distToAhead / avgSpeedMs);
                     }
+                    driver.gapText = `+${intervalSec.toFixed(3)}`;
+                    driver.gapInt = `+${intervalSec.toFixed(3)}`;
+                }
+
+                // Calculate Gap to Race Leader (gapLead)
+                if (pLeader) {
+                    const lapsDownLeader = (pLeader.lapNum !== undefined) ? (pLeader.lapNum - pCurr.lapNum) : 0;
+                    let distToLeader = 0;
+                    if (lapsDownLeader === 0) {
+                        distToLeader = Math.max(0, pLeader.lapDistance - pCurr.lapDistance);
+                    } else if (lapsDownLeader === 1) {
+                        distToLeader = Math.max(0, (tLen - pCurr.lapDistance) + pLeader.lapDistance);
+                    } else if (lapsDownLeader > 1) {
+                        distToLeader = Math.max(0, (tLen - pCurr.lapDistance) + pLeader.lapDistance + (tLen * (lapsDownLeader - 1)));
+                    }
+
+                    if (lapsDownLeader >= 1 && distToLeader >= tLen * 0.75) {
+                        driver.gapLead = `+${lapsDownLeader} LAP${lapsDownLeader > 1 ? 'S' : ''}`;
+                    } else {
+                        let leadSec = 0;
+                        if (pCurr.officialLeaderDelta > 0 && pCurr.officialLeaderDelta < 300) {
+                            leadSec = pCurr.officialLeaderDelta;
+                            pCurr.lastValidLeaderDelta = leadSec;
+                        } else if (pCurr.lastValidLeaderDelta > 0 && Math.abs(lapsDownLeader) <= 1) {
+                            leadSec = pCurr.lastValidLeaderDelta;
+                        } else {
+                            leadSec = Math.max(0.001, distToLeader / avgSpeedMs);
+                        }
+                        driver.gapLead = `+${leadSec.toFixed(3)}`;
+                    }
+                } else {
+                    driver.gapLead = driver.gapText;
                 }
             }
         });
@@ -2725,14 +2956,14 @@ setInterval(() => {
             const carBehind = state.leaderboard[playerLbIndex + 1];
             state.lap.driverBehind = (state.participants && state.participants[carBehind.carIndex]) ? state.participants[carBehind.carIndex] : (carBehind.teamName || `Car ${carBehind.carIndex}`);
             state.lap.driverBehindCarIndex = carBehind.carIndex;
-            state.lap.gapBehind = carBehind.gapText || '+0.000';
+            state.lap.gapBehind = carBehind.gapInt || carBehind.gapText || '+0.000';
             state.lap.driverBehindTyre = carBehind.tyre || 'UNK';
             state.lap.driverBehindTeamColor = carBehind.teamColor || '#FFF';
 
             // Check if car behind is within DRS range (< 1.000s)
             let gapBehindSec = 999;
-            const parsedGap = parseFloat(String(carBehind.gapText || '').replace(/[^0-9.]/g, ''));
-            if (!isNaN(parsedGap) && !String(carBehind.gapText).includes('LAP') && !String(carBehind.gapText).includes('PIT')) {
+            const parsedGap = parseFloat(String(state.lap.gapBehind || '').replace(/[^0-9.]/g, ''));
+            if (!isNaN(parsedGap) && !String(state.lap.gapBehind).includes('LAP') && !String(state.lap.gapBehind).includes('PIT')) {
                 gapBehindSec = parsedGap;
             }
             state.lap.drsThreat = gapBehindSec <= 1.0 && gapBehindSec > 0;
@@ -2859,11 +3090,43 @@ setInterval(() => {
     }
 
     clients = clients.filter(ws => ws.readyState === WebSocket.OPEN);
-    const payload = JSON.stringify(state);
+
+    // Build ultra-lean broadcast payload for 20Hz continuous streaming
+    // Drastically lowers bandwidth and CPU load for mobile browsers on WiFi (Android / iOS / Tablets)
+    const playerIdx = state.playerIndex;
+
+    // Send full trackPoints ONLY on track change or initial load (trackPointsDirty),
+    // otherwise send [] during continuous 20Hz streaming (saves 19.2 KB on EVERY tick!)
+    const sendTrack = trackPointsDirty && state.trackPoints && state.trackPoints.length > 0;
+    if (trackPointsDirty) trackPointsDirty = false;
+
+    // Leaderboard: AI cars do not need bulky 15-lap history nested inside every tick;
+    // only the player needs full lap history for local HUD graphs and sector comparisons
+    const leanLeaderboard = state.leaderboard.map(d => {
+        if (d.carIndex === playerIdx) return d;
+        const { lapHistory, ...rest } = d;
+        return rest;
+    });
+
+    const streamState = {
+        ...state,
+        trackPoints: sendTrack ? state.trackPoints : [],
+        pitLanePoints: sendTrack ? state.pitLanePoints : [],
+        leaderboard: leanLeaderboard,
+        // In continuous stream, only send the player's lap history (saves 14 KB on every tick)
+        allLapHistories: { [playerIdx]: (allLapHistories[playerIdx] || []).slice(-15) },
+        motion: {
+            ...state.motion,
+            gEnvelopeArray: (gForceData.envelopeArray || []).slice(-25),
+            gHistory: (gForceData.history || []).slice(-15)
+        }
+    };
+
+    const payload = JSON.stringify(streamState);
     clients.forEach((ws) => {
-        // Protect against Node.js heap exhaustion caused by backpressured sockets (e.g., background browser tabs)
-        if (ws.bufferedAmount > 1024 * 1024) { // >1MB buffered in TCP send queue
-            if (ws.bufferedAmount > 5 * 1024 * 1024) { // >5MB unconsumed
+        // Protect against Node.js heap exhaustion caused by backpressured sockets
+        if (ws.bufferedAmount > 512 * 1024) { // >512KB buffered in TCP send queue
+            if (ws.bufferedAmount > 3 * 1024 * 1024) { // >3MB unconsumed
                 console.warn('⚠️ Terminating unresponsive/backpressured WebSocket client to prevent memory leak.');
                 try { ws.terminate(); } catch (e) { }
             }

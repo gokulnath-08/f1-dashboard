@@ -2329,13 +2329,13 @@
         <div id="tab-radar" class="tab-content active" data-mobile-view="map">
             <!-- Mobile Viewport Switcher -->
             <div class="radar-mobile-toggle-bar" id="radar-mobile-toggle-bar">
-                <button type="button" class="radar-toggle-btn active" id="radar-btn-map" onclick="setRadarMobileView('map')">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
-                    <span>CIRCUIT MAP</span>
-                </button>
                 <button type="button" class="radar-toggle-btn" id="radar-btn-timing" onclick="setRadarMobileView('timing')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm1-13h-2v6h6v-2h-4z"/></svg>
                     <span>TIMING &amp; DATA</span>
+                </button>
+                <button type="button" class="radar-toggle-btn active" id="radar-btn-map" onclick="setRadarMobileView('map')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+                    <span>CIRCUIT MAP</span>
                 </button>
                 <button type="button" class="radar-toggle-btn" id="radar-btn-dual" onclick="setRadarMobileView('dual')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 3h8v8H3V3zm0 10h8v8H3v-8zM13 3h8v8h-8V3zm0 10h8v8h-8v-8z"/></svg>
@@ -3994,7 +3994,7 @@
                 : null;
         }
 
-        let currentRadarMobileView = 'map';
+        let currentRadarMobileView = 'timing';
         function setRadarMobileView(mode) {
             currentRadarMobileView = mode;
             const btnMap = document.getElementById('radar-btn-map');
@@ -6048,8 +6048,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                             <span class="col-s1">${s1Badge}</span>
                             <span class="col-s2">${s2Badge}</span>
                             <span class="col-s3">${s3Badge}</span>
-                            <span class="col-gap val">${idx === 0 ? 'LEAD' : driver.gapText || '--'}</span>
-                            <span class="col-int val">${idx === 0 ? 'LEAD' : driver.gapText || '--'}</span>
+                            <span class="col-gap val">${idx === 0 ? 'LEAD' : driver.gapLead || driver.gapText || '--'}</span>
+                            <span class="col-int val">${idx === 0 ? 'LEAD' : driver.gapInt || driver.gapText || '--'}</span>
                             <span class="col-best val ${bestClass}">${bestStr}</span>
                             <span class="col-laps val">${driver.lapNum || 0}</span>
                         `;
@@ -6205,6 +6205,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
                 if (
                     mapDataToUse.trackPoints &&
+                    mapDataToUse.trackPoints.length > 0 &&
                     mapDataToUse.trackPoints.length !== window.lastTrackPointsLength
                 ) {
                     window.lastTrackPointsLength = mapDataToUse.trackPoints.length;
