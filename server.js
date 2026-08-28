@@ -3100,12 +3100,14 @@ setInterval(() => {
     const sendTrack = trackPointsDirty && state.trackPoints && state.trackPoints.length > 0;
     if (trackPointsDirty) trackPointsDirty = false;
 
-    // Leaderboard: AI cars do not need bulky 15-lap history nested inside every tick;
-    // only the player needs full lap history for local HUD graphs and sector comparisons
+    // Leaderboard: AI cars only need recent laps (slice -5) rather than 15+ laps to keep stream lean
+    // Ensure lapHistory is ALWAYS an Array so the frontend History Table never encounters undefined
     const leanLeaderboard = state.leaderboard.map(d => {
         if (d.carIndex === playerIdx) return d;
-        const { lapHistory, ...rest } = d;
-        return rest;
+        return {
+            ...d,
+            lapHistory: Array.isArray(d.lapHistory) ? d.lapHistory.slice(-5) : []
+        };
     });
 
     const streamState = {
