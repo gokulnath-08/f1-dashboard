@@ -52,6 +52,18 @@ if (!fs.existsSync(setupsDir)) {
     console.log('📁 Created setups directory for car setups.');
 }
 
+/**
+ * Safe JSON file writer that catches Windows file locking (EBUSY / EPERM / UNKNOWN) errors.
+ */
+function safeWriteJson(filePath, data, pretty = false) {
+    try {
+        const content = pretty ? JSON.stringify(data, null, 2) : JSON.stringify(data);
+        fs.writeFileSync(filePath, content, 'utf8');
+    } catch (err) {
+        console.warn(`⚠️ [SafeWrite] Skipped ${path.basename(filePath)} (${err.message})`);
+    }
+}
+
 let allTimeFastest = {};
 const fastestJsonPath = path.join(lapTimeDir, 'fastest.json');
 
@@ -1133,7 +1145,7 @@ function syncTrackLinesForTrack(tId) {
             sector1: newS1,
             sector2: newS2
         };
-        fs.writeFileSync(mapPath, JSON.stringify(updatedData));
+        safeWriteJson(mapPath, updatedData);
         console.log(`✅ Synced track lines for Map ${tId} using sector times (S1: ${s1Time}ms -> d=${Math.round(newS1?.d || 0)}m, S2: ${s2Time}ms -> d=${Math.round(newS2?.d || 0)}m)`);
 
         // Broadcast to clients
@@ -1945,7 +1957,7 @@ f1Client.on('motion', (data) => {
                 };
                 if (isTrackMapped && currentTrackId !== -1) {
                     const filePath = path.join(trackMapsDir, `track_${currentTrackId}.json`);
-                    fs.writeFileSync(filePath, JSON.stringify({ trackPoints: state.trackPoints, startLine: state.startLine, sector1: state.sector1, sector2: state.sector2 }));
+                    safeWriteJson(filePath, { trackPoints: state.trackPoints, startLine: state.startLine, sector1: state.sector1, sector2: state.sector2 });
                 }
             }
         }
@@ -1968,7 +1980,7 @@ f1Client.on('motion', (data) => {
                         const firstPt = pts[0];
                         if (Math.hypot(firstPt.x - x, firstPt.z - z) < 30) {
                             isTrackMapped = true;
-                            fs.writeFileSync(path.join(trackMapsDir, `track_${currentTrackId}.json`), JSON.stringify({ trackPoints: pts, startLine: state.startLine, sector1: state.sector1, sector2: state.sector2 }));
+                            safeWriteJson(path.join(trackMapsDir, `track_${currentTrackId}.json`), { trackPoints: pts, startLine: state.startLine, sector1: state.sector1, sector2: state.sector2 });
                             state.pitLanePoints = buildApproxPitLane(state.trackPoints);
                             console.log(`✅ Track ID ${currentTrackId} fully mapped and saved!`);
                         }
@@ -2397,12 +2409,12 @@ function lockOfficialSectorLinesFromTelemetry(carIndex, sector1Ms, sector2Ms, te
                     trackPoints = Array.isArray(existing) ? existing : (existing.trackPoints || trackPoints);
                 } catch (e) { }
             }
-            fs.writeFileSync(filePath, JSON.stringify({
+            safeWriteJson(filePath, {
                 trackPoints: trackPoints,
                 startLine: state.startLine,
                 sector1: state.sector1,
                 sector2: state.sector2
-            }));
+            });
         }
 
         const msg = JSON.stringify({
@@ -3035,14 +3047,21 @@ setInterval(() => {
             driver.pos = idx + 1;
             if (driver.bestLapMs === 0) {
                 driver.gapText = driver.pitStatus > 0 ? 'IN PIT' : 'OUT LAP';
+                driver.leadSec = 9999;
+                driver.intSec = 9999;
             } else if (idx === 0) {
-
                 const mins = Math.floor(driver.bestLapMs / 60000);
                 const secs = ((driver.bestLapMs % 60000) / 1000).toFixed(3);
                 driver.gapText = `${mins}:${secs.padStart(6, '0')}`;
+                driver.leadSec = 0;
+                driver.intSec = 0;
             } else {
                 const diff = (driver.bestLapMs - poleTimeMs) / 1000;
                 driver.gapText = `+${diff.toFixed(3)}`;
+                driver.leadSec = diff;
+                const prev = newLeaderboard[idx - 1];
+                const intDiff = (driver.bestLapMs - (prev.bestLapMs || poleTimeMs)) / 1000;
+                driver.intSec = Math.max(0, intDiff);
             }
         });
 
@@ -3060,10 +3079,14 @@ setInterval(() => {
                 driver.gapText = 'PIT';
                 driver.gapInt = 'PIT';
                 driver.gapLead = 'PIT';
+                driver.leadSec = 9999;
+                driver.intSec = 9999;
             } else if (idx === 0) {
                 driver.gapText = 'Interval';
                 driver.gapInt = 'LEAD';
                 driver.gapLead = 'LEAD';
+                driver.leadSec = 0;
+                driver.intSec = 0;
             } else {
                 const driverAhead = newLeaderboard[idx - 1];
                 const pCurr = carPhysics[driver.carIndex];
@@ -3086,10 +3109,12 @@ setInterval(() => {
                 if (driverAhead.pitStatus > 0 && distToAhead > 100) {
                     driver.gapText = pCurr.lastValidDelta > 0 ? `+${pCurr.lastValidDelta.toFixed(3)}` : 'PIT AHEAD';
                     driver.gapInt = driver.gapText;
+                    driver.intSec = pCurr.lastValidDelta || 0;
                 } else if (lapDiffAhead >= 1 && distToAhead >= tLen * 0.75) {
                     // Truly a lap down on the car directly ahead
                     driver.gapText = `+${lapDiffAhead} LAP${lapDiffAhead > 1 ? 'S' : ''}`;
                     driver.gapInt = driver.gapText;
+                    driver.intSec = lapDiffAhead * 80;
                 } else {
                     // Same race lap or just crossed the finish line earlier
                     let intervalSec = 0;
@@ -3105,6 +3130,7 @@ setInterval(() => {
                     }
                     driver.gapText = `+${intervalSec.toFixed(3)}`;
                     driver.gapInt = `+${intervalSec.toFixed(3)}`;
+                    driver.intSec = intervalSec;
                 }
 
                 // Calculate Gap to Race Leader (gapLead)
@@ -3121,6 +3147,7 @@ setInterval(() => {
 
                     if (lapsDownLeader >= 1 && distToLeader >= tLen * 0.75) {
                         driver.gapLead = `+${lapsDownLeader} LAP${lapsDownLeader > 1 ? 'S' : ''}`;
+                        driver.leadSec = lapsDownLeader * 80;
                     } else {
                         let leadSec = 0;
                         if (pCurr.officialLeaderDelta > 0 && pCurr.officialLeaderDelta < 300) {
@@ -3132,9 +3159,11 @@ setInterval(() => {
                             leadSec = Math.max(0.001, distToLeader / avgSpeedMs);
                         }
                         driver.gapLead = `+${leadSec.toFixed(3)}`;
+                        driver.leadSec = leadSec;
                     }
                 } else {
                     driver.gapLead = driver.gapText;
+                    driver.leadSec = driver.intSec || 0;
                 }
             }
         });

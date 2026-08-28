@@ -1165,9 +1165,82 @@
             width: 100%;
         }
 
+        /* ── LIVE CLASSIFICATION (LEADERBOARD) ── */
+        .lb-view-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .lb-ref-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0, 229, 255, 0.15);
+            border: 1px solid #00e5ff;
+            color: #00e5ff;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.72rem;
+            font-family: "Roboto Mono", monospace;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .lb-ref-indicator:hover {
+            background: rgba(0, 229, 255, 0.25);
+            box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+        }
+
+        .lb-ref-clear {
+            font-size: 0.95rem;
+            line-height: 1;
+            margin-left: 2px;
+            color: #fff;
+        }
+
+        .lb-toggle-group {
+            display: inline-flex;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--f1-border);
+            border-radius: 5px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .lb-toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-family: "Roboto Mono", monospace;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .lb-toggle-btn:hover {
+            color: #fff;
+        }
+
+        .lb-toggle-btn.active {
+            background: var(--rbr-yellow);
+            color: #000;
+            box-shadow: 0 0 6px rgba(255, 209, 0, 0.35);
+        }
+
+        .lb-container-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .lb-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
             padding: 0 10px 6px 10px;
             color: var(--text-dim);
@@ -1180,7 +1253,6 @@
 
         .lb-row {
             display: flex;
-            justify-content: space-between;
             align-items: center;
             background: var(--f1-dark-alt);
             border: 1px solid var(--f1-border);
@@ -1188,12 +1260,46 @@
             padding: 8px 10px;
             gap: 6px;
             transition: all 0.2s ease;
+            cursor: pointer;
         }
 
         .lb-row:hover {
             border-color: var(--rbr-yellow);
             background: rgba(255, 209, 0, 0.05) !important;
-            transform: translateX(3px);
+            transform: translateX(2px);
+        }
+
+        .lb-row.is-player {
+            background: rgba(255, 209, 0, 0.08) !important;
+            border-color: var(--rbr-yellow) !important;
+        }
+
+        .lb-row.is-ref-driver {
+            border-color: #00e5ff !important;
+            background: rgba(0, 229, 255, 0.12) !important;
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+        }
+
+        .lb-row.is-ref-driver:hover {
+            background: rgba(0, 229, 255, 0.18) !important;
+        }
+
+        .ref-badge {
+            display: inline-block;
+            background: #00e5ff;
+            color: #000;
+            font-size: 0.58rem;
+            font-weight: 800;
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-left: 4px;
+            letter-spacing: 0.5px;
+            vertical-align: middle;
+        }
+
+        .val-ref {
+            color: #00e5ff !important;
+            font-weight: 700;
         }
 
         .col-pos {
@@ -1201,6 +1307,8 @@
             font-weight: 700;
             color: var(--text-muted);
             font-size: 0.85rem;
+            text-align: center;
+            flex-shrink: 0;
         }
 
         .col-driver {
@@ -1211,6 +1319,7 @@
             font-size: 0.88rem;
             overflow: hidden;
             white-space: nowrap;
+            min-width: 95px;
         }
 
         .team-stripe {
@@ -1225,14 +1334,16 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             font-weight: 600;
+            flex-shrink: 1;
         }
 
         .col-s1, .col-s2, .col-s3 {
-            width: 54px;
+            width: 50px;
             text-align: center;
             font-family: "Roboto Mono", monospace;
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             font-weight: 700;
+            flex-shrink: 0;
         }
 
         .sector-badge {
@@ -1240,9 +1351,9 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            padding: 2px 4px;
+            padding: 2px 3px;
             border-radius: 4px;
-            font-size: 0.76rem;
+            font-size: 0.74rem;
             font-weight: 700;
             font-family: "Roboto Mono", monospace;
             background: rgba(255, 255, 255, 0.05);
@@ -1281,29 +1392,33 @@
         }
 
         .col-best {
-            width: 80px;
+            width: 78px;
             text-align: right;
-            font-size: 0.88rem;
+            font-size: 0.85rem;
+            flex-shrink: 0;
         }
 
         .col-gap {
-            width: 60px;
+            width: 62px;
             text-align: right;
             font-size: 0.82rem;
             color: var(--text-muted);
+            flex-shrink: 0;
         }
 
         .col-int {
-            width: 70px;
+            width: 62px;
             text-align: right;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
+            flex-shrink: 0;
         }
 
         .col-tyre {
-            width: 44px;
+            width: 36px;
             text-align: center;
             font-size: 0.8rem;
             font-weight: 700;
+            flex-shrink: 0;
         }
 
         .col-laps {
@@ -1311,13 +1426,15 @@
             text-align: right;
             font-size: 0.82rem;
             color: var(--text-dim);
+            flex-shrink: 0;
         }
 
         .col-stat {
-            width: 55px;
+            width: 50px;
             text-align: right;
             font-size: 0.75rem;
             font-weight: 600;
+            flex-shrink: 0;
         }
 
         .badge-pen {
@@ -2133,6 +2250,37 @@
             }
         }
 
+        @media (max-width: 768px) {
+            .view-all .lb-header,
+            .view-all .lb-row {
+                min-width: 600px;
+            }
+            .view-all .col-pos {
+                position: sticky;
+                left: 0;
+                background: var(--f1-dark);
+                z-index: 2;
+            }
+            .view-all .col-driver {
+                position: sticky;
+                left: 26px;
+                background: var(--f1-dark);
+                z-index: 2;
+            }
+            .view-all .lb-row .col-pos,
+            .view-all .lb-row .col-driver {
+                background: var(--f1-dark-alt);
+            }
+            .view-all .lb-row.is-player .col-pos,
+            .view-all .lb-row.is-player .col-driver {
+                background: #252316;
+            }
+            .view-all .lb-row.is-ref-driver .col-pos,
+            .view-all .lb-row.is-ref-driver .col-driver {
+                background: #0b2229;
+            }
+        }
+
         @media (max-width: 640px) {
             .hero-kpi-bar {
                 grid-template-columns: repeat(2, 1fr);
@@ -2159,6 +2307,39 @@
             .col-laps, .col-stat {
                 display: none;
             }
+
+            .col-driver {
+                font-size: 0.82rem;
+                min-width: 90px;
+            }
+            .col-s1, .col-s2, .col-s3 {
+                width: 46px;
+                font-size: 0.70rem;
+            }
+            .sector-badge {
+                padding: 2px 2px;
+                font-size: 0.70rem;
+            }
+            .col-gap, .col-int {
+                width: 58px;
+                font-size: 0.78rem;
+            }
+            .col-best {
+                width: 68px;
+                font-size: 0.80rem;
+            }
+            .col-tyre {
+                width: 30px;
+                font-size: 0.75rem;
+            }
+            .col-pos {
+                width: 22px;
+                font-size: 0.80rem;
+            }
+            .lb-header, .lb-row {
+                padding: 6px 8px;
+                gap: 4px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -2172,6 +2353,31 @@
 
             .nav-btn {
                 padding: 6px 8px;
+            }
+
+            .col-driver {
+                font-size: 0.78rem;
+                min-width: 80px;
+            }
+            .col-s1, .col-s2, .col-s3 {
+                width: 42px;
+                font-size: 0.68rem;
+            }
+            .sector-badge {
+                padding: 1px 1px;
+                font-size: 0.68rem;
+            }
+            .col-gap, .col-int {
+                width: 52px;
+                font-size: 0.74rem;
+            }
+            .col-best {
+                width: 62px;
+                font-size: 0.74rem;
+            }
+            .lb-header, .lb-row {
+                padding: 5px 6px;
+                gap: 3px;
             }
         }
     </style>
@@ -3153,15 +3359,30 @@
         <!-- ── TAB 5: CLASSIFICATION (LEADERBOARD) ── -->
         <div id="tab-leaderboard" class="tab-content">
             <div class="panel">
-                <div class="panel-header">
-                    <span>Live Classification Standings</span>
-                    <span id="lb-mode-tag" class="panel-header-badge">RACE STANDINGS</span>
+                <div class="panel-header" style="flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>Live Classification Standings</span>
+                        <span id="lb-mode-tag" class="panel-header-badge">RACE STANDINGS</span>
+                    </div>
+                    <div class="lb-view-controls">
+                        <span id="lb-ref-indicator" class="lb-ref-indicator" style="display:none;" onclick="clearSelectedRefDriver()" title="Click to reset reference to race leader">
+                            REF: <span id="lb-ref-name">--</span>
+                            <span class="lb-ref-clear">&times;</span>
+                        </span>
+                        <div class="lb-toggle-group">
+                            <button type="button" class="lb-toggle-btn active" id="lb-btn-timing" onclick="setLeaderboardViewMode('timing')" title="Show Gap, Interval, Best & Tyre">TIMING</button>
+                            <button type="button" class="lb-toggle-btn" id="lb-btn-sectors" onclick="setLeaderboardViewMode('sectors')" title="Show S1, S2, S3 Sector Times">SECTORS</button>
+                            <button type="button" class="lb-toggle-btn" id="lb-btn-all" onclick="setLeaderboardViewMode('all')" title="Show All Columns">ALL</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="lb-container">
-                    <div id="leaderboard-headers" class="lb-header"></div>
-                    <div id="leaderboard-container" style="display:flex; flex-direction:column; gap:4px;">
-                        <div style="text-align:center; color:var(--text-muted); padding:30px; font-family:'Roboto Mono',monospace;">
-                            Waiting for live session timing data...
+                <div class="lb-container-wrapper">
+                    <div class="lb-container" id="lb-main-container">
+                        <div id="leaderboard-headers" class="lb-header"></div>
+                        <div id="leaderboard-container" style="display:flex; flex-direction:column; gap:4px;">
+                            <div style="text-align:center; color:var(--text-muted); padding:30px; font-family:'Roboto Mono',monospace;">
+                                Waiting for live session timing data...
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3536,6 +3757,50 @@
 
     <!-- ══════════ JAVASCRIPT LOGIC ══════════ -->
     <script>
+        // ── Leaderboard Global State & View Mode ──
+        let selectedRefCarIndex = -1;
+        let lbViewMode = window.innerWidth < 768 ? 'timing' : 'all';
+
+        function setLeaderboardViewMode(mode) {
+            lbViewMode = mode;
+            ['timing', 'sectors', 'all'].forEach(m => {
+                const btn = document.getElementById(`lb-btn-${m}`);
+                if (btn) btn.classList.toggle('active', m === mode);
+            });
+            const container = document.getElementById('lb-main-container');
+            if (container) {
+                container.classList.remove('view-timing', 'view-sectors', 'view-all');
+                container.classList.add(`view-${mode}`);
+            }
+            if (window.lastTelemetryData) {
+                updateLeaderboardDisplay(window.lastTelemetryData);
+            }
+        }
+
+        function selectDriverAsReference(carIndex, evt) {
+            if (evt) evt.stopPropagation();
+            if (selectedRefCarIndex === carIndex) {
+                selectedRefCarIndex = -1; // Deselect -> return to leader
+            } else {
+                selectedRefCarIndex = carIndex;
+            }
+            window.selectedCarIndex = carIndex;
+            if (window.lastTelemetryData) {
+                updateLeaderboardDisplay(window.lastTelemetryData);
+            }
+        }
+
+        function selectCarOnMap(carIndex, evt) {
+            selectDriverAsReference(carIndex, evt);
+        }
+
+        function clearSelectedRefDriver() {
+            selectedRefCarIndex = -1;
+            if (window.lastTelemetryData) {
+                updateLeaderboardDisplay(window.lastTelemetryData);
+            }
+        }
+
         const domCache = new Map();
 
         function setText(id, value) {
@@ -3992,6 +4257,276 @@
             return Array.isArray(data?.leaderboard)
                 ? data.leaderboard.find((driver) => driver.carIndex === carIndex)
                 : null;
+        }
+
+        function getSectorBadgeHtml(secMs, secBest, secSessionBest, isLive, secStatus = null) {
+            if (isLive) {
+                return `<span class="sector-badge live">LIVE</span>`;
+            }
+            if (!secMs || secMs <= 0) {
+                return `<span class="sector-badge">—</span>`;
+            }
+            let cls = "yellow";
+            if (secStatus === "sb" || (secSessionBest > 0 && secMs <= secSessionBest)) {
+                cls = "purple";
+            } else if (secStatus === "pb" || (secBest > 0 && secMs <= secBest && secStatus !== "yellow")) {
+                cls = "green";
+            }
+            const formatted = (secMs / 1000).toFixed(3);
+            return `<span class="sector-badge ${cls}">${formatted}</span>`;
+        }
+
+        function updateLeaderboardDisplay(data) {
+            if (!data || !data.leaderboard || data.leaderboard.length === 0) return;
+
+            const pIdx = data.playerIndex ?? -1;
+            const isTimeBased = data.session.sessionCategory === "TimeAttack";
+            const sb1 = data.session.sessionBestS1 || 0;
+            const sb2 = data.session.sessionBestS2 || 0;
+            const sb3 = data.session.sessionBestS3 || 0;
+            const poleTime = data.leaderboard.find(d => d.bestLapMs > 0)?.bestLapMs || 0;
+
+            // Reference driver handling
+            const refIndicator = document.getElementById("lb-ref-indicator");
+            const refNameEl = document.getElementById("lb-ref-name");
+            const refDriver = (selectedRefCarIndex >= 0) ? data.leaderboard.find(d => d.carIndex === selectedRefCarIndex) : null;
+            const refIdx = refDriver ? data.leaderboard.indexOf(refDriver) : -1;
+
+            if (refDriver && refIndicator && refNameEl) {
+                refIndicator.style.display = "inline-flex";
+                const rName = data.participants?.[refDriver.carIndex] || `CAR ${refDriver.carIndex}`;
+                refNameEl.textContent = rName.toUpperCase();
+            } else if (refIndicator) {
+                refIndicator.style.display = "none";
+            }
+
+            // Sync main container class
+            const mainContainer = document.getElementById("lb-main-container");
+            if (mainContainer) {
+                mainContainer.classList.remove('view-timing', 'view-sectors', 'view-all');
+                mainContainer.classList.add(`view-${lbViewMode}`);
+            }
+
+            // Sync toggle button active states
+            ['timing', 'sectors', 'all'].forEach(m => {
+                const btn = document.getElementById(`lb-btn-${m}`);
+                if (btn) btn.classList.toggle('active', m === lbViewMode);
+            });
+
+            // Generate Table Headers based on lbViewMode
+            let headersHtml = `<span class="col-pos">POS</span><span class="col-driver">DRIVER</span>`;
+            if (lbViewMode === 'timing') {
+                if (isTimeBased) {
+                    headersHtml += `
+                        <span class="col-best">BEST</span>
+                        <span class="col-gap">${refDriver ? 'GAP' : 'GAP'}</span>
+                        <span class="col-int">INT</span>
+                        <span class="col-laps">LAPS</span>
+                        <span class="col-stat">STAT</span>
+                    `;
+                } else {
+                    headersHtml += `
+                        <span class="col-tyre">TYRE</span>
+                        <span class="col-gap">${refDriver ? 'GAP' : 'LEAD'}</span>
+                        <span class="col-int">INT</span>
+                        <span class="col-best">BEST</span>
+                        <span class="col-laps">LAPS</span>
+                    `;
+                }
+            } else if (lbViewMode === 'sectors') {
+                headersHtml += `
+                    <span class="col-s1">S1</span>
+                    <span class="col-s2">S2</span>
+                    <span class="col-s3">S3</span>
+                    <span class="col-best">BEST</span>
+                    <span class="col-gap">${refDriver ? 'GAP' : (isTimeBased ? 'GAP' : 'LEAD')}</span>
+                `;
+            } else {
+                // 'all' mode
+                if (isTimeBased) {
+                    headersHtml += `
+                        <span class="col-s1">S1</span>
+                        <span class="col-s2">S2</span>
+                        <span class="col-s3">S3</span>
+                        <span class="col-best">BEST</span>
+                        <span class="col-gap">${refDriver ? 'GAP' : 'GAP'}</span>
+                        <span class="col-laps">LAPS</span>
+                        <span class="col-stat">STAT</span>
+                    `;
+                } else {
+                    headersHtml += `
+                        <span class="col-tyre">TYRE</span>
+                        <span class="col-s1">S1</span>
+                        <span class="col-s2">S2</span>
+                        <span class="col-s3">S3</span>
+                        <span class="col-gap">${refDriver ? 'GAP' : 'LEAD'}</span>
+                        <span class="col-int">INT</span>
+                        <span class="col-best">BEST</span>
+                        <span class="col-laps">LAPS</span>
+                    `;
+                }
+            }
+            setHtml("leaderboard-headers", headersHtml);
+
+            let lbHtml = "";
+            data.leaderboard.forEach((driver, idx) => {
+                const isPlayer = driver.carIndex === pIdx;
+                const isRefDriver = refDriver && driver.carIndex === refDriver.carIndex;
+                const isFastest = driver.carIndex === data.session.fastestLapCarIndex && driver.bestLapMs > 0;
+                const teamColor = getTeamColorCss(driver, data);
+                const name = data.participants?.[driver.carIndex] || `Car ${driver.carIndex}`;
+                const bestStr = driver.bestLapMs > 0 ? formatMs(driver.bestLapMs) : "--:--.---";
+                let bestClass = isFastest ? "purple" : (driver.bestLapMs > 0 ? "green" : "");
+
+                let penHtml = "";
+                if (driver.penalties > 0) penHtml += `<span class="badge-pen time-pen">+${driver.penalties}s</span>`;
+                if (driver.unservedDT > 0) penHtml += `<span class="badge-pen dt-pen">DT</span>`;
+
+                const dS1 = driver.s1 || 0;
+                const dS2 = driver.s2 || 0;
+                const dS3 = driver.s3 || 0;
+                const dBestS1 = driver.bestS1 || 0;
+                const dBestS2 = driver.bestS2 || 0;
+                const dBestS3 = driver.bestS3 || 0;
+
+                const curSec = driver.currentSector;
+                const s1Badge = getSectorBadgeHtml(dS1, dBestS1, sb1, curSec === 0 && driver.pitStatus === 0, driver.s1Status);
+                const s2Badge = getSectorBadgeHtml(dS2, dBestS2, sb2, curSec === 1 && driver.pitStatus === 0, driver.s2Status);
+                const s3Badge = getSectorBadgeHtml(dS3, dBestS3, sb3, curSec === 2 && driver.pitStatus === 0, driver.s3Status);
+
+                // Gap & Interval relative to Selected Reference Driver (or Leader by default)
+                let gapDisplay = '--';
+                let intDisplay = '--';
+
+                if (refDriver) {
+                    if (isRefDriver) {
+                        gapDisplay = `<span class="val-ref">0.000</span>`;
+                        intDisplay = `<span class="val-ref">REF</span>`;
+                    } else if (driver.pitStatus > 0) {
+                        gapDisplay = '<span class="badge-pen">PIT</span>';
+                        intDisplay = '<span class="badge-pen">PIT</span>';
+                    } else if (isTimeBased) {
+                        const currBest = driver.bestLapMs || 0;
+                        const refBest = refDriver.bestLapMs || 0;
+                        if (currBest > 0 && refBest > 0) {
+                            const diff = (currBest - refBest) / 1000;
+                            if (diff < 0) {
+                                gapDisplay = `<span style="color:var(--fia-green); font-weight:700;">-${Math.abs(diff).toFixed(3)}</span>`;
+                            } else if (diff > 0) {
+                                gapDisplay = `<span style="color:var(--fia-yellow); font-weight:700;">+${diff.toFixed(3)}</span>`;
+                            } else {
+                                gapDisplay = '0.000';
+                            }
+                        } else {
+                            gapDisplay = '--';
+                        }
+                        intDisplay = (idx > 0) ? (driver.gapInt || '--') : '--';
+                    } else {
+                        // RACE MODE relative to Reference Driver
+                        const currLead = Number.isFinite(driver.leadSec) ? driver.leadSec : (parseFloat(String(driver.gapLead).replace(/[^\d.-]/g, '')) || 0);
+                        const refLead = Number.isFinite(refDriver.leadSec) ? refDriver.leadSec : (parseFloat(String(refDriver.gapLead).replace(/[^\d.-]/g, '')) || 0);
+
+                        const lapDiff = (refDriver.lapNum || 0) - (driver.lapNum || 0);
+                        if (Math.abs(lapDiff) >= 1 && (driver.lapsDown > 0 || Math.abs(currLead - refLead) > 60)) {
+                            gapDisplay = (lapDiff > 0) ? `+${lapDiff} LAP${lapDiff > 1 ? 'S' : ''}` : `-${Math.abs(lapDiff)} LAP${Math.abs(lapDiff) > 1 ? 'S' : ''}`;
+                        } else {
+                            const deltaToRef = currLead - refLead;
+                            if (deltaToRef < 0) {
+                                gapDisplay = `<span style="color:var(--fia-green); font-weight:700;">-${Math.abs(deltaToRef).toFixed(3)}</span>`;
+                            } else if (deltaToRef > 0) {
+                                gapDisplay = `<span style="color:var(--fia-yellow); font-weight:700;">+${deltaToRef.toFixed(3)}</span>`;
+                            } else {
+                                gapDisplay = '0.000';
+                            }
+                        }
+
+                        if (idx < refIdx) {
+                            intDisplay = (idx === 0) ? 'LEAD' : (driver.gapInt || '--');
+                        } else if (idx === refIdx + 1) {
+                            const deltaBehind = currLead - refLead;
+                            intDisplay = (deltaBehind > 0) ? `+${deltaBehind.toFixed(3)}` : (driver.gapInt || '--');
+                        } else {
+                            intDisplay = driver.gapInt || '--';
+                        }
+                    }
+                } else {
+                    // DEFAULT (Leader reference)
+                    if (isTimeBased && driver.bestLapMs > 0 && poleTime > 0) {
+                        if (driver.bestLapMs === poleTime) {
+                            gapDisplay = '<span style="color:var(--rbr-yellow); font-weight:700;">POLE</span>';
+                        } else {
+                            const diff = (driver.bestLapMs - poleTime) / 1000;
+                            gapDisplay = `+${diff.toFixed(3)}`;
+                        }
+                        intDisplay = (idx > 0) ? (driver.gapInt || `+${((driver.bestLapMs - (data.leaderboard[idx-1].bestLapMs || poleTime)) / 1000).toFixed(3)}`) : '--';
+                    } else {
+                        gapDisplay = (idx === 0) ? 'LEAD' : (driver.gapLead || driver.gapText || '--');
+                        intDisplay = (idx === 0) ? 'LEAD' : (driver.gapInt || driver.gapText || '--');
+                    }
+                }
+
+                let rowHtml = `<div class="lb-row ${isPlayer ? 'is-player' : ''} ${isRefDriver ? 'is-ref-driver' : ''}" onclick="selectDriverAsReference(${driver.carIndex}, event)" style="cursor: pointer;">
+                    <span class="col-pos">${driver.pos || idx + 1}</span>
+                    <span class="col-driver">
+                        <span class="team-stripe" style="background: ${teamColor};"></span>
+                        <span class="driver-name-text">${name.toUpperCase()}${penHtml}${isRefDriver ? ' <span class="ref-badge">REF</span>' : ''}</span>
+                    </span>`;
+
+                if (lbViewMode === 'timing') {
+                    if (isTimeBased) {
+                        rowHtml += `
+                            <span class="col-best val ${bestClass}">${bestStr}</span>
+                            <span class="col-gap val">${gapDisplay}</span>
+                            <span class="col-int val">${intDisplay}</span>
+                            <span class="col-laps val">${driver.lapNum || 0}</span>
+                            <span class="col-stat val" style="color:var(--text-muted);">${driver.pitStatus > 0 ? 'PIT' : 'TRACK'}</span>
+                        `;
+                    } else {
+                        rowHtml += `
+                            <span class="col-tyre" style="color:${driver.tyreClass || '#FFF'};">${driver.tyre || '-'}</span>
+                            <span class="col-gap val">${gapDisplay}</span>
+                            <span class="col-int val">${intDisplay}</span>
+                            <span class="col-best val ${bestClass}">${bestStr}</span>
+                            <span class="col-laps val">${driver.lapNum || 0}</span>
+                        `;
+                    }
+                } else if (lbViewMode === 'sectors') {
+                    rowHtml += `
+                        <span class="col-s1">${s1Badge}</span>
+                        <span class="col-s2">${s2Badge}</span>
+                        <span class="col-s3">${s3Badge}</span>
+                        <span class="col-best val ${bestClass}">${bestStr}</span>
+                        <span class="col-gap val">${gapDisplay}</span>
+                    `;
+                } else {
+                    // 'all' mode
+                    if (isTimeBased) {
+                        rowHtml += `
+                            <span class="col-s1">${s1Badge}</span>
+                            <span class="col-s2">${s2Badge}</span>
+                            <span class="col-s3">${s3Badge}</span>
+                            <span class="col-best val ${bestClass}">${bestStr}</span>
+                            <span class="col-gap val">${gapDisplay}</span>
+                            <span class="col-laps val">${driver.lapNum || 0}</span>
+                            <span class="col-stat val" style="color:var(--text-muted);">${driver.pitStatus > 0 ? 'PIT' : 'TRACK'}</span>
+                        `;
+                    } else {
+                        rowHtml += `
+                            <span class="col-tyre" style="color:${driver.tyreClass || '#FFF'};">${driver.tyre || '-'}</span>
+                            <span class="col-s1">${s1Badge}</span>
+                            <span class="col-s2">${s2Badge}</span>
+                            <span class="col-s3">${s3Badge}</span>
+                            <span class="col-gap val">${gapDisplay}</span>
+                            <span class="col-int val">${intDisplay}</span>
+                            <span class="col-best val ${bestClass}">${bestStr}</span>
+                            <span class="col-laps val">${driver.lapNum || 0}</span>
+                        `;
+                    }
+                }
+                rowHtml += `</div>`;
+                lbHtml += rowHtml;
+            });
+            setHtml("leaderboard-container", lbHtml);
         }
 
         let currentRadarMobileView = 'timing';
@@ -5941,125 +6476,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             }
 
             // Classification Table
+            updateLeaderboardDisplay(data);
+
+            // History Table
             if (data.leaderboard && data.leaderboard.length > 0) {
-                const isTimeBased = data.session.sessionCategory === "TimeAttack";
-                const sb1 = data.session.sessionBestS1 || 0;
-                const sb2 = data.session.sessionBestS2 || 0;
-                const sb3 = data.session.sessionBestS3 || 0;
-                const poleTime = data.leaderboard.find(d => d.bestLapMs > 0)?.bestLapMs || 0;
-
-                let headersHtml = `<span class="col-pos">POS</span><span class="col-driver">DRIVER</span>`;
-                if (isTimeBased) {
-                    headersHtml += `
-                        <span class="col-s1">S1</span>
-                        <span class="col-s2">S2</span>
-                        <span class="col-s3">S3</span>
-                        <span class="col-best">BEST</span>
-                        <span class="col-gap">GAP</span>
-                        <span class="col-laps">LAPS</span>
-                        <span class="col-stat">STAT</span>
-                    `;
-                } else {
-                    headersHtml += `
-                        <span class="col-tyre">TYRE</span>
-                        <span class="col-s1">S1</span>
-                        <span class="col-s2">S2</span>
-                        <span class="col-s3">S3</span>
-                        <span class="col-gap">LEAD</span>
-                        <span class="col-int">INT</span>
-                        <span class="col-best">BEST</span>
-                        <span class="col-laps">LAPS</span>
-                    `;
-                }
-                setHtml("leaderboard-headers", headersHtml);
-
-                function getSectorBadgeHtml(secMs, secBest, secSessionBest, isLive, secStatus = null) {
-                    if (isLive) {
-                        return `<span class="sector-badge live">LIVE</span>`;
-                    }
-                    if (!secMs || secMs <= 0) {
-                        return `<span class="sector-badge">—</span>`;
-                    }
-                    let cls = "yellow";
-                    if (secStatus === "sb" || (secSessionBest > 0 && secMs <= secSessionBest)) {
-                        cls = "purple";
-                    } else if (secStatus === "pb" || (secBest > 0 && secMs <= secBest && secStatus !== "yellow")) {
-                        cls = "green";
-                    }
-                    const formatted = (secMs / 1000).toFixed(3);
-                    return `<span class="sector-badge ${cls}">${formatted}</span>`;
-                }
-
-                let lbHtml = "";
-                data.leaderboard.forEach((driver, idx) => {
-                    const isPlayer = driver.carIndex === pIdx;
-                    const isFastest = driver.carIndex === data.session.fastestLapCarIndex && driver.bestLapMs > 0;
-                    const teamColor = getTeamColorCss(driver, data);
-                    const name = data.participants?.[driver.carIndex] || `Car ${driver.carIndex}`;
-                    const bestStr = driver.bestLapMs > 0 ? formatMs(driver.bestLapMs) : "--:--.---";
-                    let bestClass = isFastest ? "purple" : (driver.bestLapMs > 0 ? "green" : "");
-
-                    let penHtml = "";
-                    if (driver.penalties > 0) penHtml += `<span class="badge-pen time-pen">+${driver.penalties}s</span>`;
-                    if (driver.unservedDT > 0) penHtml += `<span class="badge-pen dt-pen">DT</span>`;
-
-                    const dS1 = driver.s1 || 0;
-                    const dS2 = driver.s2 || 0;
-                    const dS3 = driver.s3 || 0;
-                    const dBestS1 = driver.bestS1 || 0;
-                    const dBestS2 = driver.bestS2 || 0;
-                    const dBestS3 = driver.bestS3 || 0;
-
-                    const curSec = driver.currentSector;
-                    const s1Badge = getSectorBadgeHtml(dS1, dBestS1, sb1, curSec === 0 && driver.pitStatus === 0, driver.s1Status);
-                    const s2Badge = getSectorBadgeHtml(dS2, dBestS2, sb2, curSec === 1 && driver.pitStatus === 0, driver.s2Status);
-                    const s3Badge = getSectorBadgeHtml(dS3, dBestS3, sb3, curSec === 2 && driver.pitStatus === 0, driver.s3Status);
-
-                    let gapDisplay = driver.gapText || '--';
-                    if (isTimeBased && driver.bestLapMs > 0 && poleTime > 0) {
-                        if (driver.bestLapMs === poleTime) {
-                            gapDisplay = '<span style="color:var(--rbr-yellow); font-weight:700;">POLE</span>';
-                        } else {
-                            const diff = (driver.bestLapMs - poleTime) / 1000;
-                            gapDisplay = `+${diff.toFixed(3)}`;
-                        }
-                    }
-
-                    let rowHtml = `<div class="lb-row" onclick="selectCarOnMap(${driver.carIndex}, event)" style="cursor: pointer; ${isPlayer ? 'background: rgba(255,209,0,0.1); border-color: var(--rbr-yellow);' : ''}">
-                        <span class="col-pos">${driver.pos || idx + 1}</span>
-                        <span class="col-driver">
-                            <span class="team-stripe" style="background: ${teamColor};"></span>
-                            <span class="driver-name-text">${name.toUpperCase()}${penHtml}</span>
-                        </span>`;
-
-                    if (isTimeBased) {
-                        rowHtml += `
-                            <span class="col-s1">${s1Badge}</span>
-                            <span class="col-s2">${s2Badge}</span>
-                            <span class="col-s3">${s3Badge}</span>
-                            <span class="col-best val ${bestClass}">${bestStr}</span>
-                            <span class="col-gap val">${gapDisplay}</span>
-                            <span class="col-laps val">${driver.lapNum || 0}</span>
-                            <span class="col-stat val" style="color:var(--text-muted);">${driver.pitStatus > 0 ? 'PIT' : 'TRACK'}</span>
-                        `;
-                    } else {
-                        rowHtml += `
-                            <span class="col-tyre" style="color:${driver.tyreClass || '#FFF'};">${driver.tyre || '-'}</span>
-                            <span class="col-s1">${s1Badge}</span>
-                            <span class="col-s2">${s2Badge}</span>
-                            <span class="col-s3">${s3Badge}</span>
-                            <span class="col-gap val">${idx === 0 ? 'LEAD' : driver.gapLead || driver.gapText || '--'}</span>
-                            <span class="col-int val">${idx === 0 ? 'LEAD' : driver.gapInt || driver.gapText || '--'}</span>
-                            <span class="col-best val ${bestClass}">${bestStr}</span>
-                            <span class="col-laps val">${driver.lapNum || 0}</span>
-                        `;
-                    }
-                    rowHtml += `</div>`;
-                    lbHtml += rowHtml;
-                });
-                setHtml("leaderboard-container", lbHtml);
-
-                // History Table
                 const hHead = document.getElementById("history-head");
                 const hBody = document.getElementById("history-body");
                 let maxLaps = 0;
