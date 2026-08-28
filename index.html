@@ -2204,12 +2204,6 @@
                 </svg>
                 <span>REFRESH</span>
             </button>
-            <button id="btn-save-telemetry" class="rbr-tool-btn" onclick="saveCurrentLapTelemetry()" title="Save Current/Last Lap Telemetry to telemetry/ and laptime/ folders">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-                    <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
-                </svg>
-                <span>SAVE LAP</span>
-            </button>
             <button id="btn-download-session" class="rbr-download-btn" onclick="downloadSessionJson()" title="Download Complete Session Data (JSON)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
                     <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
@@ -4054,22 +4048,6 @@
         function downloadSessionJson() {
             showToast("Generating Complete Session Telemetry JSON snapshot...");
             window.location.href = "/api/session/export";
-        }
-
-        async function saveCurrentLapTelemetry() {
-            try {
-                showToast("💾 Saving latest lap telemetry & fastest files...");
-                const trackId = window.lastTelemetryData?.session?.trackId ?? 16;
-                const res = await fetch(`/api/save-telemetry?trackId=${trackId}`);
-                const data = await res.json();
-                if (data.success) {
-                    showToast(`✅ Saved ${data.points} telemetry points for Track ${data.trackId}!`);
-                } else {
-                    showToast(`⚠️ ${data.message || 'Could not save lap telemetry'}`);
-                }
-            } catch(e) {
-                showToast("⚠️ Failed to reach telemetry save API: " + e.message);
-            }
         }
 
         /* ── Restored Sector Popup Function ── */
@@ -6210,7 +6188,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
                 if (
                     mapDataToUse.startLine &&
-                    mapDataToUse.startLine.yaw !== undefined
+                    mapDataToUse.startLine.yaw !== undefined &&
+                    (mapDataToUse.startLine.x !== 0 || mapDataToUse.startLine.z !== 0)
                 ) {
                     startLineMesh.position.set(
                         mapDataToUse.startLine.x,
@@ -6218,17 +6197,37 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         mapDataToUse.startLine.z,
                     );
                     startLineMesh.rotation.y = -mapDataToUse.startLine.yaw;
-                    startLineMesh.visible = false;
+                    startLineMesh.visible = true;
                 } else {
                     startLineMesh.visible = false;
                 }
-                if (mapDataToUse.sector1 && mapDataToUse.sector1.yaw !== undefined) {
-                    sector1LineMesh.visible = false;
+                if (
+                    mapDataToUse.sector1 &&
+                    mapDataToUse.sector1.yaw !== undefined &&
+                    (mapDataToUse.sector1.x !== 0 || mapDataToUse.sector1.z !== 0)
+                ) {
+                    sector1LineMesh.position.set(
+                        mapDataToUse.sector1.x,
+                        0,
+                        mapDataToUse.sector1.z,
+                    );
+                    sector1LineMesh.rotation.y = -mapDataToUse.sector1.yaw;
+                    sector1LineMesh.visible = true;
                 } else {
                     sector1LineMesh.visible = false;
                 }
-                if (mapDataToUse.sector2 && mapDataToUse.sector2.yaw !== undefined) {
-                    sector2LineMesh.visible = false;
+                if (
+                    mapDataToUse.sector2 &&
+                    mapDataToUse.sector2.yaw !== undefined &&
+                    (mapDataToUse.sector2.x !== 0 || mapDataToUse.sector2.z !== 0)
+                ) {
+                    sector2LineMesh.position.set(
+                        mapDataToUse.sector2.x,
+                        0,
+                        mapDataToUse.sector2.z,
+                    );
+                    sector2LineMesh.rotation.y = -mapDataToUse.sector2.yaw;
+                    sector2LineMesh.visible = true;
                 } else {
                     sector2LineMesh.visible = false;
                 }

@@ -62,7 +62,6 @@ if (fs.existsSync(fastestJsonPath)) {
         console.error('⚠️ Error reading fastest.json:', e);
     }
 }
-let playerBestLapByTrack = {};
 
 // --- G-Force Processing (In-Memory Only) ---
 let gForceData = {
@@ -671,49 +670,82 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // API endpoint to manually save current or last lap telemetry for a track
-    if (reqUrl.startsWith("/api/save-telemetry") || reqUrl.startsWith("/api/save-lap")) {
+    // API endpoint to safely and properly store telemetry for the current/selected track
+    if (reqUrl.startsWith("/api/save-telemetry")) {
         const urlParams = new URL(rawUrl, `http://${req.headers.host || 'localhost'}`).searchParams;
         const trackIdParam = urlParams.get('trackId') || urlParams.get('id');
-        const tId = trackIdParam ? parseInt(trackIdParam, 10) : (currentTrackId !== -1 ? currentTrackId : (state.session.trackId || 16));
-        const pIdx = state.playerIndex;
-        const pts = (lastLapTelemetry[pIdx] && lastLapTelemetry[pIdx].length > 10) 
-            ? lastLapTelemetry[pIdx] 
-            : (currentLapTelemetry[pIdx] || []);
+        const tId = trackIdParam ? parseInt(trackIdParam, 10) : currentTrackId;
 
-        let saved = false;
-        if (pts.length > 5 && tId !== -1) {
-            const trackTelemetryPath = path.join(telemetryDir, `telemetry_${tId}.json`);
-            const trackFastestPath = path.join(lapTimeDir, `fastest_${tId}.json`);
-            const driverName = (state.participants && state.participants[pIdx]) || 'Player';
-            const lapTime = (pts[pts.length - 1]?.t) || (state.lap.lastMs) || 80000;
-
-            allTimeFastest[tId] = {
-                time: lapTime,
-                driver: driverName,
-                hasTelemetry: true
-            };
-            try {
-                fs.writeFileSync(fastestJsonPath, JSON.stringify(allTimeFastest, null, 2), 'utf8');
-                fs.writeFileSync(trackFastestPath, JSON.stringify(pts.map(pt => ({ d: pt.d, t: pt.t }))), 'utf8');
-                fs.writeFileSync(trackTelemetryPath, JSON.stringify(pts, null, 2), 'utf8');
-                syncTrackLinesForTrack(tId);
-                saved = true;
-                console.log(`💾 Manual save-telemetry successful for Track ${tId} (${pts.length} pts)`);
-            } catch(e) {
-                console.error('Error in manual save-telemetry:', e);
-            }
+        if (tId === -1) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: false, message: "No active track selected" }));
+            return;
         }
 
-        res.writeHead(200, {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-        });
+        const pIdx = state.playerIndex || 0;
+        let sourceTelemetry = (lastLapTelemetry[pIdx] && lastLapTelemetry[pIdx].length >= 50)
+            ? lastLapTelemetry[pIdx]
+            : (currentLapTelemetry[pIdx] || []);
+
+        let cleanTelemetry = sourceTelemetry
+            .filter(pt => Number.isFinite(pt.x) && Number.isFinite(pt.z) && (pt.x !== 0 || pt.z !== 0));
+
+        if (cleanTelemetry.length < 50) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: false, message: `Insufficient telemetry points to save (${cleanTelemetry.length} pts found, min 50 required)` }));
+            return;
+        }
+
+        cleanTelemetry.sort((a, b) => (a.d !== undefined && b.d !== undefined) ? a.d - b.d : a.t - b.t);
+
+        // Ensure clean starting point
+        if (cleanTelemetry[0].d > 0) {
+            cleanTelemetry.unshift({
+                ...cleanTelemetry[0],
+                d: 0,
+                t: 0
+            });
+        }
+
+        const trackLen = state.session.trackLength > 0 ? state.session.trackLength : (cleanTelemetry[cleanTelemetry.length - 1].d || 5000);
+        const lastMs = state.lap.lastMs > 0 ? state.lap.lastMs : (cleanTelemetry[cleanTelemetry.length - 1].t || 75000);
+        const driverName = (state.participants && state.participants[pIdx]) || "Player";
+
+        const s1Time = carDataTracker[pIdx].bestS1 || carDataTracker[pIdx].s1 || state.session.referenceS1 || 0;
+        const s2Time = carDataTracker[pIdx].bestS2 || carDataTracker[pIdx].s2 || state.session.referenceS2 || 0;
+        const s3Time = (lastMs > 0 && s1Time > 0 && s2Time > 0) ? Math.max(0, lastMs - (s1Time + s2Time)) : 0;
+
+        // Save telemetry files
+        const telPath = path.join(telemetryDir, `telemetry_${tId}.json`);
+        const ghostPath = path.join(lapTimeDir, `fastest_${tId}.json`);
+
+        fs.writeFileSync(telPath, JSON.stringify(cleanTelemetry, null, 2), 'utf8');
+        fs.writeFileSync(ghostPath, JSON.stringify(cleanTelemetry.map(p => ({ d: p.d, t: p.t }))), 'utf8');
+
+        allTimeFastest[tId] = {
+            time: lastMs,
+            driver: driverName,
+            s1: s1Time,
+            s2: s2Time,
+            s3: s3Time,
+            hasTelemetry: true
+        };
+        fs.writeFileSync(fastestJsonPath, JSON.stringify(allTimeFastest, null, 2), 'utf8');
+
+        // Sync track sector lines using the official sector times
+        const syncedLines = syncTrackLinesForTrack(tId);
+
+        console.log(`💾 Properly stored telemetry for Track ${tId} (${cleanTelemetry.length} pts, Driver: ${driverName}, Lap: ${lastMs}ms)`);
+
+        res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
         res.end(JSON.stringify({
-            success: saved,
+            success: true,
             trackId: tId,
-            points: pts.length,
-            message: saved ? `Telemetry and fastest saved for Track ${tId}` : `Not enough telemetry points (${pts.length}) to save`
+            points: cleanTelemetry.length,
+            lapTimeMs: lastMs,
+            driver: driverName,
+            syncedLines: syncedLines || null,
+            message: `Telemetry and sector lines saved successfully for Track ${tId}`
         }, null, 2));
         return;
     }
@@ -1008,38 +1040,82 @@ function syncTrackLinesForTrack(tId) {
     if (!fs.existsSync(telPath)) return null;
 
     try {
-        const telData = JSON.parse(fs.readFileSync(telPath, 'utf8'));
+        let telData = JSON.parse(fs.readFileSync(telPath, 'utf8'));
         if (!Array.isArray(telData) || telData.length === 0) return null;
 
-        let newStart = null, newS1 = null, newS2 = null;
+        // Filter out invalid dummy points where x === 0 and z === 0
+        telData = telData.filter(p => Number.isFinite(p.x) && Number.isFinite(p.z) && (p.x !== 0 || p.z !== 0));
+        if (telData.length < 10) return null;
 
-        // Start line is the point closest to d = 0
-        const startLinePt = telData.reduce((prev, curr) => Math.abs(curr.d) < Math.abs(prev.d) ? curr : prev);
-        newStart = { x: startLinePt.x, z: startLinePt.z, yaw: startLinePt.yaw || 0, d: startLinePt.d };
+        // Ensure sorted by distance/time
+        telData.sort((a, b) => (a.d !== undefined && b.d !== undefined) ? a.d - b.d : a.t - b.t);
 
-        // If we have sector distances from session, use them; otherwise use 1/3 and 2/3 distance
-        const totalDist = (state.session.trackLength > 0) ? state.session.trackLength : (telData[telData.length - 1].d || 5000);
-        const targetS1Dist = (state.session.sector2Distance > 0) ? state.session.sector2Distance : (totalDist / 3);
-        const targetS2Dist = (state.session.sector3Distance > 0) ? state.session.sector3Distance : ((totalDist / 3) * 2);
+        // 1. Start line: point closest to d = 0 (with valid x, z coordinates)
+        const startCandidates = telData.filter(p => Math.abs(p.d || 0) < 150);
+        const startLinePt = (startCandidates.length > 0)
+            ? startCandidates.reduce((prev, curr) => Math.abs(curr.d || 0) < Math.abs(prev.d || 0) ? curr : prev)
+            : telData[0];
 
-        const s1Pt = telData.reduce((prev, curr) => Math.abs(curr.d - targetS1Dist) < Math.abs(prev.d - targetS1Dist) ? curr : prev);
-        newS1 = { x: s1Pt.x, z: s1Pt.z, yaw: s1Pt.yaw || 0, d: s1Pt.d };
+        const newStart = {
+            x: startLinePt.x,
+            z: startLinePt.z,
+            yaw: startLinePt.yaw || 0,
+            d: startLinePt.d || 0
+        };
 
-        const s2Pt = telData.reduce((prev, curr) => Math.abs(curr.d - targetS2Dist) < Math.abs(prev.d - targetS2Dist) ? curr : prev);
-        newS2 = { x: s2Pt.x, z: s2Pt.z, yaw: s2Pt.yaw || 0, d: s2Pt.d };
+        // 2. Reference Sector Times (s1 and s2 in ms)
+        const rec = allTimeFastest[tId] || {};
+        const totalLapTime = (rec.time > 0) ? rec.time : (telData[telData.length - 1].t || 75000);
+        let s1Time = rec.s1 || 0;
+        let s2Time = rec.s2 || 0;
+
+        // If not in fastest.json, check current session if track matches
+        if ((!s1Time || !s2Time) && tId === currentTrackId) {
+            s1Time = state.session.referenceS1 || state.session.sessionBestS1 || 0;
+            s2Time = state.session.referenceS2 || state.session.sessionBestS2 || 0;
+        }
+
+        // If still no sector times, check any lap in allLapHistories
+        if (!s1Time || !s2Time) {
+            for (let c = 0; c < 22; c++) {
+                const h = allLapHistories[c] || [];
+                for (const l of h) {
+                    if (l.s1 > 0 && l.s2 > 0) {
+                        s1Time = l.s1;
+                        s2Time = l.s2;
+                        break;
+                    }
+                }
+                if (s1Time > 0 && s2Time > 0) break;
+            }
+        }
+
+        // Proportional fallback (~28% and ~40% of total lap time) if no sector splits are known
+        if (!s1Time || s1Time <= 0) s1Time = Math.round(totalLapTime * 0.28);
+        if (!s2Time || s2Time <= 0) s2Time = Math.round(totalLapTime * 0.40);
+
+        const targetS1Time = s1Time;
+        const targetS2Time = s1Time + s2Time;
+
+        // Extract coordinate from telemetry using SECTOR TIME REFERENCE
+        const coordS1 = extractCoordinateFromTelemetry(telData, targetS1Time);
+        const coordS2 = extractCoordinateFromTelemetry(telData, targetS2Time);
+
+        const newS1 = coordS1 ? { x: coordS1.x, z: coordS1.z, yaw: coordS1.yaw || 0, d: coordS1.d || 0 } : null;
+        const newS2 = coordS2 ? { x: coordS2.x, z: coordS2.z, yaw: coordS2.yaw || 0, d: coordS2.d || 0 } : null;
 
         if (tId === currentTrackId) {
-            state.startLine = newStart || state.startLine;
-            state.sector1 = newS1 || state.sector1;
-            state.sector2 = newS2 || state.sector2;
+            if (newStart) state.startLine = newStart;
+            if (newS1) state.sector1 = newS1;
+            if (newS2) state.sector2 = newS2;
+            trackPointsDirty = true;
         }
 
         const mapPath = path.join(trackMapsDir, `track_${tId}.json`);
         let trackPoints = [];
         if (fs.existsSync(mapPath)) {
             const mapData = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
-            const isArray = Array.isArray(mapData);
-            trackPoints = isArray ? mapData : (mapData.trackPoints || []);
+            trackPoints = Array.isArray(mapData) ? mapData : (mapData.trackPoints || []);
         } else {
             // Subsample from telemetry if map file doesn't exist
             let lastD = -999;
@@ -1058,7 +1134,7 @@ function syncTrackLinesForTrack(tId) {
             sector2: newS2
         };
         fs.writeFileSync(mapPath, JSON.stringify(updatedData));
-        console.log(`✅ Synced track lines for Map ${tId}`);
+        console.log(`✅ Synced track lines for Map ${tId} using sector times (S1: ${s1Time}ms -> d=${Math.round(newS1?.d || 0)}m, S2: ${s2Time}ms -> d=${Math.round(newS2?.d || 0)}m)`);
 
         // Broadcast to clients
         const msg = JSON.stringify({
@@ -1069,12 +1145,14 @@ function syncTrackLinesForTrack(tId) {
             sector2: newS2
         });
         clients.forEach(c => {
-            if (c.readyState === WebSocket.OPEN) c.send(msg);
+            if (c.readyState === WebSocket.OPEN) {
+                try { c.send(msg); } catch (e) { }
+            }
         });
 
-        return { startLine: newStart, sector1: newS1, sector2: newS2 };
+        return updatedData;
     } catch (e) {
-        console.error("Error syncing track lines:", e);
+        console.error(`Error syncing track lines for Track ${tId}:`, e);
         return null;
     }
 }
@@ -1979,18 +2057,24 @@ function loadTrackDeltaReference(trackId) {
             });
         }
 
-        // Calculate reference sectors from telemetry distance markers or split points
-        const totalDist = (state.session.trackLength > 0) ? state.session.trackLength : (fastestLapGhostData[fastestLapGhostData.length - 1].d || 5000);
-        const s2Dist = (state.session.sector2Distance > 0) ? state.session.sector2Distance : Math.round(totalDist / 3);
-        const s3Dist = (state.session.sector3Distance > 0) ? state.session.sector3Distance : Math.round((totalDist / 3) * 2);
-
-        const ptS1 = fastestLapGhostData.reduce((prev, curr) => Math.abs(curr.d - s2Dist) < Math.abs(prev.d - s2Dist) ? curr : prev, fastestLapGhostData[0]);
-        const ptS2 = fastestLapGhostData.reduce((prev, curr) => Math.abs(curr.d - s3Dist) < Math.abs(prev.d - s3Dist) ? curr : prev, fastestLapGhostData[0]);
+        // Calculate reference sectors from official record if available; otherwise telemetry distance markers
         const finalTime = fastestLapGhostData[fastestLapGhostData.length - 1].t;
+        let refS1 = (record && record.s1 > 0) ? record.s1 : 0;
+        let refS2 = (record && record.s2 > 0) ? record.s2 : 0;
+        let refS3 = (record && record.s3 > 0) ? record.s3 : 0;
 
-        const refS1 = ptS1 ? ptS1.t : Math.round(finalTime / 3);
-        const refS2 = (ptS2 && ptS1) ? Math.max(0, ptS2.t - ptS1.t) : Math.round(finalTime / 3);
-        const refS3 = ptS2 ? Math.max(0, finalTime - ptS2.t) : Math.max(0, finalTime - (refS1 + refS2));
+        if (!refS1 || !refS2 || !refS3) {
+            const totalDist = (state.session.trackLength > 0) ? state.session.trackLength : (fastestLapGhostData[fastestLapGhostData.length - 1].d || 5000);
+            const s2Dist = (state.session.sector2Distance > 0) ? state.session.sector2Distance : Math.round(totalDist / 3);
+            const s3Dist = (state.session.sector3Distance > 0) ? state.session.sector3Distance : Math.round((totalDist / 3) * 2);
+
+            const ptS1 = fastestLapGhostData.reduce((prev, curr) => Math.abs(curr.d - s2Dist) < Math.abs(prev.d - s2Dist) ? curr : prev, fastestLapGhostData[0]);
+            const ptS2 = fastestLapGhostData.reduce((prev, curr) => Math.abs(curr.d - s3Dist) < Math.abs(prev.d - s3Dist) ? curr : prev, fastestLapGhostData[0]);
+
+            refS1 = refS1 || (ptS1 ? ptS1.t : Math.round(finalTime * 0.28));
+            refS2 = refS2 || ((ptS2 && ptS1) ? Math.max(0, ptS2.t - ptS1.t) : Math.round(finalTime * 0.40));
+            refS3 = refS3 || Math.max(0, finalTime - (refS1 + refS2));
+        }
 
         if (refS1 > 0 && refS2 > 0 && refS3 > 0) {
             state.session.referenceS1 = refS1;
@@ -2234,7 +2318,8 @@ f1Client.on('sessionHistory', (data) => {
  * @returns {Object|null} The interpolated coordinate
  */
 function extractCoordinateFromTelemetry(telemetry, targetTimeMs) {
-    if (!telemetry || telemetry.length === 0 || targetTimeMs <= 0) return null;
+    if (!telemetry || telemetry.length === 0 || targetTimeMs === undefined || targetTimeMs === null || targetTimeMs < 0) return null;
+    if (targetTimeMs === 0) return telemetry[0];
     let idx = telemetry.findIndex(pt => pt.t >= targetTimeMs);
     if (idx === 0) return telemetry[0];
     if (idx > 0) {
@@ -2280,7 +2365,7 @@ function lockOfficialSectorLinesFromTelemetry(carIndex, sector1Ms, sector2Ms, te
     let trackUpdated = false;
     if (sector1Ms > 0) {
         const coord = extractCoordinateFromTelemetry(telemetry, sector1Ms);
-        if (shouldSetSectorLine(state.sector1, coord)) {
+        if (coord && hasTelemetryCoordinate(coord) && (coord.x !== 0 || coord.z !== 0)) {
             state.sector1 = { x: coord.x, z: coord.z, yaw: coord.yaw || 0, d: coord.d };
             trackUpdated = true;
         }
@@ -2288,18 +2373,50 @@ function lockOfficialSectorLinesFromTelemetry(carIndex, sector1Ms, sector2Ms, te
 
     if (sector1Ms > 0 && sector2Ms > 0) {
         const coord = extractCoordinateFromTelemetry(telemetry, sector1Ms + sector2Ms);
-        if (shouldSetSectorLine(state.sector2, coord)) {
+        if (coord && hasTelemetryCoordinate(coord) && (coord.x !== 0 || coord.z !== 0)) {
             state.sector2 = { x: coord.x, z: coord.z, yaw: coord.yaw || 0, d: coord.d };
             trackUpdated = true;
         }
     }
 
+    // Also lock startLine if near d = 0
+    const startCandidate = telemetry.find(pt => Math.abs(pt.d || 0) < 60 && (pt.x !== 0 || pt.z !== 0));
+    if (startCandidate && (!state.startLine || state.startLine.x === 0 || Math.abs(startCandidate.d) < Math.abs(state.startLine.d || 999))) {
+        state.startLine = { x: startCandidate.x, z: startCandidate.z, yaw: startCandidate.yaw || 0, d: startCandidate.d || 0 };
+        trackUpdated = true;
+    }
+
     if (trackUpdated) {
-        if (isTrackMapped && currentTrackId !== -1) {
+        trackPointsDirty = true;
+        if (currentTrackId !== -1) {
             const filePath = path.join(trackMapsDir, `track_${currentTrackId}.json`);
-            fs.writeFileSync(filePath, JSON.stringify({ trackPoints: state.trackPoints, startLine: state.startLine, sector1: state.sector1, sector2: state.sector2 }));
+            let trackPoints = state.trackPoints || [];
+            if (fs.existsSync(filePath)) {
+                try {
+                    const existing = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                    trackPoints = Array.isArray(existing) ? existing : (existing.trackPoints || trackPoints);
+                } catch (e) { }
+            }
+            fs.writeFileSync(filePath, JSON.stringify({
+                trackPoints: trackPoints,
+                startLine: state.startLine,
+                sector1: state.sector1,
+                sector2: state.sector2
+            }));
         }
-        //console.log(`Official sector lines updated from car ${carIndex} split telemetry.`);
+
+        const msg = JSON.stringify({
+            type: 'trackLinesUpdated',
+            trackId: currentTrackId,
+            startLine: state.startLine,
+            sector1: state.sector1,
+            sector2: state.sector2
+        });
+        clients.forEach(c => {
+            if (c.readyState === WebSocket.OPEN) {
+                try { c.send(msg); } catch (e) { }
+            }
+        });
     }
 
     return trackUpdated;
@@ -2342,81 +2459,108 @@ f1Client.on('lapData', (data) => {
 
             // Capture ghost telemetry upon lap completion with full lap validation
             const lastTime = lap.m_lastLapTimeInMS || (lap.m_lastLapTime * 1000) || 0;
-            const effectiveTrackId = (currentTrackId !== -1) ? currentTrackId : (state.session.trackId !== undefined ? state.session.trackId : -1);
             const tLen = state.session.trackLength > 0 ? state.session.trackLength : 4000;
-            const pts = lastLapTelemetry[i] || [];
 
-            const firstPtDist = pts.length > 0 ? (pts[0].d || 0) : 9999;
-            const lastPtDist = pts.length > 0 ? (pts[pts.length - 1].d || 0) : 0;
-            const distCovered = Math.abs(lastPtDist - firstPtDist);
-            const isFullLap = pts.length >= 35 && (distCovered >= tLen * 0.6 || distCovered >= 1800);
+            // Preserve sector times of the completed lap before reset
+            const finishedS1 = carDataTracker[i].s1 || 0;
+            const finishedS2 = carDataTracker[i].s2 || 0;
+            const finishedS3 = (lastTime > 0 && finishedS1 > 0 && finishedS2 > 0) ? Math.max(0, lastTime - (finishedS1 + finishedS2)) : (carDataTracker[i].s3 || 0);
 
-            if (lastTime > 25000 && effectiveTrackId !== -1 && isFullLap) {
-                // FORCE the final point of the telemetry array to perfectly match the official lap time
-                const lastPoint = pts[pts.length - 1];
+            // Clean up telemetry: remove points with invalid coordinates
+            let validTelemetry = (lastLapTelemetry[i] || [])
+                .filter(pt => Number.isFinite(pt.x) && Number.isFinite(pt.z) && (pt.x !== 0 || pt.z !== 0));
+            const hasMinPoints = validTelemetry.length >= 80;
+            const startsNearLine = validTelemetry.some(pt => (pt.d || 0) < 60);
+            const lastTelemetryPt = validTelemetry.length > 0 ? validTelemetry[validTelemetry.length - 1] : null;
+            const completesLap = lastTelemetryPt && (lastTelemetryPt.d || 0) >= (tLen * 0.85);
+            const isCleanLap = hasMinPoints && startsNearLine && completesLap;
+
+            if (lastTime > 50000 && currentTrackId !== -1 && isCleanLap) {
+                validTelemetry.sort((a, b) => (a.d !== undefined && b.d !== undefined) ? a.d - b.d : a.t - b.t);
+
+                // Ensure the starting point is at d = 0, t = 0
+                if (validTelemetry[0].d > 0) {
+                    validTelemetry.unshift({
+                        ...validTelemetry[0],
+                        d: 0,
+                        t: 0
+                    });
+                }
+
+                // FORCE the final point of the telemetry array to perfectly match the official lap time and track distance
+                const lastPoint = validTelemetry[validTelemetry.length - 1];
                 if (lastPoint && lastPoint.t !== lastTime) {
                     const trackLen = state.session.trackLength > 0 ? state.session.trackLength : (lastPoint.d + 20);
-                    pts.push({ ...lastPoint, d: trackLen, t: lastTime });
+                    validTelemetry.push({ ...lastPoint, d: trackLen, t: lastTime });
                 }
 
                 const isPlayer = (i === pIdx);
-                const driverName = (state.participants && state.participants[i]) || carDataTracker[i].teamName || (isPlayer ? 'Player' : `Car ${i}`);
-                let record = allTimeFastest[effectiveTrackId];
-                const trackTelemetryPath = path.join(telemetryDir, `telemetry_${effectiveTrackId}.json`);
-                const trackFastestPath = path.join(lapTimeDir, `fastest_${effectiveTrackId}.json`);
+                let record = allTimeFastest[currentTrackId];
+                const isFaster = !record || lastTime < record.time;
+                const trackTelemetryPath = path.join(telemetryDir, `telemetry_${currentTrackId}.json`);
+                const trackFastestPath = path.join(lapTimeDir, `fastest_${currentTrackId}.json`);
                 const telMissing = !fs.existsSync(trackTelemetryPath);
-                const fastMissing = !fs.existsSync(trackFastestPath);
 
-                const playerPrevBest = playerBestLapByTrack[effectiveTrackId] || Infinity;
-                const isPlayerPB = isPlayer && (lastTime < playerPrevBest);
-                if (isPlayerPB) {
-                    playerBestLapByTrack[effectiveTrackId] = lastTime;
-                }
-
-                const isNewTrackRecord = !record || lastTime < record.time;
-                const isAiRecord = record && (
-                    !record.driver ||
-                    record.driver === 'Unknown' ||
-                    ['LECLERC', 'VERSTAPPEN', 'HAMILTON', 'NORRIS', 'RUSSELL', 'ANTONELLI', 'JACKSON'].includes(String(record.driver).toUpperCase())
-                );
-
-                // Save whenever:
-                // 1) New all-time record on this track
-                // 2) Player sets a new personal best lap this session
-                // 3) Telemetry or fastest file is missing on disk
-                // 4) Existing record was an AI driver and player completed a full lap
-                const shouldSaveTelemetry = isNewTrackRecord || isPlayerPB || telMissing || fastMissing || (isPlayer && isAiRecord);
+                // Priority: Player's completed lap ALWAYS saves full inputs; AI lap only saves if telemetry missing or new overall record
+                const shouldSaveTelemetry = isPlayer || telMissing || (!record || lastTime < record.time);
 
                 if (shouldSaveTelemetry) {
-                    if (isNewTrackRecord || (isPlayer && (isAiRecord || !record || isPlayerPB))) {
-                        allTimeFastest[effectiveTrackId] = {
-                            time: lastTime,
-                            driver: driverName,
-                            hasTelemetry: true
-                        };
+                    const driverName = (state.participants && state.participants[i]) || carDataTracker[i].teamName || (isPlayer ? 'Player' : 'Unknown');
+
+                    allTimeFastest[currentTrackId] = {
+                        time: (!record || lastTime < record.time) ? lastTime : record.time,
+                        driver: (!record || lastTime < record.time) ? driverName : (record.driver || driverName),
+                        s1: finishedS1 || (record && record.s1) || 0,
+                        s2: finishedS2 || (record && record.s2) || 0,
+                        s3: finishedS3 || (record && record.s3) || 0,
+                        hasTelemetry: true
+                    };
+                    fastestLapGhostData = validTelemetry;
+                    fs.writeFileSync(fastestJsonPath, JSON.stringify(allTimeFastest, null, 2), 'utf8');
+
+                    // Save compact ghost lap [ { d, t } ]
+                    fs.writeFileSync(trackFastestPath, JSON.stringify(validTelemetry.map(pt => ({ d: pt.d, t: pt.t }))), 'utf8');
+
+                    // Save full rich telemetry [ { d, t, x, y, z, yaw, pitch, roll, throttle, brake, speed, steer, gear } ]
+                    fs.writeFileSync(trackTelemetryPath, JSON.stringify(validTelemetry, null, 2), 'utf8');
+
+                    if (!record || lastTime < record.time) {
                         state.session.allTimeFastestLapMs = lastTime;
                         state.session.allTimeFastestDriver = driverName;
-                    } else if (record) {
-                        record.hasTelemetry = true;
+                        console.log(`🏆 NEW TRACK RECORD & FULL TELEMETRY SAVED! Track ${currentTrackId}: ${driverName} - ${lastTime}ms (${validTelemetry.length} pts)`);
+                    } else {
+                        console.log(`💾 PLAYER TELEMETRY SAVED! Track ${currentTrackId}: ${driverName} - ${lastTime}ms (${validTelemetry.length} pts)`);
                     }
 
-                    fastestLapGhostData = pts;
-
-                    try {
-                        fs.writeFileSync(fastestJsonPath, JSON.stringify(allTimeFastest, null, 2), 'utf8');
-                        fs.writeFileSync(trackFastestPath, JSON.stringify(pts.map(pt => ({ d: pt.d, t: pt.t }))), 'utf8');
-                        fs.writeFileSync(trackTelemetryPath, JSON.stringify(pts, null, 2), 'utf8');
-                        console.log(`💾 TELEMETRY & FASTEST SAVED! Track ${effectiveTrackId} [${driverName}] - ${lastTime}ms (${pts.length} pts)`);
-                    } catch (err) {
-                        console.error(`⚠️ Error writing telemetry/fastest files for Track ${effectiveTrackId}:`, err);
-                    }
-
-                    try {
-                        syncTrackLinesForTrack(effectiveTrackId);
-                    } catch (e) { }
+                    // Update sector lines in track map using the official sector times
+                    syncTrackLinesForTrack(currentTrackId);
+                } else {
+                    lockOfficialSectorLinesFromTelemetry(i, finishedS1, finishedS2, validTelemetry);
                 }
+            }
 
-                lockOfficialSectorLinesFromTelemetry(i, carDataTracker[i].s1, carDataTracker[i].s2, pts);
+            // RESET sector tracking for the new lap so sector chips and cards start fresh LIVE
+            carDataTracker[i].s1 = 0;
+            carDataTracker[i].s2 = 0;
+            carDataTracker[i].s3 = 0;
+            carDataTracker[i].s1Status = 'pending';
+            carDataTracker[i].s2Status = 'pending';
+            carDataTracker[i].s3Status = 'pending';
+
+            if (i === pIdx) {
+                state.lap.s1 = 0;
+                state.lap.s2 = 0;
+                state.lap.s3 = 0;
+                state.lap.liveS1 = 0;
+                state.lap.liveS2 = 0;
+                state.lap.liveS3 = 0;
+                state.lap.s1State = 'live';
+                state.lap.s2State = 'pending';
+                state.lap.s3State = 'pending';
+                state.lap.s1Status = 'pending';
+                state.lap.s2Status = 'pending';
+                state.lap.s3Status = 'pending';
+            }
 
                 // Save setup at the end of the lap for the player
                 if (i === pIdx && currentTrackId !== -1) {
@@ -2456,7 +2600,6 @@ f1Client.on('lapData', (data) => {
                     }
                 }
             }
-        }
 
         carPhysics[i].lapDistance = lap.m_lapDistance;
         carPhysics[i].lapNum = lap.m_currentLapNum;
@@ -2485,35 +2628,38 @@ f1Client.on('lapData', (data) => {
         const curMs = lap.m_currentLapTimeInMS || (lap.m_lastLapTime * 1000) || (lap.m_currentLapTime * 1000) || 0;
         if (curMs >= 0 && lap.m_lapDistance >= 0 && lap.m_resultStatus !== 0) {
             const carObj = state.allCars && state.allCars[i] ? state.allCars[i] : {};
-            const arr = currentLapTelemetry[i] || (currentLapTelemetry[i] = []);
-            const lastPt = arr.length > 0 ? arr[arr.length - 1] : null;
+            // Only record if valid world coordinates have arrived from motion packet
+            if (carObj.x !== undefined && Number.isFinite(carObj.x) && (carObj.x !== 0 || carObj.z !== 0)) {
+                const arr = currentLapTelemetry[i] || (currentLapTelemetry[i] = []);
+                const lastPt = arr.length > 0 ? arr[arr.length - 1] : null;
 
-            const distDiff = lastPt ? Math.abs(lap.m_lapDistance - lastPt.d) : 999;
-            const timeDiff = lastPt ? Math.abs(curMs - lastPt.t) : 999;
+                const distDiff = lastPt ? Math.abs(lap.m_lapDistance - lastPt.d) : 999;
+                const timeDiff = lastPt ? Math.abs(curMs - lastPt.t) : 999;
 
-            // Subsample: only push if distance difference >= 1.5m or time delta >= 100ms
-            if (!lastPt || distDiff >= 1.5 || timeDiff >= 100) {
-                let pt = {
-                    d: Math.round(lap.m_lapDistance * 10) / 10,
-                    t: curMs,
-                    x: Math.round((carObj.x || 0) * 100) / 100,
-                    y: Math.round((carObj.y || 0) * 100) / 100,
-                    z: Math.round((carObj.z || 0) * 100) / 100,
-                    yaw: Math.round((carObj.yaw || 0) * 1000) / 1000,
-                    pitch: Math.round((carObj.pitch || 0) * 1000) / 1000,
-                    roll: Math.round((carObj.roll || 0) * 1000) / 1000,
-                    throttle: 0, brake: 0, speed: Math.round(carObj.speed || 0), steer: 0, gear: 0
-                };
-                if (i === state.playerIndex) {
-                    pt.throttle = Math.round(state.inputs.throttle);
-                    pt.brake = Math.round(state.inputs.brake);
-                    pt.speed = Math.round(state.inputs.speed);
-                    pt.steer = Math.round(state.inputs.steer * 100) / 100;
-                    pt.gear = state.inputs.gear;
-                }
-                arr.push(pt);
-                if (arr.length > 3000) {
-                    arr.shift();
+                // Subsample: only push if distance difference >= 1.5m or time delta >= 100ms
+                if (!lastPt || distDiff >= 1.5 || timeDiff >= 100) {
+                    let pt = {
+                        d: Math.round(lap.m_lapDistance * 10) / 10,
+                        t: curMs,
+                        x: Math.round(carObj.x * 100) / 100,
+                        y: Math.round((carObj.y || 0) * 100) / 100,
+                        z: Math.round(carObj.z * 100) / 100,
+                        yaw: Math.round((carObj.yaw || 0) * 1000) / 1000,
+                        pitch: Math.round((carObj.pitch || 0) * 1000) / 1000,
+                        roll: Math.round((carObj.roll || 0) * 1000) / 1000,
+                        throttle: 0, brake: 0, speed: Math.round(carObj.speed || 0), steer: 0, gear: 0
+                    };
+                    if (i === state.playerIndex) {
+                        pt.throttle = Math.round(state.inputs.throttle);
+                        pt.brake = Math.round(state.inputs.brake);
+                        pt.speed = Math.round(state.inputs.speed);
+                        pt.steer = Math.round(state.inputs.steer * 100) / 100;
+                        pt.gear = state.inputs.gear;
+                    }
+                    arr.push(pt);
+                    if (arr.length > 3000) {
+                        arr.shift();
+                    }
                 }
             }
         }

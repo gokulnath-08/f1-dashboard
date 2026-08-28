@@ -2490,30 +2490,50 @@
       const totalD = pts[pts.length - 1].d || 5000;
       const totalT = pts[pts.length - 1].t || 80000;
 
-      if (!currentStartLine || !Number.isFinite(currentStartLine.x)) {
-        const s0 = pts.reduce((prev, curr) => Math.abs(curr.d) < Math.abs(prev.d) ? curr : prev);
+      const validPts = pts.filter(p => Number.isFinite(p.x) && Number.isFinite(p.z) && (p.x !== 0 || p.z !== 0));
+      const sourcePts = validPts.length > 10 ? validPts : pts;
+
+      if (!currentStartLine || !Number.isFinite(currentStartLine.x) || (currentStartLine.x === 0 && currentStartLine.z === 0)) {
+        const s0 = sourcePts.reduce((prev, curr) => Math.abs(curr.d || 0) < Math.abs(prev.d || 0) ? curr : prev, sourcePts[0]);
         currentStartLine = { x: s0.x, z: s0.z, yaw: s0.yaw || 0, d: s0.d || 0 };
       }
 
-      if (!currentSector1 || !Number.isFinite(currentSector1.x)) {
-        const s1TargetD = totalD / 3;
-        const pt1 = pts.reduce((prev, curr) => Math.abs(curr.d - s1TargetD) < Math.abs(prev.d - s1TargetD) ? curr : prev);
-        currentSector1 = { x: pt1.x, z: pt1.z, yaw: pt1.yaw || 0, d: pt1.d || s1TargetD };
+      // Check if track record has official sector split times
+      const rec = (currentTrackId !== null && allTrackRecords && allTrackRecords[currentTrackId]) ? allTrackRecords[currentTrackId] : null;
+      const recS1 = rec && rec.s1 > 0 ? rec.s1 : 0;
+      const recS2 = rec && rec.s2 > 0 ? rec.s2 : 0;
+
+      if (!currentSector1 || !Number.isFinite(currentSector1.x) || (currentSector1.x === 0 && currentSector1.z === 0)) {
+        let pt1 = null;
+        if (recS1 > 0) {
+          pt1 = sourcePts.find(p => (p.t || 0) >= recS1);
+        }
+        if (!pt1) {
+          const s1TargetD = totalD / 3;
+          pt1 = sourcePts.reduce((prev, curr) => Math.abs((curr.d || 0) - s1TargetD) < Math.abs((prev.d || 0) - s1TargetD) ? curr : prev);
+        }
+        currentSector1 = { x: pt1.x, z: pt1.z, yaw: pt1.yaw || 0, d: pt1.d || 0 };
       }
 
-      if (!currentSector2 || !Number.isFinite(currentSector2.x)) {
-        const s2TargetD = (totalD * 2) / 3;
-        const pt2 = pts.reduce((prev, curr) => Math.abs(curr.d - s2TargetD) < Math.abs(prev.d - s2TargetD) ? curr : prev);
-        currentSector2 = { x: pt2.x, z: pt2.z, yaw: pt2.yaw || 0, d: pt2.d || s2TargetD };
+      if (!currentSector2 || !Number.isFinite(currentSector2.x) || (currentSector2.x === 0 && currentSector2.z === 0)) {
+        let pt2 = null;
+        if (recS1 > 0 && recS2 > 0) {
+          pt2 = sourcePts.find(p => (p.t || 0) >= (recS1 + recS2));
+        }
+        if (!pt2) {
+          const s2TargetD = (totalD * 2) / 3;
+          pt2 = sourcePts.reduce((prev, curr) => Math.abs((curr.d || 0) - s2TargetD) < Math.abs((prev.d || 0) - s2TargetD) ? curr : prev);
+        }
+        currentSector2 = { x: pt2.x, z: pt2.z, yaw: pt2.yaw || 0, d: pt2.d || 0 };
       }
 
       s1Dist = currentSector1.d || (totalD / 3);
       s2Dist = currentSector2.d || ((totalD * 2) / 3);
 
-      const ptS1 = pts.find(p => (p.d || 0) >= s1Dist);
-      const ptS2 = pts.find(p => (p.d || 0) >= s2Dist);
-      s1Time = ptS1 ? ptS1.t : Math.round(totalT / 3);
-      s2Time = ptS2 ? Math.round(ptS2.t - s1Time) : Math.round(totalT / 3);
+      const ptS1 = sourcePts.find(p => (p.d || 0) >= s1Dist);
+      const ptS2 = sourcePts.find(p => (p.d || 0) >= s2Dist);
+      s1Time = recS1 > 0 ? recS1 : (ptS1 ? ptS1.t : Math.round(totalT * 0.28));
+      s2Time = recS2 > 0 ? recS2 : (ptS2 ? Math.round(ptS2.t - s1Time) : Math.round(totalT * 0.40));
     }
 
     // Fetches all track records from laptime folder or API

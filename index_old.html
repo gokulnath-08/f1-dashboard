@@ -5989,7 +5989,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
                 if (
                     mapDataToUse.startLine &&
-                    mapDataToUse.startLine.yaw !== undefined
+                    mapDataToUse.startLine.yaw !== undefined &&
+                    (mapDataToUse.startLine.x !== 0 || mapDataToUse.startLine.z !== 0)
                 ) {
                     startLineMesh.position.set(
                         mapDataToUse.startLine.x,
@@ -5997,17 +5998,37 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         mapDataToUse.startLine.z,
                     );
                     startLineMesh.rotation.y = -mapDataToUse.startLine.yaw;
-                    startLineMesh.visible = false;
+                    startLineMesh.visible = true;
                 } else {
                     startLineMesh.visible = false;
                 }
-                if (mapDataToUse.sector1 && mapDataToUse.sector1.yaw !== undefined) {
-                    sector1LineMesh.visible = false;
+                if (
+                    mapDataToUse.sector1 &&
+                    mapDataToUse.sector1.yaw !== undefined &&
+                    (mapDataToUse.sector1.x !== 0 || mapDataToUse.sector1.z !== 0)
+                ) {
+                    sector1LineMesh.position.set(
+                        mapDataToUse.sector1.x,
+                        0,
+                        mapDataToUse.sector1.z,
+                    );
+                    sector1LineMesh.rotation.y = -mapDataToUse.sector1.yaw;
+                    sector1LineMesh.visible = true;
                 } else {
                     sector1LineMesh.visible = false;
                 }
-                if (mapDataToUse.sector2 && mapDataToUse.sector2.yaw !== undefined) {
-                    sector2LineMesh.visible = false;
+                if (
+                    mapDataToUse.sector2 &&
+                    mapDataToUse.sector2.yaw !== undefined &&
+                    (mapDataToUse.sector2.x !== 0 || mapDataToUse.sector2.z !== 0)
+                ) {
+                    sector2LineMesh.position.set(
+                        mapDataToUse.sector2.x,
+                        0,
+                        mapDataToUse.sector2.z,
+                    );
+                    sector2LineMesh.rotation.y = -mapDataToUse.sector2.yaw;
+                    sector2LineMesh.visible = true;
                 } else {
                     sector2LineMesh.visible = false;
                 }
