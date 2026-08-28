@@ -62,6 +62,7 @@ if (fs.existsSync(fastestJsonPath)) {
         console.error('⚠️ Error reading fastest.json:', e);
     }
 }
+let playerBestLapByTrack = {};
 
 // --- G-Force Processing (In-Memory Only) ---
 let gForceData = {
@@ -666,6 +667,53 @@ const server = http.createServer((req, res) => {
             trackId: tId,
             data: result || null,
             message: result ? `Track lines synced successfully for Track ${tId}` : `No telemetry found for Track ${tId}`
+        }, null, 2));
+        return;
+    }
+
+    // API endpoint to manually save current or last lap telemetry for a track
+    if (reqUrl.startsWith("/api/save-telemetry") || reqUrl.startsWith("/api/save-lap")) {
+        const urlParams = new URL(rawUrl, `http://${req.headers.host || 'localhost'}`).searchParams;
+        const trackIdParam = urlParams.get('trackId') || urlParams.get('id');
+        const tId = trackIdParam ? parseInt(trackIdParam, 10) : (currentTrackId !== -1 ? currentTrackId : (state.session.trackId || 16));
+        const pIdx = state.playerIndex;
+        const pts = (lastLapTelemetry[pIdx] && lastLapTelemetry[pIdx].length > 10) 
+            ? lastLapTelemetry[pIdx] 
+            : (currentLapTelemetry[pIdx] || []);
+
+        let saved = false;
+        if (pts.length > 5 && tId !== -1) {
+            const trackTelemetryPath = path.join(telemetryDir, `telemetry_${tId}.json`);
+            const trackFastestPath = path.join(lapTimeDir, `fastest_${tId}.json`);
+            const driverName = (state.participants && state.participants[pIdx]) || 'Player';
+            const lapTime = (pts[pts.length - 1]?.t) || (state.lap.lastMs) || 80000;
+
+            allTimeFastest[tId] = {
+                time: lapTime,
+                driver: driverName,
+                hasTelemetry: true
+            };
+            try {
+                fs.writeFileSync(fastestJsonPath, JSON.stringify(allTimeFastest, null, 2), 'utf8');
+                fs.writeFileSync(trackFastestPath, JSON.stringify(pts.map(pt => ({ d: pt.d, t: pt.t }))), 'utf8');
+                fs.writeFileSync(trackTelemetryPath, JSON.stringify(pts, null, 2), 'utf8');
+                syncTrackLinesForTrack(tId);
+                saved = true;
+                console.log(`💾 Manual save-telemetry successful for Track ${tId} (${pts.length} pts)`);
+            } catch(e) {
+                console.error('Error in manual save-telemetry:', e);
+            }
+        }
+
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        });
+        res.end(JSON.stringify({
+            success: saved,
+            trackId: tId,
+            points: pts.length,
+            message: saved ? `Telemetry and fastest saved for Track ${tId}` : `Not enough telemetry points (${pts.length}) to save`
         }, null, 2));
         return;
     }
@@ -2294,56 +2342,81 @@ f1Client.on('lapData', (data) => {
 
             // Capture ghost telemetry upon lap completion with full lap validation
             const lastTime = lap.m_lastLapTimeInMS || (lap.m_lastLapTime * 1000) || 0;
+            const effectiveTrackId = (currentTrackId !== -1) ? currentTrackId : (state.session.trackId !== undefined ? state.session.trackId : -1);
             const tLen = state.session.trackLength > 0 ? state.session.trackLength : 4000;
-            const isFullLap = lastLapTelemetry[i] &&
-                              lastLapTelemetry[i].length >= 120 &&
-                              (lastLapTelemetry[i][0].d || 0) < 300 &&
-                              (lastLapTelemetry[i][lastLapTelemetry[i].length - 1].d || 0) >= (tLen * 0.85);
+            const pts = lastLapTelemetry[i] || [];
 
-            if (lastTime > 50000 && currentTrackId !== -1 && isFullLap) {
+            const firstPtDist = pts.length > 0 ? (pts[0].d || 0) : 9999;
+            const lastPtDist = pts.length > 0 ? (pts[pts.length - 1].d || 0) : 0;
+            const distCovered = Math.abs(lastPtDist - firstPtDist);
+            const isFullLap = pts.length >= 35 && (distCovered >= tLen * 0.6 || distCovered >= 1800);
 
+            if (lastTime > 25000 && effectiveTrackId !== -1 && isFullLap) {
                 // FORCE the final point of the telemetry array to perfectly match the official lap time
-                const lastPoint = lastLapTelemetry[i][lastLapTelemetry[i].length - 1];
+                const lastPoint = pts[pts.length - 1];
                 if (lastPoint && lastPoint.t !== lastTime) {
                     const trackLen = state.session.trackLength > 0 ? state.session.trackLength : (lastPoint.d + 20);
-                    lastLapTelemetry[i].push({ ...lastPoint, d: trackLen, t: lastTime });
+                    pts.push({ ...lastPoint, d: trackLen, t: lastTime });
                 }
 
-                let record = allTimeFastest[currentTrackId];
-                const isFaster = !record || lastTime < record.time;
-                const trackTelemetryPath = path.join(telemetryDir, `telemetry_${currentTrackId}.json`);
-                const trackFastestPath = path.join(lapTimeDir, `fastest_${currentTrackId}.json`);
+                const isPlayer = (i === pIdx);
+                const driverName = (state.participants && state.participants[i]) || carDataTracker[i].teamName || (isPlayer ? 'Player' : `Car ${i}`);
+                let record = allTimeFastest[effectiveTrackId];
+                const trackTelemetryPath = path.join(telemetryDir, `telemetry_${effectiveTrackId}.json`);
+                const trackFastestPath = path.join(lapTimeDir, `fastest_${effectiveTrackId}.json`);
                 const telMissing = !fs.existsSync(trackTelemetryPath);
-                // Capture reference telemetry if record is missing, telemetry file is missing on disk, or lap is within 10s of record
-                const needsGhost = (record && (!record.hasTelemetry || telMissing) && Math.abs(lastTime - record.time) < 10000) || (!record && isFullLap);
+                const fastMissing = !fs.existsSync(trackFastestPath);
 
-                if (isFaster) {
-                    allTimeFastest[currentTrackId] = {
-                        time: lastTime,
-                        driver: (state.participants && state.participants[i]) || carDataTracker[i].teamName || 'Unknown',
-                        hasTelemetry: true
-                    };
-                    fastestLapGhostData = lastLapTelemetry[i];
-                    fs.writeFileSync(fastestJsonPath, JSON.stringify(allTimeFastest, null, 2), 'utf8');
-                    const trackFastestPath = path.join(lapTimeDir, `fastest_${currentTrackId}.json`);
-                    fs.writeFileSync(trackFastestPath, JSON.stringify(lastLapTelemetry[i].map(pt => ({ d: pt.d, t: pt.t }))), 'utf8');
-                    const trackTelemetryPath = path.join(telemetryDir, `telemetry_${currentTrackId}.json`);
-                    fs.writeFileSync(trackTelemetryPath, JSON.stringify(fastestLapGhostData, null, 2), 'utf8');
-                    state.session.allTimeFastestLapMs = lastTime;
-                    state.session.allTimeFastestDriver = allTimeFastest[currentTrackId].driver;
-                    console.log(`🏆 NEW TRACK RECORD & FULL TELEMETRY SAVED! Track ${currentTrackId}: ${state.session.allTimeFastestDriver} - ${lastTime}ms`);
-                } else if (needsGhost) {
-                    allTimeFastest[currentTrackId].hasTelemetry = true;
-                    fastestLapGhostData = lastLapTelemetry[i];
-                    fs.writeFileSync(fastestJsonPath, JSON.stringify(allTimeFastest, null, 2), 'utf8');
-                    const trackFastestPath = path.join(lapTimeDir, `fastest_${currentTrackId}.json`);
-                    fs.writeFileSync(trackFastestPath, JSON.stringify(lastLapTelemetry[i].map(pt => ({ d: pt.d, t: pt.t }))), 'utf8');
-                    const trackTelemetryPath = path.join(telemetryDir, `telemetry_${currentTrackId}.json`);
-                    fs.writeFileSync(trackTelemetryPath, JSON.stringify(fastestLapGhostData, null, 2), 'utf8');
-                    console.log(`👻 REFERENCE GHOST & TELEMETRY SAVED! Track ${currentTrackId} - ${lastTime}ms (Track Record remains ${record.time}ms)`);
+                const playerPrevBest = playerBestLapByTrack[effectiveTrackId] || Infinity;
+                const isPlayerPB = isPlayer && (lastTime < playerPrevBest);
+                if (isPlayerPB) {
+                    playerBestLapByTrack[effectiveTrackId] = lastTime;
                 }
 
-                lockOfficialSectorLinesFromTelemetry(i, carDataTracker[i].s1, carDataTracker[i].s2, lastLapTelemetry[i]);
+                const isNewTrackRecord = !record || lastTime < record.time;
+                const isAiRecord = record && (
+                    !record.driver ||
+                    record.driver === 'Unknown' ||
+                    ['LECLERC', 'VERSTAPPEN', 'HAMILTON', 'NORRIS', 'RUSSELL', 'ANTONELLI', 'JACKSON'].includes(String(record.driver).toUpperCase())
+                );
+
+                // Save whenever:
+                // 1) New all-time record on this track
+                // 2) Player sets a new personal best lap this session
+                // 3) Telemetry or fastest file is missing on disk
+                // 4) Existing record was an AI driver and player completed a full lap
+                const shouldSaveTelemetry = isNewTrackRecord || isPlayerPB || telMissing || fastMissing || (isPlayer && isAiRecord);
+
+                if (shouldSaveTelemetry) {
+                    if (isNewTrackRecord || (isPlayer && (isAiRecord || !record || isPlayerPB))) {
+                        allTimeFastest[effectiveTrackId] = {
+                            time: lastTime,
+                            driver: driverName,
+                            hasTelemetry: true
+                        };
+                        state.session.allTimeFastestLapMs = lastTime;
+                        state.session.allTimeFastestDriver = driverName;
+                    } else if (record) {
+                        record.hasTelemetry = true;
+                    }
+
+                    fastestLapGhostData = pts;
+
+                    try {
+                        fs.writeFileSync(fastestJsonPath, JSON.stringify(allTimeFastest, null, 2), 'utf8');
+                        fs.writeFileSync(trackFastestPath, JSON.stringify(pts.map(pt => ({ d: pt.d, t: pt.t }))), 'utf8');
+                        fs.writeFileSync(trackTelemetryPath, JSON.stringify(pts, null, 2), 'utf8');
+                        console.log(`💾 TELEMETRY & FASTEST SAVED! Track ${effectiveTrackId} [${driverName}] - ${lastTime}ms (${pts.length} pts)`);
+                    } catch (err) {
+                        console.error(`⚠️ Error writing telemetry/fastest files for Track ${effectiveTrackId}:`, err);
+                    }
+
+                    try {
+                        syncTrackLinesForTrack(effectiveTrackId);
+                    } catch (e) { }
+                }
+
+                lockOfficialSectorLinesFromTelemetry(i, carDataTracker[i].s1, carDataTracker[i].s2, pts);
 
                 // Save setup at the end of the lap for the player
                 if (i === pIdx && currentTrackId !== -1) {
