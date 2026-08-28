@@ -2795,7 +2795,7 @@ setInterval(() => {
                 ...carDataTracker[i],
                 lapDistance: carPhysics[i].lapDistance,
                 speed: carPhysics[i].speed,
-                lapHistory: (allLapHistories[i] || []).slice(-15)
+                lapHistory: allLapHistories[i] || []
             });
         }
     }
@@ -3100,23 +3100,12 @@ setInterval(() => {
     const sendTrack = trackPointsDirty && state.trackPoints && state.trackPoints.length > 0;
     if (trackPointsDirty) trackPointsDirty = false;
 
-    // Leaderboard: AI cars only need recent laps (slice -5) rather than 15+ laps to keep stream lean
-    // Ensure lapHistory is ALWAYS an Array so the frontend History Table never encounters undefined
-    const leanLeaderboard = state.leaderboard.map(d => {
-        if (d.carIndex === playerIdx) return d;
-        return {
-            ...d,
-            lapHistory: Array.isArray(d.lapHistory) ? d.lapHistory.slice(-5) : []
-        };
-    });
-
     const streamState = {
         ...state,
         trackPoints: sendTrack ? state.trackPoints : [],
         pitLanePoints: sendTrack ? state.pitLanePoints : [],
-        leaderboard: leanLeaderboard,
-        // In continuous stream, only send the player's lap history (saves 14 KB on every tick)
-        allLapHistories: { [playerIdx]: (allLapHistories[playerIdx] || []).slice(-15) },
+        leaderboard: state.leaderboard,
+        allLapHistories: allLapHistories,
         motion: {
             ...state.motion,
             gEnvelopeArray: (gForceData.envelopeArray || []).slice(-25),

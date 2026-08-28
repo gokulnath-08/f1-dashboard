@@ -6481,9 +6481,16 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 const hHead = document.getElementById("history-head");
                 const hBody = document.getElementById("history-body");
                 let maxLaps = 0;
+
+                const getDriverLaps = (d) => {
+                    if (Array.isArray(d.lapHistory) && d.lapHistory.length > 0) return d.lapHistory;
+                    if (data.allLapHistories && Array.isArray(data.allLapHistories[d.carIndex])) return data.allLapHistories[d.carIndex];
+                    return [];
+                };
+
                 leaderboardRows.forEach((d) => {
-                    if (d.lapHistory && d.lapHistory.length > maxLaps)
-                        maxLaps = d.lapHistory.length;
+                    const laps = getDriverLaps(d);
+                    if (laps.length > maxLaps) maxLaps = laps.length;
                 });
 
                 if (maxLaps > 0) {
@@ -6497,6 +6504,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
                     let bodyHtml = "";
                     leaderboardRows.forEach((driver) => {
+                        const driverLaps = getDriverLaps(driver);
                         let driverName =
                             data.participants && data.participants[driver.carIndex]
                                 ? data.participants[driver.carIndex].toUpperCase()
@@ -6528,7 +6536,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                             </td>`;
 
                         for (let i = 0; i < maxLaps; i++) {
-                            const lapData = (driver.lapHistory && driver.lapHistory[i]) ? driver.lapHistory[i] : {};
+                            const lapData = driverLaps[i] || {};
                             const lapTimeMs =
                                 typeof lapData === "object"
                                     ? lapData.lapTime || 0
