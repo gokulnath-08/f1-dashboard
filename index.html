@@ -6108,7 +6108,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                             </td>`;
 
                         for (let i = 0; i < maxLaps; i++) {
-                            const lapData = driver.lapHistory[i] || {};
+                            const lapData = (driver.lapHistory && driver.lapHistory[i]) ? driver.lapHistory[i] : {};
                             const lapTimeMs =
                                 typeof lapData === "object"
                                     ? lapData.lapTime || 0
