@@ -5257,11 +5257,113 @@
         }
 
         /**
+         * Clears all 3D track geometries and meshes, resetting canvas to empty state.
+         */
+        function clearTrackGeometry() {
+            currentTrackMap.trackId = null;
+            currentTrackMap.pointsLength = 0;
+            currentTrackMap.trackPoints = [];
+            currentTrackMap.startLine = null;
+            currentTrackMap.sector1 = null;
+            currentTrackMap.sector2 = null;
+
+            for (let i = 0; i < 3; i++) {
+                if (trackLines[i]) {
+                    if (trackLines[i].geometry) trackLines[i].geometry.dispose();
+                    trackLines[i].geometry = new THREE.BufferGeometry();
+                    trackLines[i].visible = false;
+                }
+            }
+
+            if (pitLaneMesh) {
+                if (pitLaneMesh.geometry) pitLaneMesh.geometry.dispose();
+                pitLaneMesh.geometry = new THREE.BufferGeometry();
+                pitLaneMesh.visible = false;
+            }
+
+            if (startLineMesh) startLineMesh.visible = false;
+            if (sector1LineMesh) sector1LineMesh.visible = false;
+            if (sector2LineMesh) sector2LineMesh.visible = false;
+
+            if (window.liveRecordingLineMesh) {
+                trackScene.remove(window.liveRecordingLineMesh);
+                if (window.liveRecordingLineMesh.geometry) window.liveRecordingLineMesh.geometry.dispose();
+                window.liveRecordingLineMesh = null;
+            }
+
+            try { localStorage.removeItem('f1_cached_track_map'); } catch (e) { }
+        }
+
+        /**
+         * Renders an in-progress circuit path live as the car drives around an unmapped circuit.
+         */
+        function renderLiveRecordingPath(pts, trackId) {
+            if (!pts || pts.length < 2) return;
+
+            if (currentTrackMap.trackId !== trackId) {
+                clearTrackGeometry();
+                currentTrackMap.trackId = trackId;
+            }
+
+            const name = F1_TRACK_MAP[trackId] || (trackId !== null ? `TRACK ${trackId}` : 'CIRCUIT');
+            setText("track-name", `${name.toUpperCase()} (MAPPING: ${pts.length} PTS)`);
+
+            // Hide completed solid track lines while drawing live path
+            for (let i = 0; i < 3; i++) {
+                if (trackLines[i]) trackLines[i].visible = false;
+            }
+            if (pitLaneMesh) pitLaneMesh.visible = false;
+            if (startLineMesh) startLineMesh.visible = false;
+            if (sector1LineMesh) sector1LineMesh.visible = false;
+            if (sector2LineMesh) sector2LineMesh.visible = false;
+
+            const threePts = pts.map(p => new THREE.Vector3(p.x, 1, p.z));
+            const geometry = new THREE.BufferGeometry().setFromPoints(threePts);
+
+            if (!window.liveRecordingLineMesh) {
+                const material = new THREE.LineBasicMaterial({
+                    color: 0x00e5ff,
+                    linewidth: 4,
+                    transparent: true,
+                    opacity: 0.95
+                });
+                window.liveRecordingLineMesh = new THREE.Line(geometry, material);
+                trackScene.add(window.liveRecordingLineMesh);
+            } else {
+                window.liveRecordingLineMesh.geometry.dispose();
+                window.liveRecordingLineMesh.geometry = geometry;
+                window.liveRecordingLineMesh.visible = true;
+            }
+
+            // Adjust camera to frame live path
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            pts.forEach(p => {
+                if (p.x < minX) minX = p.x;
+                if (p.x > maxX) maxX = p.x;
+                if (p.z < minZ) minZ = p.z;
+                if (p.z > maxZ) maxZ = p.z;
+            });
+            if (Number.isFinite(minX) && Number.isFinite(maxX)) {
+                trackViewCenter.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2);
+                trackViewSize = Math.max((maxX - minX), (maxZ - minZ)) * 0.7 + 80;
+                fitTrackCamera();
+            }
+        }
+
+        /**
          * Rebuilds and renders the 3D track tube geometries, start line, and timing sector markers.
          */
         function renderTrackGeometry(mapData, force = false) {
             if (!mapData || !mapData.trackPoints || !Array.isArray(mapData.trackPoints) || mapData.trackPoints.length === 0) {
+                clearTrackGeometry();
                 return;
+            }
+
+            // Clear temporary live recording line when full geometry arrives
+            if (window.liveRecordingLineMesh) {
+                trackScene.remove(window.liveRecordingLineMesh);
+                if (window.liveRecordingLineMesh.geometry) window.liveRecordingLineMesh.geometry.dispose();
+                window.liveRecordingLineMesh = null;
             }
 
             const tId = mapData.trackId !== undefined && mapData.trackId !== null ? parseInt(mapData.trackId, 10) : currentTrackMap.trackId;
@@ -6855,23 +6957,41 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             if (data.type === "trackDataResponse") {
                 const trackData = data.data;
                 const trackId = data.trackId !== undefined && data.trackId !== null ? parseInt(data.trackId, 10) : null;
-                if (trackData && Array.isArray(trackData.trackPoints) && trackData.trackPoints.length >= 20) {
-                    renderTrackGeometry({
-                        trackId: trackId,
-                        trackPoints: trackData.trackPoints,
-                        startLine: trackData.startLine,
-                        sector1: trackData.sector1,
-                        sector2: trackData.sector2
-                    }, true);
-
-                    const select = document.getElementById("track-selector");
-                    if (trackId !== null && select && select.value != trackId) {
-                        select.value = trackId;
-                    }
-                    if (trackId !== null) {
+                if (!trackData || !Array.isArray(trackData.trackPoints) || trackData.trackPoints.length < 20) {
+                    clearTrackGeometry();
+                    if (trackId !== null && trackId !== -1) {
+                        currentTrackMap.trackId = trackId;
                         const name = F1_TRACK_MAP[trackId] || `TRACK ${trackId}`;
-                        setText("track-name", name.toUpperCase());
+                        setText("track-name", name.toUpperCase() + " (DRIVE 1 LAP TO MAP)");
+                    } else {
+                        setText("track-name", "NO ACTIVE TRACK");
                     }
+                    return;
+                }
+
+                renderTrackGeometry({
+                    trackId: trackId,
+                    trackPoints: trackData.trackPoints,
+                    startLine: trackData.startLine,
+                    sector1: trackData.sector1,
+                    sector2: trackData.sector2
+                }, true);
+
+                const select = document.getElementById("track-selector");
+                if (trackId !== null && select && select.value != trackId) {
+                    select.value = trackId;
+                }
+                if (trackId !== null && trackId !== -1) {
+                    const name = F1_TRACK_MAP[trackId] || `TRACK ${trackId}`;
+                    setText("track-name", name.toUpperCase());
+                }
+                return;
+            }
+
+            if (data.type === "trackRecordingProgress") {
+                const trackId = data.trackId !== undefined && data.trackId !== null ? parseInt(data.trackId, 10) : null;
+                if (data.trackPoints && data.trackPoints.length >= 2) {
+                    renderLiveRecordingPath(data.trackPoints, trackId);
                 }
                 return;
             }
@@ -7502,8 +7622,17 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             if (isLiveSession && liveTrackId !== null) {
                 if (currentTrackMap.isOfflineOverride || currentTrackMap.trackId !== liveTrackId) {
                     currentTrackMap.isOfflineOverride = false;
+                    const prevTrackId = currentTrackMap.trackId;
                     currentTrackMap.trackId = liveTrackId;
                     currentTrackMap.requestedTrackId = liveTrackId;
+
+                    // If moving from one track to another (e.g. Brazil to Las Vegas),
+                    // clear the old track geometry immediately so it doesn't stay on screen!
+                    if (prevTrackId !== null && prevTrackId !== liveTrackId) {
+                        clearTrackGeometry();
+                        currentTrackMap.trackId = liveTrackId;
+                    }
+
                     if (ws && ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ action: "getTrackData", trackId: liveTrackId }));
                     }
@@ -7600,18 +7729,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         setRadarMobileView('map');
         drawInputTrace(0, 0, false, false);
 
-        // Load cached track immediately from localStorage on refresh/page load
-        try {
-            const cachedTrack = localStorage.getItem('f1_cached_track_map');
-            if (cachedTrack) {
-                const mapObj = JSON.parse(cachedTrack);
-                if (mapObj && Array.isArray(mapObj.trackPoints) && mapObj.trackPoints.length >= 20) {
-                    renderTrackGeometry(mapObj, true);
-                    const tName = F1_TRACK_MAP[mapObj.trackId] || `TRACK ${mapObj.trackId}`;
-                    setText("track-name", tName.toUpperCase());
-                }
-            }
-        } catch (e) { }
+        // Open empty on cold startup - do not auto-load stale tracks until live session or user selection
+        setText("track-name", "NO ACTIVE TRACK");
 
         connectWebSocket();
         window.addEventListener('DOMContentLoaded', () => {

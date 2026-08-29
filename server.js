@@ -1330,24 +1330,20 @@ function handleWsConnection(ws) {
             }));
         } catch (e) { }
     } else {
-        let connectTrackId = currentTrackId !== -1 ? currentTrackId : ((state.session && state.session.trackId !== -1) ? state.session.trackId : 16);
-        const tPath = path.join(trackMapsDir, `track_${connectTrackId}.json`);
-        if (fs.existsSync(tPath)) {
-            try {
-                const raw = fs.readFileSync(tPath, 'utf8').trim();
-                if (raw && raw.length > 2) {
-                    const tData = JSON.parse(raw);
-                    const pts = Array.isArray(tData) ? tData : (tData.trackPoints || []);
-                    if (pts.length >= 20) {
-                        ws.send(JSON.stringify({
-                            type: 'trackDataResponse',
-                            trackId: connectTrackId,
-                            data: tData
-                        }));
-                    }
+        // Cold start or no active session: send empty track map (do NOT default to Australia or Brazil)
+        try {
+            ws.send(JSON.stringify({
+                type: 'trackDataResponse',
+                trackId: currentTrackId,
+                data: {
+                    trackPoints: [],
+                    pitLanePoints: [],
+                    startLine: null,
+                    sector1: null,
+                    sector2: null
                 }
-            } catch (e) { }
-        }
+            }));
+        } catch (e) { }
     }
     trackPointsDirty = true;
     lapHistoryDirty = true;
@@ -1371,8 +1367,9 @@ function handleWsConnection(ws) {
             if (data.action === 'getTrackData') {
                 let trackId = data.trackId !== undefined ? parseInt(data.trackId, 10) : currentTrackId;
                 if (isNaN(trackId) || trackId === -1) {
-                    trackId = currentTrackId !== -1 ? currentTrackId : ((state.session && state.session.trackId !== -1) ? state.session.trackId : 16);
+                    trackId = currentTrackId;
                 }
+
                 if (!isNaN(trackId) && trackId !== -1) {
                     const tPath = path.join(trackMapsDir, `track_${trackId}.json`);
                     if (fs.existsSync(tPath)) {
@@ -1388,21 +1385,38 @@ function handleWsConnection(ws) {
                             }
                         } catch (e) { }
                     }
-                }
-                if (state.trackPoints && state.trackPoints.length >= 20) {
+
+                    // If requesting the current active game track and live points exist for it
+                    if (trackId === currentTrackId && state.trackPoints && state.trackPoints.length >= 20) {
+                        ws.send(JSON.stringify({
+                            type: 'trackDataResponse',
+                            trackId: currentTrackId,
+                            data: {
+                                trackPoints: state.trackPoints,
+                                pitLanePoints: state.pitLanePoints || [],
+                                startLine: state.startLine,
+                                sector1: state.sector1,
+                                sector2: state.sector2
+                            }
+                        }));
+                        return;
+                    }
+
+                    // Track file does not exist: return empty track for this specific trackId
                     ws.send(JSON.stringify({
                         type: 'trackDataResponse',
-                        trackId: currentTrackId !== -1 ? currentTrackId : trackId,
-                        data: {
-                            trackPoints: state.trackPoints,
-                            pitLanePoints: state.pitLanePoints || [],
-                            startLine: state.startLine,
-                            sector1: state.sector1,
-                            sector2: state.sector2
-                        }
+                        trackId: trackId,
+                        data: { trackPoints: [], pitLanePoints: [], startLine: null, sector1: null, sector2: null }
                     }));
                     return;
                 }
+
+                // No track requested and no track active
+                ws.send(JSON.stringify({
+                    type: 'trackDataResponse',
+                    trackId: -1,
+                    data: { trackPoints: [], pitLanePoints: [], startLine: null, sector1: null, sector2: null }
+                }));
                 return;
             }
 
@@ -1817,7 +1831,7 @@ let state = {
         trackTemp: 0, airTemp: 0, sc: 'Clear', lapsTotal: 0, pitLimit: 80, fastestLapCarIndex: -1,
         sessionFastestLapMs: Infinity, sessionFastestDriver: 'None', sessionBestS1: 0, sessionBestS2: 0, sessionBestS3: 0,
         referenceS1: 0, referenceS2: 0, referenceS3: 0, allTimeBestS1: 0, allTimeBestS2: 0, allTimeBestS3: 0,
-        trackId: 0, timeRemaining: 0, timeTotal: 0, safetyCarStatus: 'NONE', sessionType: 'NONE', sessionCategory: 'Race', allTimeFastestLapMs: Infinity, allTimeFastestDriver: 'Unknown', sector2Distance: 0, sector3Distance: 0,
+        trackId: -1, timeRemaining: 0, timeTotal: 0, safetyCarStatus: 'NONE', sessionType: 'NONE', sessionCategory: 'Race', allTimeFastestLapMs: Infinity, allTimeFastestDriver: 'Unknown', sector2Distance: 0, sector3Distance: 0,
         gamePaused: false
     },
     weatherForecast: [],
@@ -2171,27 +2185,91 @@ f1Client.on('motion', (data) => {
             }
         }
 
-        if (!isTrackMapped && currentTrackId !== -1) {
-            const x = pMotion.m_worldPositionX;
-            const z = pMotion.m_worldPositionZ;
-            const pts = state.trackPoints;
-            const lastPt = pts.length > 0 ? pts[pts.length - 1] : null;
+/**
+ * Completes and saves a newly mapped circuit from live recorded telemetry.
+ * Automatically closes the loop, computes pit lane, sets official sector lines,
+ * saves to disk, and broadcasts the completed circuit map to all clients.
+ */
+function completeLiveTrackMapping() {
+    if (isTrackMapped || currentTrackId === -1 || !state.trackPoints || state.trackPoints.length < 50) return;
+    isTrackMapped = true;
 
-            if (!lastPt || Math.hypot(lastPt.x - x, lastPt.z - z) > 10) {
-                if (lastPt && Math.hypot(lastPt.x - x, lastPt.z - z) > 500) {
-                    pts.length = 0;
-                } else {
+    const pts = state.trackPoints;
+    const firstPt = pts[0];
+    const lastPt = pts[pts.length - 1];
+    if (Math.hypot(lastPt.x - firstPt.x, lastPt.z - firstPt.z) > 5) {
+        pts.push({ x: firstPt.x, z: firstPt.z });
+    }
+
+    state.pitLanePoints = buildApproxPitLane(pts);
+
+    const filePath = path.join(trackMapsDir, `track_${currentTrackId}.json`);
+    safeSaveTrackMap(filePath, {
+        trackPoints: pts,
+        startLine: state.startLine,
+        sector1: state.sector1,
+        sector2: state.sector2
+    });
+
+    // Synchronize official sector lines using exact distance
+    syncTrackLinesForTrack(currentTrackId);
+
+    // Broadcast full trackDataResponse to all clients
+    const completeMsg = JSON.stringify({
+        type: 'trackDataResponse',
+        trackId: currentTrackId,
+        data: {
+            trackPoints: state.trackPoints,
+            pitLanePoints: state.pitLanePoints || [],
+            startLine: state.startLine,
+            sector1: state.sector1,
+            sector2: state.sector2
+        }
+    });
+    clients.forEach(c => {
+        if (c.readyState === WebSocket.OPEN) {
+            try { c.send(completeMsg); } catch (e) { }
+        }
+    });
+    console.log(`🎉 Track ID ${currentTrackId} fully mapped, synchronized and saved! (${pts.length} pts)`);
+}
+
+        if (!isTrackMapped && currentTrackId !== -1) {
+            const currentSpeed = carPhysics[pIdx] ? carPhysics[pIdx].speed : 0;
+            const pitStatus = carDataTracker[pIdx] ? carDataTracker[pIdx].pitStatus : 0;
+
+            // Only record track coordinates when actively driving on track (not stationary in pit lane)
+            if (currentSpeed > 15 && pitStatus === 0) {
+                const x = pMotion.m_worldPositionX;
+                const z = pMotion.m_worldPositionZ;
+                const pts = state.trackPoints;
+                const lastPt = pts.length > 0 ? pts[pts.length - 1] : null;
+                const distFromLast = lastPt ? Math.hypot(lastPt.x - x, lastPt.z - z) : 999;
+
+                if (distFromLast >= 10 && distFromLast < 400) {
                     pts.push({ x, z });
-                    if (pts.length > 3000) {
-                        pts.shift();
+                    if (pts.length > 3000) pts.shift();
+
+                    // Stream recording progress to clients every 5 points (~0.5s)
+                    if (pts.length % 5 === 0) {
+                        const progressMsg = JSON.stringify({
+                            type: 'trackRecordingProgress',
+                            trackId: currentTrackId,
+                            pointsCount: pts.length,
+                            trackPoints: pts
+                        });
+                        clients.forEach(c => {
+                            if (c.readyState === WebSocket.OPEN) {
+                                try { c.send(progressMsg); } catch (e) { }
+                            }
+                        });
                     }
-                    if (pts.length > 150) {
+
+                    // Check if car returned to start after a substantial lap
+                    if (pts.length >= 70) {
                         const firstPt = pts[0];
-                        if (Math.hypot(firstPt.x - x, firstPt.z - z) < 30) {
-                            isTrackMapped = true;
-                            safeSaveTrackMap(path.join(trackMapsDir, `track_${currentTrackId}.json`), { trackPoints: pts, startLine: state.startLine, sector1: state.sector1, sector2: state.sector2 });
-                            state.pitLanePoints = buildApproxPitLane(state.trackPoints);
-                            console.log(`✅ Track ID ${currentTrackId} fully mapped and saved!`);
+                        if (Math.hypot(firstPt.x - x, firstPt.z - z) < 55) {
+                            completeLiveTrackMapping();
                         }
                     }
                 }
@@ -2412,6 +2490,25 @@ f1Client.on('session', (data) => {
             state.sector1 = null;
             state.sector2 = null;
             isTrackMapped = false;
+            trackPointsDirty = true;
+
+            // Broadcast empty track to all clients so they immediately clear old track
+            const clearMsg = JSON.stringify({
+                type: 'trackDataResponse',
+                trackId: currentTrackId,
+                data: {
+                    trackPoints: [],
+                    pitLanePoints: [],
+                    startLine: null,
+                    sector1: null,
+                    sector2: null
+                }
+            });
+            clients.forEach(c => {
+                if (c.readyState === WebSocket.OPEN) {
+                    try { c.send(clearMsg); } catch (e) { }
+                }
+            });
         }
 
         if (currentTrackId !== -1) loadTrackDeltaReference(currentTrackId);
@@ -2819,6 +2916,10 @@ f1Client.on('lapData', (data) => {
                 } else {
                     lockOfficialSectorLinesFromTelemetry(i, finishedS1, finishedS2, validTelemetry);
                 }
+            }
+
+            if (!isTrackMapped && currentTrackId !== -1 && state.trackPoints && state.trackPoints.length >= 50 && i === pIdx) {
+                completeLiveTrackMapping();
             }
 
             // RESET sector tracking for the new lap so sector chips and cards start fresh LIVE
