@@ -64,6 +64,32 @@ function safeWriteJson(filePath, data, pretty = false) {
     }
 }
 
+/**
+ * Saves a track map JSON safely, ensuring existing trackPoints are never overwritten with empty arrays.
+ */
+function safeSaveTrackMap(filePath, data) {
+    if (!filePath || !data) return;
+    let pts = data.trackPoints;
+    // An authentic F1 track contains at least 50 points. Never overwrite a mapped circuit with partial data!
+    if (!Array.isArray(pts) || pts.length < 50) {
+        if (fs.existsSync(filePath)) {
+            try {
+                const raw = fs.readFileSync(filePath, 'utf8').trim();
+                if (raw && raw.length > 2) {
+                    const existing = JSON.parse(raw);
+                    const existingPts = Array.isArray(existing) ? existing : (existing.trackPoints || []);
+                    if (existingPts.length >= 50) {
+                        data.trackPoints = existingPts;
+                    }
+                }
+            } catch (e) { }
+        }
+    }
+    if (data.trackPoints && data.trackPoints.length >= 20) {
+        safeWriteJson(filePath, data);
+    }
+}
+
 let allTimeFastest = {};
 const fastestJsonPath = path.join(lapTimeDir, 'fastest.json');
 
@@ -1041,6 +1067,8 @@ function abs_diff(a, b) { return Math.abs((a || 0) - (b || 0)); }
 
 let clients = [];
 let trackPointsDirty = true;
+let lapHistoryDirty = true;
+let broadcastTick = 0;
 
 /**
  * Re-synchronizes start line, sector 1, and sector 2 lines for a circuit from recorded telemetry.
@@ -1145,7 +1173,7 @@ function syncTrackLinesForTrack(tId) {
             sector1: newS1,
             sector2: newS2
         };
-        safeWriteJson(mapPath, updatedData);
+        safeSaveTrackMap(mapPath, updatedData);
         console.log(`✅ Synced track lines for Map ${tId} using sector times (S1: ${s1Time}ms -> d=${Math.round(newS1?.d || 0)}m, S2: ${s2Time}ms -> d=${Math.round(newS2?.d || 0)}m)`);
 
         // Broadcast to clients
@@ -1178,7 +1206,7 @@ function handleWsConnection(ws) {
     clients.push(ws);
 
     // Send full 3D track map immediately on connection so the dashboard renders right away
-    if (state.trackPoints && state.trackPoints.length > 0) {
+    if (state.trackPoints && state.trackPoints.length >= 20) {
         try {
             ws.send(JSON.stringify({
                 type: 'trackDataResponse',
@@ -1192,7 +1220,29 @@ function handleWsConnection(ws) {
                 }
             }));
         } catch (e) { }
+    } else {
+        let connectTrackId = currentTrackId !== -1 ? currentTrackId : ((state.session && state.session.trackId !== -1) ? state.session.trackId : 16);
+        const tPath = path.join(trackMapsDir, `track_${connectTrackId}.json`);
+        if (fs.existsSync(tPath)) {
+            try {
+                const raw = fs.readFileSync(tPath, 'utf8').trim();
+                if (raw && raw.length > 2) {
+                    const tData = JSON.parse(raw);
+                    const pts = Array.isArray(tData) ? tData : (tData.trackPoints || []);
+                    if (pts.length >= 20) {
+                        ws.send(JSON.stringify({
+                            type: 'trackDataResponse',
+                            trackId: connectTrackId,
+                            data: tData
+                        }));
+                    }
+                }
+            } catch (e) { }
+        }
     }
+    trackPointsDirty = true;
+    lapHistoryDirty = true;
+
     ws.on('message', (msg) => {
         try {
             const data = JSON.parse(msg);
@@ -1210,15 +1260,39 @@ function handleWsConnection(ws) {
             }
 
             if (data.action === 'getTrackData') {
-                const trackId = parseInt(data.trackId);
-                if (!isNaN(trackId)) {
+                let trackId = data.trackId !== undefined ? parseInt(data.trackId, 10) : currentTrackId;
+                if (isNaN(trackId) || trackId === -1) {
+                    trackId = currentTrackId !== -1 ? currentTrackId : ((state.session && state.session.trackId !== -1) ? state.session.trackId : 16);
+                }
+                if (!isNaN(trackId) && trackId !== -1) {
                     const tPath = path.join(trackMapsDir, `track_${trackId}.json`);
                     if (fs.existsSync(tPath)) {
                         try {
-                            const tData = JSON.parse(fs.readFileSync(tPath, 'utf8'));
-                            ws.send(JSON.stringify({ type: 'trackDataResponse', trackId, data: tData }));
+                            const raw = fs.readFileSync(tPath, 'utf8').trim();
+                            if (raw && raw.length > 2) {
+                                const tData = JSON.parse(raw);
+                                const pts = Array.isArray(tData) ? tData : (tData.trackPoints || []);
+                                if (pts.length >= 20) {
+                                    ws.send(JSON.stringify({ type: 'trackDataResponse', trackId, data: tData }));
+                                    return;
+                                }
+                            }
                         } catch (e) { }
                     }
+                }
+                if (state.trackPoints && state.trackPoints.length >= 20) {
+                    ws.send(JSON.stringify({
+                        type: 'trackDataResponse',
+                        trackId: currentTrackId !== -1 ? currentTrackId : trackId,
+                        data: {
+                            trackPoints: state.trackPoints,
+                            pitLanePoints: state.pitLanePoints || [],
+                            startLine: state.startLine,
+                            sector1: state.sector1,
+                            sector2: state.sector2
+                        }
+                    }));
+                    return;
                 }
                 return;
             }
@@ -1652,7 +1726,31 @@ let state = {
     },
     motion: { pitch: 0, roll: 0, gLat: 0, gLong: 0, gVert: 0, susp: { fl: 0, fr: 0, rl: 0, rr: 0 }, gEnvelopeArray: gForceData.envelopeArray, gHistory: gForceData.history, maxGSeen: gForceData.maxGSeen },
     inputs: { speed: 0, gear: 'N', rpm: 0, throttle: 0, brake: 0, clutch: 0, steer: 0, drs: 'CLOSED' },
-    ers: { mode: 'None', battery: 0 },
+    ers: {
+        mode: 'Medium',
+        battery: 100,
+        storeJoules: 4000000,
+        deployModeInt: 1,
+        deployedLapJoules: 0,
+        deployedLapPct: 0,
+        harvestedMGUKJoules: 0,
+        harvestedMGUHJoules: 0,
+        harvestedTotalJoules: 0,
+        icePower: 0,
+        mgukPower: 0,
+        ersRecommendation: 'BALANCED'
+    },
+    fuel: {
+        tankKg: 0,
+        capacityKg: 110,
+        pct: 0,
+        remainingLapsDelta: 0,
+        mix: 'Standard',
+        mixInt: 1,
+        targetBurnPerLap: 0,
+        lapsLeft: 0,
+        status: 'OPTIMAL'
+    },
     setup: {
         // Aerodynamics
         wingF: 0, wingR: 0,
@@ -1725,6 +1823,8 @@ function resetSessionData() {
     state.session.sessionBestS1 = refS1;
     state.session.sessionBestS2 = refS2;
     state.session.sessionBestS3 = refS3;
+
+    lapHistoryDirty = true;
 
     // Immediately push reset state to all WebSocket clients
     clients = clients.filter(ws => ws.readyState === WebSocket.OPEN);
@@ -1957,7 +2057,7 @@ f1Client.on('motion', (data) => {
                 };
                 if (isTrackMapped && currentTrackId !== -1) {
                     const filePath = path.join(trackMapsDir, `track_${currentTrackId}.json`);
-                    safeWriteJson(filePath, { trackPoints: state.trackPoints, startLine: state.startLine, sector1: state.sector1, sector2: state.sector2 });
+                    safeSaveTrackMap(filePath, { trackPoints: state.trackPoints, startLine: state.startLine, sector1: state.sector1, sector2: state.sector2 });
                 }
             }
         }
@@ -1980,7 +2080,7 @@ f1Client.on('motion', (data) => {
                         const firstPt = pts[0];
                         if (Math.hypot(firstPt.x - x, firstPt.z - z) < 30) {
                             isTrackMapped = true;
-                            safeWriteJson(path.join(trackMapsDir, `track_${currentTrackId}.json`), { trackPoints: pts, startLine: state.startLine, sector1: state.sector1, sector2: state.sector2 });
+                            safeSaveTrackMap(path.join(trackMapsDir, `track_${currentTrackId}.json`), { trackPoints: pts, startLine: state.startLine, sector1: state.sector1, sector2: state.sector2 });
                             state.pitLanePoints = buildApproxPitLane(state.trackPoints);
                             console.log(`✅ Track ID ${currentTrackId} fully mapped and saved!`);
                         }
@@ -2147,49 +2247,51 @@ f1Client.on('session', (data) => {
         resetSessionData();
     }
 
-    if (tId !== undefined && tId !== currentTrackId && tId !== -1) {
-        currentTrackId = tId;
-        state.customSectorLines = [0];
-        isTrackMapped = false;
-        const filePath = path.join(trackMapsDir, `track_${tId}.json`);
+    if (tId !== undefined && tId !== -1) {
+        if (tId !== currentTrackId || !state.trackPoints || state.trackPoints.length < 20) {
+            currentTrackId = tId;
+            state.customSectorLines = [0];
+            isTrackMapped = false;
+            const filePath = path.join(trackMapsDir, `track_${tId}.json`);
 
         if (fs.existsSync(filePath)) {
             try {
-                const parsedData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-                if (Array.isArray(parsedData)) {
-                    state.trackPoints = parsedData;
-                    state.startLine = null;
-                    state.sector1 = null;
-                    state.sector2 = null;
-                    isTrackMapped = true;
-                } else {
-                    state.trackPoints = parsedData.trackPoints || [];
-                    state.startLine = parsedData.startLine || null;
-                    state.sector1 = (parsedData.sector1 && typeof parsedData.sector1 === 'object') ? parsedData.sector1 : ((parsedData.sector1Line && typeof parsedData.sector1Line === 'object') ? parsedData.sector1Line : null);
-                    state.sector2 = (parsedData.sector2 && typeof parsedData.sector2 === 'object') ? parsedData.sector2 : ((parsedData.sector2Line && typeof parsedData.sector2Line === 'object') ? parsedData.sector2Line : null);
-                    if (state.trackPoints.length > 0) isTrackMapped = true;
+                const raw = fs.readFileSync(filePath, 'utf8').trim();
+                if (raw && raw.length > 2) {
+                    const parsedData = JSON.parse(raw);
+                    if (Array.isArray(parsedData)) {
+                        state.trackPoints = parsedData;
+                        state.startLine = null;
+                        state.sector1 = null;
+                        state.sector2 = null;
+                        isTrackMapped = true;
+                    } else {
+                        state.trackPoints = parsedData.trackPoints || [];
+                        state.startLine = parsedData.startLine || null;
+                        state.sector1 = (parsedData.sector1 && typeof parsedData.sector1 === 'object') ? parsedData.sector1 : ((parsedData.sector1Line && typeof parsedData.sector1Line === 'object') ? parsedData.sector1Line : null);
+                        state.sector2 = (parsedData.sector2 && typeof parsedData.sector2 === 'object') ? parsedData.sector2 : ((parsedData.sector2Line && typeof parsedData.sector2Line === 'object') ? parsedData.sector2Line : null);
+                        if (state.trackPoints.length > 0) isTrackMapped = true;
+                    }
+                    state.pitLanePoints = buildApproxPitLane(state.trackPoints);
+                    trackPointsDirty = true;
+                    // Broadcast trackDataResponse to all clients so they immediately have the track map
+                    const tMsg = JSON.stringify({
+                        type: 'trackDataResponse',
+                        trackId: currentTrackId,
+                        data: {
+                            trackPoints: state.trackPoints,
+                            pitLanePoints: state.pitLanePoints || [],
+                            startLine: state.startLine,
+                            sector1: state.sector1,
+                            sector2: state.sector2
+                        }
+                    });
+                    clients.forEach(c => {
+                        if (c.readyState === WebSocket.OPEN) {
+                            try { c.send(tMsg); } catch (e) { }
+                        }
+                    });
                 }
-                state.pitLanePoints = buildApproxPitLane(state.trackPoints);
-                trackPointsDirty = true;
-                console.log(`🗺️ Loaded Track ${currentTrackId} map (${state.trackPoints.length} points)`);
-
-                // Broadcast trackDataResponse to all clients so they immediately have the track map
-                const tMsg = JSON.stringify({
-                    type: 'trackDataResponse',
-                    trackId: currentTrackId,
-                    data: {
-                        trackPoints: state.trackPoints,
-                        pitLanePoints: state.pitLanePoints || [],
-                        startLine: state.startLine,
-                        sector1: state.sector1,
-                        sector2: state.sector2
-                    }
-                });
-                clients.forEach(c => {
-                    if (c.readyState === WebSocket.OPEN) {
-                        try { c.send(tMsg); } catch (e) { }
-                    }
-                });
             } catch (e) {
                 console.error('Error parsing track map JSON:', e);
             }
@@ -2204,6 +2306,7 @@ f1Client.on('session', (data) => {
         }
 
         if (currentTrackId !== -1) loadTrackDeltaReference(currentTrackId);
+        }
     }
 
     setPlayerIndex(data.m_header);
@@ -2224,6 +2327,7 @@ f1Client.on('session', (data) => {
     const timeAttackIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 13, 17, 18, 19];
     state.session.sessionCategory = timeAttackIds.includes(sessionTypeRaw) ? 'TimeAttack' : 'Race';
 
+    state.session.trackId = data.m_trackId !== undefined ? data.m_trackId : currentTrackId;
     state.session.trackName = trackMap[data.m_trackId] || `TRACK NOT FOUND`;
     state.session.pitLimit = data.m_pitSpeedLimit;
     state.session.sc = scMap[data.m_safetyCarStatus] || 'Clear';
@@ -2275,16 +2379,55 @@ f1Client.on('sessionHistory', (data) => {
     const numLaps = data.m_numLaps !== undefined ? data.m_numLaps : data.numLaps;
     const historyArray = data.m_lapHistoryData || data.lapHistoryData || [];
 
-    allLapHistories[carIndex] = historyArray.slice(0, numLaps).map(lap => {
-        const lapTime = lap.m_lapTimeInMS || lap.lapTimeInMS || (lap.m_lapTime ? Math.round(lap.m_lapTime * 1000) : 0) || (lap.lapTime ? Math.round(lap.lapTime * 1000) : 0) || 0;
-        return {
-            lapTime: lapTime,
-            s1: getSectorTime(lap, 1),
-            s2: getSectorTime(lap, 2),
-            s3: getSectorTime(lap, 3),
-            validFlags: lap.m_lapValidBitFlags !== undefined ? lap.m_lapValidBitFlags : 0x0f
-        };
-    });
+    if (!allLapHistories[carIndex]) allLapHistories[carIndex] = [];
+    const currentHist = allLapHistories[carIndex];
+    const maxLen = Math.max(numLaps, currentHist.length);
+    const updated = [];
+
+    for (let k = 0; k < maxLen; k++) {
+        const lapRaw = (k < numLaps && k < historyArray.length) ? historyArray[k] : null;
+        const existing = currentHist[k] || null;
+
+        let lapTime = 0;
+        let s1 = 0, s2 = 0, s3 = 0;
+        let validFlags = 0x0f;
+
+        if (lapRaw) {
+            lapTime = lapRaw.m_lapTimeInMS || lapRaw.lapTimeInMS || (lapRaw.m_lapTime ? Math.round(lapRaw.m_lapTime * 1000) : 0) || (lapRaw.lapTime ? Math.round(lapRaw.lapTime * 1000) : 0) || 0;
+            s1 = getSectorTime(lapRaw, 1);
+            s2 = getSectorTime(lapRaw, 2);
+            s3 = getSectorTime(lapRaw, 3);
+            validFlags = lapRaw.m_lapValidBitFlags !== undefined ? lapRaw.m_lapValidBitFlags : 0x0f;
+        }
+
+        // Non-destructive merge: never overwrite valid existing lap/sector data with zeroes
+        if (existing) {
+            if (lapTime === 0 && existing.lapTime > 0) lapTime = existing.lapTime;
+            if (s1 === 0 && existing.s1 > 0) s1 = existing.s1;
+            if (s2 === 0 && existing.s2 > 0) s2 = existing.s2;
+            if (s3 === 0 && existing.s3 > 0) s3 = existing.s3;
+            if (!lapRaw && existing.validFlags !== undefined) validFlags = existing.validFlags;
+        }
+
+        // Auto-calculate S3 if S1, S2 and lapTime are available
+        if (s3 === 0 && lapTime > 0 && s1 > 0 && s2 > 0 && lapTime > (s1 + s2)) {
+            s3 = lapTime - (s1 + s2);
+        }
+        // Auto-calculate lapTime if all 3 sectors are available
+        if (lapTime === 0 && s1 > 0 && s2 > 0 && s3 > 0) {
+            lapTime = s1 + s2 + s3;
+        }
+
+        updated.push({
+            lapTime,
+            s1,
+            s2,
+            s3,
+            validFlags
+        });
+    }
+    allLapHistories[carIndex] = updated;
+    lapHistoryDirty = true;
 
     const tyreStints = data.m_tyreStintsHistoryData || data.tyreStintsHistoryData || [];
     const numTyreStints = data.m_numTyreStints !== undefined ? data.m_numTyreStints : (data.numTyreStints || tyreStints.length);
@@ -2409,7 +2552,7 @@ function lockOfficialSectorLinesFromTelemetry(carIndex, sector1Ms, sector2Ms, te
                     trackPoints = Array.isArray(existing) ? existing : (existing.trackPoints || trackPoints);
                 } catch (e) { }
             }
-            safeWriteJson(filePath, {
+            safeSaveTrackMap(filePath, {
                 trackPoints: trackPoints,
                 startLine: state.startLine,
                 sector1: state.sector1,
@@ -2477,6 +2620,23 @@ f1Client.on('lapData', (data) => {
             const finishedS1 = carDataTracker[i].s1 || 0;
             const finishedS2 = carDataTracker[i].s2 || 0;
             const finishedS3 = (lastTime > 0 && finishedS1 > 0 && finishedS2 > 0) ? Math.max(0, lastTime - (finishedS1 + finishedS2)) : (carDataTracker[i].s3 || 0);
+
+            // Record completed lap in allLapHistories for immediate pace analysis and classification
+            if (lastTime > 0) {
+                if (!allLapHistories[i]) allLapHistories[i] = [];
+                const completedLapNum = (lap.m_currentLapNum > 1) ? (lap.m_currentLapNum - 1) : (carPhysics[i].lapNum || 1);
+                const lapIdx = Math.max(0, completedLapNum - 1);
+                const existing = allLapHistories[i][lapIdx] || {};
+
+                allLapHistories[i][lapIdx] = {
+                    lapTime: lastTime || existing.lapTime || 0,
+                    s1: finishedS1 || existing.s1 || 0,
+                    s2: finishedS2 || existing.s2 || 0,
+                    s3: finishedS3 || existing.s3 || (lastTime > 0 && finishedS1 > 0 && finishedS2 > 0 ? Math.max(0, lastTime - (finishedS1 + finishedS2)) : 0),
+                    validFlags: (carDataTracker[i].penalties === 0 && !carDataTracker[i].invalidLap) ? 0x01 : (existing.validFlags !== undefined ? existing.validFlags : 0x00)
+                };
+                lapHistoryDirty = true;
+            }
 
             // Clean up telemetry: remove points with invalid coordinates
             let validTelemetry = (lastLapTelemetry[i] || [])
@@ -2986,13 +3146,62 @@ f1Client.on('carStatus', (data) => {
     }
 
     const pStat = data.m_carStatusData[pIdx];
-    state.car.compound = carDataTracker[pIdx].tyre;
-    state.car.flag = flagMap[pStat.m_vehicleFiaFlags] || 'GREEN';
-    state.ers.battery = (pStat.m_ersStoreEnergy / 4000000) * 100;
-    state.ers.mode = ersMap[pStat.m_ersDeployMode] || pStat.m_ersDeployMode;
-    state.setup.fuel = pStat.m_fuelInTank || pStat.m_fuelMass || state.setup.fuel;
-    state.setup.fuelLaps = pStat.m_fuelRemainingLaps || 0;
-    state.car.tyreAge = pStat.m_tyresAgeLaps || 0;
+    if (pStat) {
+        state.car.compound = carDataTracker[pIdx].tyre;
+        state.car.flag = flagMap[pStat.m_vehicleFiaFlags] || 'GREEN';
+
+        // ERS Deep Telemetry & Strategy
+        const ersStore = pStat.m_ersStoreEnergy !== undefined ? pStat.m_ersStoreEnergy : 0;
+        const ersDeployMode = pStat.m_ersDeployMode !== undefined ? pStat.m_ersDeployMode : 1;
+        const ersHarvestMGUK = pStat.m_ersHarvestedThisLapMGUK || 0;
+        const ersHarvestMGUH = pStat.m_ersHarvestedThisLapMGUH || 0;
+        const ersDeployed = pStat.m_ersDeployedThisLap || 0;
+        const batteryPct = Math.min(100, Math.max(0, (ersStore / 4000000) * 100));
+
+        state.ers = {
+            storeJoules: ersStore,
+            battery: batteryPct,
+            mode: ersMap[ersDeployMode] || 'Medium',
+            deployModeInt: ersDeployMode,
+            harvestedMGUKJoules: ersHarvestMGUK,
+            harvestedMGUHJoules: ersHarvestMGUH,
+            harvestedTotalJoules: ersHarvestMGUK + ersHarvestMGUH,
+            deployedLapJoules: ersDeployed,
+            deployedLapPct: Math.min(100, Math.max(0, (ersDeployed / 4000000) * 100)),
+            icePower: pStat.m_enginePowerICE || 0,
+            mgukPower: pStat.m_enginePowerMGUK || 0,
+            ersRecommendation: (batteryPct < 25) ? 'HARVEST (LOW STORE)' : ((batteryPct > 75) ? 'OVERTAKE AVAILABLE' : 'BALANCED')
+        };
+
+        // Fuel Deep Telemetry & Strategy
+        const fuelInTank = pStat.m_fuelInTank !== undefined ? pStat.m_fuelInTank : (pStat.m_fuelMass || state.setup.fuel || 0);
+        const fuelCapacity = pStat.m_fuelCapacity || 110;
+        const fuelRemainingLaps = pStat.m_fuelRemainingLaps || 0;
+        const fuelMix = pStat.m_fuelMix !== undefined ? pStat.m_fuelMix : 1;
+        const fuelMixMap = { 0: 'Lean', 1: 'Standard', 2: 'Rich', 3: 'Max' };
+
+        state.setup.fuel = fuelInTank;
+        state.setup.fuelCapacity = fuelCapacity;
+        state.setup.fuelLaps = fuelRemainingLaps;
+        state.setup.fuelMix = fuelMixMap[fuelMix] || 'Standard';
+        state.car.tyreAge = pStat.m_tyresAgeLaps || 0;
+
+        const completedLaps = carPhysics[pIdx].lapNum > 1 ? (carPhysics[pIdx].lapNum - 1) : 0;
+        const lapsLeft = state.session.lapsLeft || Math.max(0, (state.session.lapsTotal || 0) - completedLaps);
+        const fuelPerLapNeeded = (lapsLeft > 0 && fuelInTank > 0) ? (fuelInTank / lapsLeft) : 0;
+
+        state.fuel = {
+            tankKg: fuelInTank,
+            capacityKg: fuelCapacity,
+            pct: fuelCapacity > 0 ? Math.min(100, Math.max(0, (fuelInTank / fuelCapacity) * 100)) : 0,
+            remainingLapsDelta: fuelRemainingLaps,
+            mix: fuelMixMap[fuelMix] || 'Standard',
+            mixInt: fuelMix,
+            lapsLeft: lapsLeft,
+            targetBurnPerLap: fuelPerLapNeeded,
+            status: fuelRemainingLaps >= 0.3 ? 'SURPLUS' : (fuelRemainingLaps >= -0.15 ? 'OPTIMAL' : 'DEFICIT (LIFT & COAST)')
+        };
+    }
 });
 
 
@@ -3026,7 +3235,7 @@ setInterval(() => {
                 ...carDataTracker[i],
                 lapDistance: carPhysics[i].lapDistance,
                 speed: carPhysics[i].speed,
-                lapHistory: allLapHistories[i] || []
+                lapHistory: (i === state.playerIndex) ? (allLapHistories[i] || []) : []
             });
         }
     }
@@ -3342,18 +3551,24 @@ setInterval(() => {
     // Build ultra-lean broadcast payload for 20Hz continuous streaming
     // Drastically lowers bandwidth and CPU load for mobile browsers on WiFi (Android / iOS / Tablets)
     const playerIdx = state.playerIndex;
+    broadcastTick++;
 
     // Send full trackPoints ONLY on track change or initial load (trackPointsDirty),
     // otherwise send [] during continuous 20Hz streaming (saves 19.2 KB on EVERY tick!)
     const sendTrack = trackPointsDirty && state.trackPoints && state.trackPoints.length > 0;
     if (trackPointsDirty) trackPointsDirty = false;
 
+    // Send bulky allLapHistories dictionary at 1Hz or when a lap finishes/updates (lapHistoryDirty),
+    // eliminating 70KB+ redundant payload on 19 out of 20 ticks!
+    const sendLapHistory = lapHistoryDirty || (broadcastTick % 20 === 0);
+    if (lapHistoryDirty) lapHistoryDirty = false;
+
     const streamState = {
         ...state,
         trackPoints: sendTrack ? state.trackPoints : [],
         pitLanePoints: sendTrack ? state.pitLanePoints : [],
         leaderboard: state.leaderboard,
-        allLapHistories: allLapHistories,
+        allLapHistories: sendLapHistory ? allLapHistories : {},
         motion: {
             ...state.motion,
             gEnvelopeArray: (gForceData.envelopeArray || []).slice(-25),
@@ -3363,15 +3578,18 @@ setInterval(() => {
 
     const payload = JSON.stringify(streamState);
     clients.forEach((ws) => {
-        // Protect against Node.js heap exhaustion caused by backpressured sockets
-        if (ws.bufferedAmount > 512 * 1024) { // >512KB buffered in TCP send queue
-            if (ws.bufferedAmount > 3 * 1024 * 1024) { // >3MB unconsumed
-                console.warn('⚠️ Terminating unresponsive/backpressured WebSocket client to prevent memory leak.');
-                try { ws.terminate(); } catch (e) { }
-            }
+        if (ws.readyState !== WebSocket.OPEN) return;
+        // Non-destructive real-time frame dropping: if client socket has pending data in flight,
+        // drop intermediate frames so TCP queue never builds up and client never lags behind.
+        // Never terminate the connection - client seamlessly receives the next fresh live frame when ready.
+        if (ws.bufferedAmount > 64 * 1024) {
             return;
         }
-        try { ws.send(payload); } catch (e) { }
+        try {
+            ws.send(payload);
+        } catch (e) {
+            // Socket errors are cleanly caught and handled by ws.on('error') / ws.on('close')
+        }
     });
 }, intervalMs);
 
