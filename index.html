@@ -5346,8 +5346,8 @@
             orderedPts.push(orderedPts[0].clone()); // Re-close loop
 
             const len = orderedPts.length - 1;
-            const idx1 = mapData.sector1 ? getClosestIndex(orderedPts, mapData.sector1, Math.floor(len * 0.1), Math.floor(len * 0.6)) : Math.floor(len / 3);
-            const idx2 = mapData.sector2 ? getClosestIndex(orderedPts, mapData.sector2, idx1, Math.floor(len * 0.95)) : Math.floor((len / 3) * 2);
+            const idx1 = mapData.sector1 ? getClosestIndex(orderedPts, mapData.sector1, 1, Math.max(2, len - 3)) : Math.floor(len / 3);
+            const idx2 = mapData.sector2 ? getClosestIndex(orderedPts, mapData.sector2, Math.min(len - 2, idx1 + 1), len - 1) : Math.floor((len / 3) * 2);
 
             const ptsS1 = orderedPts.slice(0, idx1 + 1);
             const ptsS2 = orderedPts.slice(idx1, idx2 + 1);

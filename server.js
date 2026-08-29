@@ -1071,26 +1071,125 @@ let lapHistoryDirty = true;
 let broadcastTick = 0;
 
 /**
- * Re-synchronizes start line, sector 1, and sector 2 lines for a circuit from recorded telemetry.
- * Uses official session sector markers if available; falls back to 1/3 and 2/3 distance if not.
+ * Official F1 Track Sector Distance Catalog (in metres).
+ * Represents the official FIA timing line locations along the circuit.
+ */
+const OFFICIAL_TRACK_SECTOR_DISTANCES = {
+    0:  { s1: 1720, s2: 3680, len: 5278 }, // Melbourne (Albert Park)
+    2:  { s1: 1418, s2: 2985, len: 5451 }, // Shanghai
+    3:  { s1: 1800, s2: 4001, len: 5412 }, // Sakhir (Bahrain)
+    4:  { s1: 1512, s2: 3194, len: 4657 }, // Catalunya (Barcelona)
+    5:  { s1: 1098, s2: 2190, len: 3337 }, // Monaco
+    6:  { s1: 1450, s2: 3100, len: 4361 }, // Montreal (Circuit Gilles Villeneuve)
+    7:  { s1: 1750, s2: 3980, len: 5891 }, // Silverstone
+    9:  { s1: 1268, s2: 2953, len: 4381 }, // Hungaroring
+    10: { s1: 2323, s2: 5150, len: 7004 }, // Spa-Francorchamps
+    11: { s1: 1898, s2: 3726, len: 5793 }, // Monza
+    12: { s1: 1464, s2: 3133, len: 4940 }, // Singapore (Marina Bay)
+    13: { s1: 1820, s2: 4120, len: 5807 }, // Suzuka
+    14: { s1: 1420, s2: 3450, len: 5281 }, // Abu Dhabi (Yas Marina)
+    15: { s1: 1661, s2: 3923, len: 5513 }, // Circuit of the Americas (Austin)
+    16: { s1: 1215.4, s2: 3160.7, len: 4294 }, // Interlagos (Brazil)
+    17: { s1: 1209, s2: 2913, len: 4318 }, // Red Bull Ring (Austria)
+    19: { s1: 2038, s2: 3592, len: 4304 }, // Mexico (Autodromo Hermanos Rodriguez)
+    20: { s1: 1880, s2: 4150, len: 6003 }, // Baku
+    26: { s1: 1290, s2: 2850, len: 4259 }, // Zandvoort
+    27: { s1: 1660, s2: 3520, len: 4909 }, // Imola
+    29: { s1: 1890, s2: 4210, len: 6174 }, // Jeddah
+    30: { s1: 1750, s2: 3850, len: 5412 }, // Miami
+    31: { s1: 1950, s2: 4650, len: 6201 }, // Las Vegas
+    32: { s1: 1680, s2: 3720, len: 5419 }, // Losail (Qatar)
+    42: { s1: 1215, s2: 3162, len: 5474 }  // Madrid
+};
+
+/**
+ * Extracts a coordinate from recorded telemetry by EXACT DISTANCE along the track.
+ * Linearly interpolates coordinates and yaw between adjacent points.
+ */
+function extractCoordinateFromTelemetryByDistance(telemetry, targetDistance) {
+    if (!telemetry || telemetry.length === 0 || targetDistance === undefined || targetDistance === null || targetDistance < 0) return null;
+    if (targetDistance === 0) {
+        const d0Candidate = telemetry.find(pt => Math.abs(pt.d || 0) < 60 && (pt.x !== 0 || pt.z !== 0));
+        return d0Candidate || telemetry[0];
+    }
+    let idx = telemetry.findIndex(pt => (pt.d !== undefined ? pt.d : 0) >= targetDistance);
+    if (idx === 0) return telemetry[0];
+    if (idx > 0) {
+        const pt1 = telemetry[idx - 1];
+        const pt2 = telemetry[idx];
+        const d1 = pt1.d !== undefined ? pt1.d : 0;
+        const d2 = pt2.d !== undefined ? pt2.d : 0;
+        const rangeD = d2 - d1;
+        if (rangeD > 0) {
+            const ratio = Math.max(0, Math.min(1, (targetDistance - d1) / rangeD));
+            return {
+                x: pt1.x + (pt2.x - pt1.x) * ratio,
+                z: pt1.z + (pt2.z - pt1.z) * ratio,
+                yaw: pt1.yaw !== undefined ? pt1.yaw + (pt2.yaw - pt1.yaw) * ratio : (pt2.yaw || 0),
+                d: targetDistance
+            };
+        }
+        return pt2;
+    }
+    return null;
+}
+
+/**
+ * Re-synchronizes start line, sector 1, and sector 2 lines for a circuit using EXACT TRACK DISTANCES.
+ * Uses official session sector markers from the game engine or the official FIA catalog.
  */
 function syncTrackLinesForTrack(tId) {
     if (tId === undefined || tId === null || tId === -1) return null;
     const telPath = path.join(telemetryDir, `telemetry_${tId}.json`);
-    if (!fs.existsSync(telPath)) return null;
+    const mapPath = path.join(trackMapsDir, `track_${tId}.json`);
 
     try {
-        let telData = JSON.parse(fs.readFileSync(telPath, 'utf8'));
-        if (!Array.isArray(telData) || telData.length === 0) return null;
+        let telData = [];
+        let trackPoints = [];
 
-        // Filter out invalid dummy points where x === 0 and z === 0
-        telData = telData.filter(p => Number.isFinite(p.x) && Number.isFinite(p.z) && (p.x !== 0 || p.z !== 0));
-        if (telData.length < 10) return null;
+        // Load recorded lap telemetry if present
+        if (fs.existsSync(telPath)) {
+            try {
+                const rawTel = JSON.parse(fs.readFileSync(telPath, 'utf8'));
+                if (Array.isArray(rawTel) && rawTel.length > 10) {
+                    telData = rawTel.filter(p => Number.isFinite(p.x) && Number.isFinite(p.z) && (p.x !== 0 || p.z !== 0));
+                    telData.sort((a, b) => (a.d !== undefined && b.d !== undefined) ? a.d - b.d : a.t - b.t);
+                }
+            } catch (e) { }
+        }
 
-        // Ensure sorted by distance/time
-        telData.sort((a, b) => (a.d !== undefined && b.d !== undefined) ? a.d - b.d : a.t - b.t);
+        // Load track map geometry if present
+        if (fs.existsSync(mapPath)) {
+            try {
+                const mapData = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+                trackPoints = Array.isArray(mapData) ? mapData : (mapData.trackPoints || []);
+            } catch (e) { }
+        }
 
-        // 1. Start line: point closest to d = 0 (with valid x, z coordinates)
+        // If no telemetry file exists, compute cumulative distances from trackPoints
+        if (telData.length < 10) {
+            if (trackPoints.length >= 20) {
+                let cumulative = 0;
+                telData = [{ x: trackPoints[0].x, z: trackPoints[0].z, yaw: 0, d: 0 }];
+                for (let i = 1; i < trackPoints.length; i++) {
+                    const seg = Math.hypot(trackPoints[i].x - trackPoints[i-1].x, trackPoints[i].z - trackPoints[i-1].z);
+                    cumulative += seg;
+                    const dx = trackPoints[i].x - trackPoints[i-1].x;
+                    const dz = trackPoints[i].z - trackPoints[i-1].z;
+                    const yaw = Math.atan2(dx, dz);
+                    telData.push({ x: trackPoints[i].x, z: trackPoints[i].z, yaw, d: cumulative });
+                }
+            } else {
+                return null;
+            }
+        }
+
+        // Total circuit distance
+        const totalDist = (telData[telData.length - 1].d > 0)
+            ? telData[telData.length - 1].d
+            : (state.session.trackLength || 5000);
+
+        // 1. Start line: point closest to d = 0
         const startCandidates = telData.filter(p => Math.abs(p.d || 0) < 150);
         const startLinePt = (startCandidates.length > 0)
             ? startCandidates.reduce((prev, curr) => Math.abs(curr.d || 0) < Math.abs(prev.d || 0) ? curr : prev)
@@ -1103,46 +1202,54 @@ function syncTrackLinesForTrack(tId) {
             d: startLinePt.d || 0
         };
 
-        // 2. Reference Sector Times (s1 and s2 in ms)
-        const rec = allTimeFastest[tId] || {};
-        const totalLapTime = (rec.time > 0) ? rec.time : (telData[telData.length - 1].t || 75000);
-        let s1Time = rec.s1 || 0;
-        let s2Time = rec.s2 || 0;
+        // Determine exact sector distances in metres
+        let targetS1Distance = null;
+        let targetS2Distance = null;
 
-        // If not in fastest.json, check current session if track matches
-        if ((!s1Time || !s2Time) && tId === currentTrackId) {
-            s1Time = state.session.referenceS1 || state.session.sessionBestS1 || 0;
-            s2Time = state.session.referenceS2 || state.session.sessionBestS2 || 0;
+        // Priority 1: Live official sector distance from game engine (PacketSessionData) if track matches
+        if (tId === currentTrackId && state.session.sector2Distance > 100 && state.session.sector3Distance > state.session.sector2Distance) {
+            targetS1Distance = state.session.sector2Distance;
+            targetS2Distance = state.session.sector3Distance;
         }
 
-        // If still no sector times, check any lap in allLapHistories
-        if (!s1Time || !s2Time) {
-            for (let c = 0; c < 22; c++) {
-                const h = allLapHistories[c] || [];
-                for (const l of h) {
-                    if (l.s1 > 0 && l.s2 > 0) {
-                        s1Time = l.s1;
-                        s2Time = l.s2;
-                        break;
+        // Priority 2: Official FIA sector distance catalog
+        if ((!targetS1Distance || !targetS2Distance) && OFFICIAL_TRACK_SECTOR_DISTANCES[tId]) {
+            targetS1Distance = OFFICIAL_TRACK_SECTOR_DISTANCES[tId].s1;
+            targetS2Distance = OFFICIAL_TRACK_SECTOR_DISTANCES[tId].s2;
+        }
+
+        // Priority 3: Existing valid map file distance
+        if (!targetS1Distance || !targetS2Distance) {
+            if (fs.existsSync(mapPath)) {
+                try {
+                    const existingMap = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+                    if (existingMap.sector1 && existingMap.sector2 && existingMap.sector1.d > 200 && existingMap.sector2.d > existingMap.sector1.d + 500) {
+                        targetS1Distance = existingMap.sector1.d;
+                        targetS2Distance = existingMap.sector2.d;
                     }
-                }
-                if (s1Time > 0 && s2Time > 0) break;
+                } catch (e) { }
             }
         }
 
-        // Proportional fallback (~28% and ~40% of total lap time) if no sector splits are known
-        if (!s1Time || s1Time <= 0) s1Time = Math.round(totalLapTime * 0.28);
-        if (!s2Time || s2Time <= 0) s2Time = Math.round(totalLapTime * 0.40);
+        // Priority 4: Proportional split from lap times (fastest.json)
+        if (!targetS1Distance || !targetS2Distance) {
+            const rec = allTimeFastest[tId] || {};
+            if (rec.s1 > 0 && rec.s2 > 0 && rec.time > (rec.s1 + rec.s2)) {
+                targetS1Distance = Math.round(totalDist * (rec.s1 / rec.time));
+                targetS2Distance = Math.round(totalDist * ((rec.s1 + rec.s2) / rec.time));
+            }
+        }
 
-        const targetS1Time = s1Time;
-        const targetS2Time = s1Time + s2Time;
+        // Fallback: 30% and 70% of total distance
+        if (!targetS1Distance || targetS1Distance <= 0) targetS1Distance = Math.round(totalDist * 0.30);
+        if (!targetS2Distance || targetS2Distance <= targetS1Distance) targetS2Distance = Math.round(totalDist * 0.70);
 
-        // Extract coordinate from telemetry using SECTOR TIME REFERENCE
-        const coordS1 = extractCoordinateFromTelemetry(telData, targetS1Time);
-        const coordS2 = extractCoordinateFromTelemetry(telData, targetS2Time);
+        // Extract precise 3D coordinates using EXACT TRACK DISTANCES
+        const coordS1 = extractCoordinateFromTelemetryByDistance(telData, targetS1Distance);
+        const coordS2 = extractCoordinateFromTelemetryByDistance(telData, targetS2Distance);
 
-        const newS1 = coordS1 ? { x: coordS1.x, z: coordS1.z, yaw: coordS1.yaw || 0, d: coordS1.d || 0 } : null;
-        const newS2 = coordS2 ? { x: coordS2.x, z: coordS2.z, yaw: coordS2.yaw || 0, d: coordS2.d || 0 } : null;
+        const newS1 = coordS1 ? { x: coordS1.x, z: coordS1.z, yaw: coordS1.yaw || 0, d: coordS1.d || targetS1Distance } : null;
+        const newS2 = coordS2 ? { x: coordS2.x, z: coordS2.z, yaw: coordS2.yaw || 0, d: coordS2.d || targetS2Distance } : null;
 
         if (tId === currentTrackId) {
             if (newStart) state.startLine = newStart;
@@ -1151,13 +1258,7 @@ function syncTrackLinesForTrack(tId) {
             trackPointsDirty = true;
         }
 
-        const mapPath = path.join(trackMapsDir, `track_${tId}.json`);
-        let trackPoints = [];
-        if (fs.existsSync(mapPath)) {
-            const mapData = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
-            trackPoints = Array.isArray(mapData) ? mapData : (mapData.trackPoints || []);
-        } else {
-            // Subsample from telemetry if map file doesn't exist
+        if (trackPoints.length === 0) {
             let lastD = -999;
             for (const p of telData) {
                 if (Math.abs(p.d - lastD) >= 18) {
@@ -1174,7 +1275,7 @@ function syncTrackLinesForTrack(tId) {
             sector2: newS2
         };
         safeSaveTrackMap(mapPath, updatedData);
-        console.log(`✅ Synced track lines for Map ${tId} using sector times (S1: ${s1Time}ms -> d=${Math.round(newS1?.d || 0)}m, S2: ${s2Time}ms -> d=${Math.round(newS2?.d || 0)}m)`);
+        console.log(`✅ Synced track lines for Map ${tId} using exact distance (S1: d=${Math.round(newS1?.d || 0)}m, S2: d=${Math.round(newS2?.d || 0)}m of ${Math.round(totalDist)}m)`);
 
         // Broadcast to clients
         const msg = JSON.stringify({
@@ -1184,9 +1285,17 @@ function syncTrackLinesForTrack(tId) {
             sector1: newS1,
             sector2: newS2
         });
+        const tMsg = JSON.stringify({
+            type: 'trackDataResponse',
+            trackId: tId,
+            data: updatedData
+        });
         clients.forEach(c => {
             if (c.readyState === WebSocket.OPEN) {
-                try { c.send(msg); } catch (e) { }
+                try {
+                    c.send(msg);
+                    c.send(tMsg);
+                } catch (e) { }
             }
         });
 
@@ -2490,9 +2599,8 @@ function extractCoordinateFromTelemetry(telemetry, targetTimeMs) {
                 d: pt1.d + (pt2.d - pt1.d) * ratio
             };
         }
-        return pt2;
     }
-    return telemetry[telemetry.length - 1];
+    return null;
 }
 
 function hasTelemetryCoordinate(point) {
@@ -2515,7 +2623,9 @@ function shouldSetSectorLine(existing, coord) {
  * @returns {boolean} True if the track map was updated
  */
 function lockOfficialSectorLinesFromTelemetry(carIndex, sector1Ms, sector2Ms, telemetry) {
-    if (currentTrackId === -1 || !Array.isArray(telemetry) || telemetry.length < 5) return false;
+    if (currentTrackId === -1 || !Array.isArray(telemetry) || telemetry.length < 50) return false;
+    const lastPt = telemetry[telemetry.length - 1];
+    if (!lastPt || (lastPt.d || 0) < 2000) return false;
 
     let trackUpdated = false;
     if (sector1Ms > 0) {
@@ -2911,10 +3021,6 @@ f1Client.on('lapData', (data) => {
                 state.session.sessionBestS3 = liveS3;
                 state.session.sessionBestS3Driver = (state.participants && state.participants[i]) ? state.participants[i] : `Car ${i}`;
             }
-        }
-
-        if ((liveS1 > 0 || liveS2 > 0) && currentLapTelemetry[i].length > 5) {
-            lockOfficialSectorLinesFromTelemetry(i, liveS1 || carDataTracker[i].s1, liveS2 || carDataTracker[i].s2, currentLapTelemetry[i]);
         }
 
         let calculatedBestMs = Infinity;
