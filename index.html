@@ -1206,13 +1206,89 @@
             position: absolute;
             bottom: 12px;
             left: 12px;
-            background: var(--f1-panel);
-            padding: 6px 12px;
-            border: 1px solid var(--f1-border);
-            border-radius: 8px;
+            background: rgba(4, 10, 24, 0.88);
+            backdrop-filter: blur(8px);
+            padding: 4px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
             font-family: "Roboto Mono", monospace;
-            font-size: 0.75rem;
-            z-index: 10;
+            font-size: 0.68rem;
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+
+        .map-floating-hud {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        .hud-chip {
+            background: rgba(4, 10, 24, 0.88);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            padding: 4px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .hud-lbl {
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            font-family: "Roboto Mono", monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .hud-val {
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: #FFFFFF;
+            font-family: "Roboto Mono", monospace;
+        }
+
+        @media (max-width: 768px) {
+            .map-overlay {
+                bottom: 8px;
+                left: 8px;
+                padding: 3px 6px;
+                font-size: 0.6rem;
+                z-index: 16;
+            }
+            .map-floating-hud {
+                bottom: 8px;
+                right: 8px;
+                gap: 4px;
+                z-index: 16;
+            }
+            .hud-chip {
+                padding: 2px 5px;
+            }
+            .hud-lbl {
+                font-size: 0.48rem;
+            }
+            .hud-val {
+                font-size: 0.65rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .map-floating-hud .hud-chip:nth-child(4) {
+                display: none;
+            }
         }
 
 
@@ -2740,15 +2816,6 @@
         <div id="tab-radar" class="tab-content active" data-mobile-view="map">
             <!-- Mobile Viewport Switcher -->
             <div class="radar-mobile-toggle-bar" id="radar-mobile-toggle-bar">
-                <button type="button" class="radar-toggle-btn" id="radar-btn-timing"
-                    onclick="setRadarMobileView('timing')">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"
-                        fill="currentColor">
-                        <path
-                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm1-13h-2v6h6v-2h-4z" />
-                    </svg>
-                    <span>TIMING &amp; DATA</span>
-                </button>
                 <button type="button" class="radar-toggle-btn active" id="radar-btn-map"
                     onclick="setRadarMobileView('map')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"
@@ -2757,6 +2824,15 @@
                             d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z" />
                     </svg>
                     <span>CIRCUIT MAP</span>
+                </button>
+                <button type="button" class="radar-toggle-btn" id="radar-btn-timing"
+                    onclick="setRadarMobileView('timing')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"
+                        fill="currentColor">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm1-13h-2v6h6v-2h-4z" />
+                    </svg>
+                    <span>TIMING &amp; DATA</span>
                 </button>
                 <button type="button" class="radar-toggle-btn" id="radar-btn-dual" onclick="setRadarMobileView('dual')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"
