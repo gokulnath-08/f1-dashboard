@@ -2566,11 +2566,6 @@
         </div>
 
         <div class="rbr-header-actions">
-            <!-- Audio Radio & Voice Engineer Toggle -->
-            <button id="btn-audio-mute" class="audio-toggle-btn" onclick="window.f1Audio.toggleMute()" title="Toggle Web Audio Radio & Voice Engineer">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                <span>RADIO ON</span>
-            </button>
             <button id="btn-refresh-session" class="rbr-tool-btn" onclick="refreshTelemetryConnection()"
                 title="Quick Refresh / Reconnect Telemetry">
                 <svg id="refresh-spinner-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13"
@@ -3043,6 +3038,8 @@
               display: flex;
               justify-content: space-between;
               align-items: center;
+              flex-wrap: wrap;
+              gap: 8px;
             ">
                     <div style="display: flex; align-items: center; gap: 10px">
                         <span>Track Position</span>
@@ -3060,7 +3057,24 @@
                             <option value="">Load Track...</option>
                         </select>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 6px;">
+
+                    <!-- 3D Radar Interactive Camera Mode Bar in Header -->
+                    <div class="radar-cam-controls">
+                        <button type="button" class="radar-cam-btn active" id="cam-btn-orbit" onclick="setRadarCameraMode('orbit')" title="Free Orbit God View">
+                            <span>🌐 ORBIT</span>
+                        </button>
+                        <button type="button" class="radar-cam-btn" id="cam-btn-follow" onclick="setRadarCameraMode('follow')" title="Follow Player Car">
+                            <span>🏎️ CHASE</span>
+                        </button>
+                        <button type="button" class="radar-cam-btn" id="cam-btn-top" onclick="setRadarCameraMode('top')" title="Top-Down 2D Circuit Map">
+                            <span>📐 2D TOP</span>
+                        </button>
+                        <button type="button" class="radar-cam-btn" onclick="fitTrackCamera()" title="Reset Track View & Zoom">
+                            <span>🔍 RESET</span>
+                        </button>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto;">
                         <button id="syncbttn" onclick="syncTrackLines()" style="
                                 background: rgba(255, 255, 255, 0.1);
                                 border: 1px solid rgba(255, 255, 255, 0.15);
@@ -3110,29 +3124,13 @@
                     </div>
                 </div>
                 <div class="map-wrapper">
-                    <!-- 3D Radar Interactive Camera Mode Bar -->
-                    <div class="radar-cam-controls">
-                        <button type="button" class="radar-cam-btn active" id="cam-btn-orbit" onclick="setRadarCameraMode('orbit')" title="Free Orbit God View">
-                            <span>🌐 ORBIT</span>
-                        </button>
-                        <button type="button" class="radar-cam-btn" id="cam-btn-follow" onclick="setRadarCameraMode('follow')" title="Follow Player Car">
-                            <span>🏎️ CHASE</span>
-                        </button>
-                        <button type="button" class="radar-cam-btn" id="cam-btn-top" onclick="setRadarCameraMode('top')" title="Top-Down 2D Circuit Map">
-                            <span>📐 2D TOP</span>
-                        </button>
-                        <button type="button" class="radar-cam-btn" onclick="fitTrackCamera()" title="Reset Track View & Zoom">
-                            <span>🔍 RESET</span>
-                        </button>
-                    </div>
-
                     <div id="track-map-container"></div>
                     <div id="map-label-layer" class="map-label-layer"></div>
                     <div class="map-zoom-controls">
-                        <button type="button" id="map-zoom-in" aria-label="Zoom in">
+                        <button type="button" id="map-zoom-in" onclick="event.stopPropagation(); setMapZoom(trackZoom * 1.2);" aria-label="Zoom in" title="Zoom In (+)">
                             +
                         </button>
-                        <button type="button" id="map-zoom-out" aria-label="Zoom out">
+                        <button type="button" id="map-zoom-out" onclick="event.stopPropagation(); setMapZoom(trackZoom / 1.2);" aria-label="Zoom out" title="Zoom Out (-)">
                             -
                         </button>
                     </div>
@@ -8806,9 +8804,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 }
             }
 
-            // ── Feed Next-Gen F1 Cockpit DDU, Audio Engineer & Telemetry Analyzer Modules ──
+            // ── Feed Next-Gen F1 Cockpit DDU & Telemetry Analyzer Modules ──
             if (window.f1Ddu) window.f1Ddu.updateDDU(data);
-            if (window.f1Audio) window.f1Audio.processTelemetry(data);
             if (window.f1Analyzer) window.f1Analyzer.pushTelemetrySample(data);
         }
 
