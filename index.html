@@ -8640,25 +8640,18 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const currentLiveSpeed = Math.round(data.inputs.speed || 0);
             setText("speed", currentLiveSpeed);
 
-            if (!window.playerTopSpeed) {
-                window.playerTopSpeed = parseInt(localStorage.getItem('f1_session_top_speed') || '0', 10);
-            }
-            if (data.inputs.topSpeed !== undefined && data.inputs.topSpeed !== null && data.inputs.topSpeed > 0) {
-                window.playerTopSpeed = Math.max(window.playerTopSpeed || 0, Math.round(data.inputs.topSpeed));
-            } else if (currentLiveSpeed > 0) {
-                window.playerTopSpeed = Math.max(window.playerTopSpeed || 0, currentLiveSpeed);
-            }
+            // Read session top speed directly from server.js session tracking (playerLbData.maxSpeed or data.session)
+            const serverSessionTopSpeed = (playerLbData && playerLbData.maxSpeed > 0)
+                ? playerLbData.maxSpeed
+                : (data.session && data.session.topSpeed > 0 ? data.session.topSpeed : (data.inputs.topSpeed || 0));
 
-            if (window.playerTopSpeed > 0) {
-                try {
-                    localStorage.setItem('f1_session_top_speed', String(window.playerTopSpeed));
-                } catch (e) {}
-                if (data.session) {
-                    data.session.topSpeed = window.playerTopSpeed;
-                }
-                setText("top-speed", window.playerTopSpeed);
-                setText("panel-top-speed", `${window.playerTopSpeed} km/h`);
-                setText("hud-top-speed", `${window.playerTopSpeed} KM/H`);
+            const effectiveTopSpeed = Math.max(serverSessionTopSpeed, currentLiveSpeed);
+
+            if (effectiveTopSpeed > 0) {
+                window.playerTopSpeed = effectiveTopSpeed;
+                setText("top-speed", effectiveTopSpeed);
+                setText("panel-top-speed", `${effectiveTopSpeed} km/h`);
+                setText("hud-top-speed", `${effectiveTopSpeed} KM/H`);
             } else {
                 setText("hud-top-speed", "--");
             }
