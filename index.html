@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
     <title>FIA F1 Official Telemetry Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="f1-next-ui.css" />
+    <script src="audio-engineer.js"></script>
+    <script src="ddu-wheel.js"></script>
+    <script src="telemetry-analyzer.js"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,400;0,600;0,700;0,900;1,700&family=Roboto+Mono:wght@400;500;700;900&display=swap"
         rel="stylesheet" />
@@ -2512,6 +2516,9 @@
 </head>
 
 <body>
+    <!-- Top Glowing F1 Apex Line -->
+    <div class="f1-apex-line"></div>
+
     <!-- ══════════ BRANDING HEADER ══════════ -->
     <div class="rbr-branding-bar">
         <div class="rbr-brand-title">
@@ -2530,10 +2537,44 @@
                 </defs>
             </svg>
             <span class="rbr-team-name">ORACLE <span class="rbr-highlight-yellow">RED BULL</span> RACING</span>
-            <span class="rbr-telemetry-tag">RB20 • COMMAND CENTER</span>
+            <select id="theme-picker-select" class="theme-select-dropdown" onchange="switchF1Theme(this.value)" title="Switch Team Theme Color Palette">
+                <option value="redbull">Red Bull Racing</option>
+                <option value="ferrari">Scuderia Ferrari</option>
+                <option value="mercedes">Mercedes-AMG</option>
+                <option value="mclaren">McLaren F1</option>
+                <option value="astonmartin">Aston Martin</option>
+                <option value="stealth">Stealth Cyber</option>
+            </select>
+        </div>
+
+        <!-- 15-LED RPM Shift Light Bar Center -->
+        <div class="f1-shift-light-bar" id="hdr-shift-light-bar">
+            <div class="shift-led-cluster">
+                <div class="shift-led green" data-index="0"></div>
+                <div class="shift-led green" data-index="1"></div>
+                <div class="shift-led green" data-index="2"></div>
+                <div class="shift-led green" data-index="3"></div>
+                <div class="shift-led green" data-index="4"></div>
+                <div class="shift-led red" data-index="5"></div>
+                <div class="shift-led red" data-index="6"></div>
+                <div class="shift-led red" data-index="7"></div>
+                <div class="shift-led red" data-index="8"></div>
+                <div class="shift-led red" data-index="9"></div>
+                <div class="shift-led blue" data-index="10"></div>
+                <div class="shift-led blue" data-index="11"></div>
+                <div class="shift-led blue" data-index="12"></div>
+                <div class="shift-led purple" data-index="13"></div>
+                <div class="shift-led purple" data-index="14"></div>
+            </div>
+            <div class="drs-status-pill" id="hdr-drs-pill">DRS</div>
         </div>
 
         <div class="rbr-header-actions">
+            <!-- Audio Radio & Voice Engineer Toggle -->
+            <button id="btn-audio-mute" class="audio-toggle-btn" onclick="window.f1Audio.toggleMute()" title="Toggle Web Audio Radio & Voice Engineer">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                <span>RADIO ON</span>
+            </button>
             <button id="btn-refresh-session" class="rbr-tool-btn" onclick="refreshTelemetryConnection()"
                 title="Quick Refresh / Reconnect Telemetry">
                 <svg id="refresh-spinner-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13"
@@ -2627,6 +2668,12 @@
                     d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm1-13h-2v6h6v-2h-4z" />
             </svg>
             <span class="nav-label">Timing &amp; Radar</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('tab-ddu', this)" title="Formula 1 Cockpit Steering Wheel Display">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.46.04-.92.1-1.36L8.5 12l.9 3.6 2.6-1.3 2.6 1.3.9-3.6 4.4-1.36c.06.44.1.9.1 1.36 0 4.41-3.59 8-8 8zm0-10c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+            </svg>
+            <span class="nav-label">Cockpit DDU</span>
         </button>
         <button class="nav-btn" onclick="switchTab('tab-telemetry', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
@@ -3067,6 +3114,22 @@
                     </div>
                 </div>
                 <div class="map-wrapper">
+                    <!-- 3D Radar Interactive Camera Mode Bar -->
+                    <div class="radar-cam-controls">
+                        <button type="button" class="radar-cam-btn active" id="cam-btn-orbit" onclick="setRadarCameraMode('orbit')" title="Free Orbit God View">
+                            <span>🌐 ORBIT</span>
+                        </button>
+                        <button type="button" class="radar-cam-btn" id="cam-btn-follow" onclick="setRadarCameraMode('follow')" title="Follow Player Car">
+                            <span>🏎️ CHASE</span>
+                        </button>
+                        <button type="button" class="radar-cam-btn" id="cam-btn-top" onclick="setRadarCameraMode('top')" title="Top-Down 2D Circuit Map">
+                            <span>📐 2D TOP</span>
+                        </button>
+                        <button type="button" class="radar-cam-btn" onclick="fitTrackCamera()" title="Reset Track View & Zoom">
+                            <span>🔍 RESET</span>
+                        </button>
+                    </div>
+
                     <div id="track-map-container"></div>
                     <div id="map-label-layer" class="map-label-layer"></div>
                     <div class="map-zoom-controls">
@@ -3091,6 +3154,138 @@
                     <div class="map-overlay">
                         <span style="color: var(--text-muted)">Uplink: </span><span id="ws-status"
                             style="color: var(--fia-yellow)">CONNECTING</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB 1.5: COCKPIT STEERING WHEEL DDU MODE ── -->
+        <div id="tab-ddu" class="tab-content">
+            <div class="ddu-container" id="ddu-container">
+                <!-- DDU Top Bar -->
+                <div class="ddu-top-bar">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight:800; color:var(--theme-accent); background:var(--theme-badge-bg); border:1px solid var(--theme-accent); padding:4px 10px; border-radius:4px;" id="ddu-pos">P--</span>
+                        <span style="font-size:0.85rem; font-weight:700; color:#FFF; font-family:'Roboto Mono', monospace;" id="ddu-lap">LAP 0/0</span>
+                    </div>
+
+                    <!-- 15-LED Shift Lights Center -->
+                    <div class="f1-shift-light-bar" style="margin: 0 auto;">
+                        <div class="shift-led-cluster">
+                            <div class="shift-led green" data-index="0"></div>
+                            <div class="shift-led green" data-index="1"></div>
+                            <div class="shift-led green" data-index="2"></div>
+                            <div class="shift-led green" data-index="3"></div>
+                            <div class="shift-led green" data-index="4"></div>
+                            <div class="shift-led red" data-index="5"></div>
+                            <div class="shift-led red" data-index="6"></div>
+                            <div class="shift-led red" data-index="7"></div>
+                            <div class="shift-led red" data-index="8"></div>
+                            <div class="shift-led red" data-index="9"></div>
+                            <div class="shift-led blue" data-index="10"></div>
+                            <div class="shift-led blue" data-index="11"></div>
+                            <div class="shift-led blue" data-index="12"></div>
+                            <div class="shift-led purple" data-index="13"></div>
+                            <div class="shift-led purple" data-index="14"></div>
+                        </div>
+                        <div class="drs-status-pill" id="ddu-drs-status">DRS OFF</div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button type="button" class="rbr-tool-btn" onclick="toggleDDUFullscreen()" title="Toggle Fullscreen Cockpit DDU">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                            </svg>
+                            <span>FULLSCREEN</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DDU Grid Main (Left, Center, Right) -->
+                <div class="ddu-grid-main">
+                    <!-- LEFT COLUMN: Tyres & Brakes -->
+                    <div class="ddu-panel-card">
+                        <div class="ddu-card-title">
+                            <span>🔥 TYRE THERMALS &amp; WEAR</span>
+                            <span id="ddu-compound-badge" style="color:var(--rbr-yellow); font-family:'Roboto Mono', monospace;">SOFT</span>
+                        </div>
+                        <div class="ddu-tyre-grid">
+                            <div class="ddu-tyre-box" id="ddu-tyre-box-fl">
+                                <span style="font-size:0.6rem; color:var(--text-muted); font-weight:700;">FL</span>
+                                <span class="ddu-tyre-temp" id="ddu-tyre-temp-fl">--°C</span>
+                                <span class="ddu-tyre-press" id="ddu-tyre-press-fl">-- PSI</span>
+                                <span class="ddu-tyre-wear" id="ddu-tyre-wear-fl">WEAR: 0%</span>
+                            </div>
+                            <div class="ddu-tyre-box" id="ddu-tyre-box-fr">
+                                <span style="font-size:0.6rem; color:var(--text-muted); font-weight:700;">FR</span>
+                                <span class="ddu-tyre-temp" id="ddu-tyre-temp-fr">--°C</span>
+                                <span class="ddu-tyre-press" id="ddu-tyre-press-fr">-- PSI</span>
+                                <span class="ddu-tyre-wear" id="ddu-tyre-wear-fr">WEAR: 0%</span>
+                            </div>
+                            <div class="ddu-tyre-box" id="ddu-tyre-box-rl">
+                                <span style="font-size:0.6rem; color:var(--text-muted); font-weight:700;">RL</span>
+                                <span class="ddu-tyre-temp" id="ddu-tyre-temp-rl">--°C</span>
+                                <span class="ddu-tyre-press" id="ddu-tyre-press-rl">-- PSI</span>
+                                <span class="ddu-tyre-wear" id="ddu-tyre-wear-rl">WEAR: 0%</span>
+                            </div>
+                            <div class="ddu-tyre-box" id="ddu-tyre-box-rr">
+                                <span style="font-size:0.6rem; color:var(--text-muted); font-weight:700;">RR</span>
+                                <span class="ddu-tyre-temp" id="ddu-tyre-temp-rr">--°C</span>
+                                <span class="ddu-tyre-press" id="ddu-tyre-press-rr">-- PSI</span>
+                                <span class="ddu-tyre-wear" id="ddu-tyre-wear-rr">WEAR: 0%</span>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); padding:8px; border-radius:4px; margin-top:4px;">
+                            <span style="font-size:0.68rem; color:var(--text-muted); font-weight:700;">BRAKE BIAS</span>
+                            <span style="font-family:'Roboto Mono',monospace; font-size:1.05rem; font-weight:800; color:var(--theme-accent);" id="ddu-bbias">54.0%</span>
+                        </div>
+                    </div>
+
+                    <!-- CENTER COLUMN: Gear, Speed, RPM, Delta -->
+                    <div class="ddu-center-col">
+                        <div class="ddu-gear-box" id="ddu-gear">N</div>
+                        <div class="ddu-speed-huge" id="ddu-speed">0</div>
+                        <div class="ddu-speed-unit">KM / H</div>
+
+                        <div class="ddu-delta-banner">
+                            <span style="font-size:0.7rem; color:var(--text-muted); font-weight:700;" id="ddu-delta-lbl">DELTA (GHOST)</span>
+                            <span class="ddu-delta-val" id="ddu-delta-val">±0.000</span>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: ERS, Fuel & Intervals -->
+                    <div class="ddu-panel-card">
+                        <div class="ddu-card-title">
+                            <span>⚡ ERS &amp; FUEL STRATEGY</span>
+                            <span id="ddu-ers-mode" style="color:var(--fia-cyan); font-family:'Roboto Mono', monospace;">MED</span>
+                        </div>
+
+                        <div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:4px;">
+                                <span style="color:var(--text-muted);">ERS BATTERY (SOC):</span>
+                                <span id="ddu-ers-soc" style="font-family:'Roboto Mono',monospace; font-weight:800; color:#FFF;">100%</span>
+                            </div>
+                            <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+                                <div id="ddu-ers-bar" style="width:100%; height:100%; background:linear-gradient(90deg, #00F0FF, #00E676); transition:width 0.2s;"></div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); padding:8px; border-radius:4px; margin-top:2px;">
+                            <span style="font-size:0.68rem; color:var(--text-muted); font-weight:700;">FUEL DELTA</span>
+                            <span style="font-family:'Roboto Mono',monospace; font-size:1.05rem; font-weight:800; color:var(--fia-green);" id="ddu-fuel-delta">+0.00 LAPS</span>
+                        </div>
+
+                        <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:6px; margin-top:4px; display:flex; flex-direction:column; gap:4px;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.72rem;">
+                                <span style="color:var(--text-muted);">CAR AHEAD:</span>
+                                <span id="ddu-car-ahead" style="font-family:'Roboto Mono',monospace; font-weight:700; color:#FFF;">LEADER (+0.000)</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.72rem;">
+                                <span style="color:var(--text-muted);">CAR BEHIND:</span>
+                                <span id="ddu-car-behind" style="font-family:'Roboto Mono',monospace; font-weight:700; color:#93C5FD;">NONE (--)</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3169,17 +3364,19 @@
                     <span class="val" id="drs">CLOSED</span>
                 </div>
 
-                <!-- Live Input Trace Canvas -->
+                <!-- Real-time 60fps Multi-Trace Telemetry Stream (Speed, Throttle, Brake, RPM, Gear) -->
                 <div class="input-trace-container" style="margin-top: 10px;">
-                    <div class="panel-header" style="font-size: 0.72rem; margin-bottom: 4px;">
-                        <span>Live Input Trace (10s)</span>
-                        <div style="display:flex; gap:8px; font-size:0.65rem; font-family:'Roboto Mono',monospace;">
-                            <span style="color:var(--fia-green);">● Throttle</span>
-                            <span style="color:var(--f1-red);">● Brake</span>
+                    <div class="panel-header" style="font-size: 0.72rem; margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>60Hz Multi-Trace Telemetry Comparator</span>
+                        <div style="display:flex; gap:10px; font-size:0.65rem; font-family:'Roboto Mono',monospace;">
+                            <span style="color:#00F0FF; font-weight:700;">● Speed</span>
+                            <span style="color:#00E676; font-weight:700;">● Throttle</span>
+                            <span style="color:#FF1E00; font-weight:700;">● Brake</span>
                         </div>
                     </div>
-                    <canvas id="input-trace-canvas"
-                        style="width: 100%; height: 75px; background: rgba(0,0,0,0.3); border-radius: 6px; border: 1px solid var(--f1-border);"></canvas>
+                    <canvas id="telemetry-trace-canvas"
+                        style="width: 100%; height: 110px; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid var(--f1-border); display:block;"></canvas>
+                    <canvas id="input-trace-canvas" style="display:none;"></canvas>
                 </div>
             </div>
 
@@ -5768,12 +5965,55 @@
             requestedTrackId: null
         };
 
+        let radarCameraMode = 'orbit';
+
+        function setRadarCameraMode(mode) {
+            radarCameraMode = mode;
+            ['orbit', 'follow', 'top'].forEach(m => {
+                const btn = document.getElementById(`cam-btn-${m}`);
+                if (btn) btn.classList.toggle('active', m === mode);
+            });
+            if (mode === 'top') {
+                camera.rotation.set(-Math.PI / 2, 0, 0);
+            }
+            if (mode === 'orbit' || mode === 'top') {
+                fitTrackCamera();
+            }
+        }
+
+        function fitTrackCamera() {
+            trackZoom = 1;
+            if (currentTrackMap.trackPoints && currentTrackMap.trackPoints.length > 0) {
+                let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+                currentTrackMap.trackPoints.forEach(p => {
+                    if (p.x < minX) minX = p.x;
+                    if (p.x > maxX) maxX = p.x;
+                    if (p.z < minZ) minZ = p.z;
+                    if (p.z > maxZ) maxZ = p.z;
+                });
+                trackViewCenter.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2);
+                trackBaseViewSize = Math.max((maxX - minX), (maxZ - minZ)) / 2 + 200;
+            } else {
+                trackViewCenter.set(0, 0, 0);
+                trackBaseViewSize = 1200;
+            }
+            updateTrackCameraBounds();
+        }
+
         /**
          * Main render loop for Three.js. Requests the next animation frame and 
          * redraws the scene and dynamic map overlays (driver labels).
          */
         function animate() {
             requestAnimationFrame(animate);
+            if (radarCameraMode === 'follow' && latestMapData && latestMapData.playerIndex !== undefined) {
+                const pIdx = latestMapData.playerIndex;
+                const pMesh = carMeshes[pIdx];
+                if (pMesh && pMesh.visible) {
+                    trackViewCenter.lerp(new THREE.Vector3(pMesh.position.x, 0, pMesh.position.z), 0.08);
+                    updateTrackCameraBounds();
+                }
+            }
             renderer.render(scene, camera);
             updateMapOverlays();
         }
@@ -8568,6 +8808,43 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         mesh.renderOrder = 1;
                     }
                 }
+            }
+
+            // ── Feed Next-Gen F1 Cockpit DDU, Audio Engineer & Telemetry Analyzer Modules ──
+            if (window.f1Ddu) window.f1Ddu.updateDDU(data);
+            if (window.f1Audio) window.f1Audio.processTelemetry(data);
+            if (window.f1Analyzer) window.f1Analyzer.pushTelemetrySample(data);
+        }
+
+        /* ── Navigation Tab Switcher ── */
+        function switchTab(tabId, btn) {
+            document.querySelectorAll(".tab-content").forEach(tab => {
+                tab.classList.remove("active");
+            });
+            document.querySelectorAll(".nav-bar .nav-btn").forEach(b => {
+                b.classList.remove("active");
+            });
+
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) {
+                targetTab.classList.add("active");
+            }
+            if (btn) {
+                btn.classList.add("active");
+            }
+
+            if (tabId === "tab-radar") {
+                resizeThreeJS();
+            } else if (tabId === "tab-telemetry") {
+                if (window.f1Analyzer) window.f1Analyzer.resizeCanvases();
+                drawGGraph();
+            } else if (tabId === "tab-ddu") {
+                if (window.f1Ddu && window.lastTelemetryData) {
+                    window.f1Ddu.updateDDU(window.lastTelemetryData);
+                }
+            } else if (tabId === "tab-session-history" && window.lastTelemetryData) {
+                drawPaceChart(window.lastTelemetryData);
+                updateRivalComparison(window.lastTelemetryData);
             }
         }
 
