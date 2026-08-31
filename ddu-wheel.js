@@ -10,12 +10,160 @@ class F1DduEngine {
         this.ledElements = [];
         this.maxRpm = 13500;
         this.idleRpm = 4000;
+        this.personalBestSectors = { s1: null, s2: null, s3: null };
+        this.sessionFastestSectors = { s1: null, s2: null, s3: null };
         this.initDdu();
     }
 
     initDdu() {
         // Cache LED DOM elements
         this.ledElements = Array.from(document.querySelectorAll('.shift-led'));
+    }
+
+    /**
+     * Formats milliseconds or seconds to sector time: "24.185"
+     */
+    formatSectorTime(val) {
+        if (!val || val <= 0) return '--.---';
+        const sec = val > 500 ? val / 1000 : val;
+        return Number(sec).toFixed(3);
+    }
+
+    /**
+     * Formats sector delta: "Δ +0.142" or "Δ -0.085"
+     */
+    formatSectorDelta(deltaSec) {
+        if (deltaSec === null || deltaSec === undefined || !Number.isFinite(deltaSec)) return 'Δ ±0.000';
+        const prefix = deltaSec > 0 ? '+' : '';
+        return `Δ ${prefix}${Number(deltaSec).toFixed(3)}`;
+    }
+
+    /**
+     * Updates Sector Times and Comparison Delta Pod
+     */
+    updateSectors(data) {
+        if (!data || !data.lap) return;
+
+        const lapData = data.lap || {};
+        const activeSector = lapData.sector !== undefined ? lapData.sector : (lapData.currentSector || 1);
+
+        // Raw sector times from telemetry
+        const s1Raw = lapData.s1 || lapData.sector1Ms || lapData.sector1TimeInMS || lapData.s1Time || 0;
+        const s2Raw = lapData.s2 || lapData.sector2Ms || lapData.sector2TimeInMS || lapData.s2Time || 0;
+        const s3Raw = lapData.s3 || lapData.sector3Ms || lapData.sector3TimeInMS || lapData.s3Time || 0;
+
+        // Best sector times (Personal Best)
+        if (s1Raw > 0 && (!this.personalBestSectors.s1 || s1Raw < this.personalBestSectors.s1)) this.personalBestSectors.s1 = s1Raw;
+        if (s2Raw > 0 && (!this.personalBestSectors.s2 || s2Raw < this.personalBestSectors.s2)) this.personalBestSectors.s2 = s2Raw;
+        if (s3Raw > 0 && (!this.personalBestSectors.s3 || s3Raw < this.personalBestSectors.s3)) this.personalBestSectors.s3 = s3Raw;
+
+        const bestS1Raw = lapData.bestS1 || lapData.bestSector1Ms || this.personalBestSectors.s1 || (s1Raw > 0 ? s1Raw : null);
+        const bestS2Raw = lapData.bestS2 || lapData.bestSector2Ms || this.personalBestSectors.s2 || (s2Raw > 0 ? s2Raw : null);
+        const bestS3Raw = lapData.bestS3 || lapData.bestSector3Ms || this.personalBestSectors.s3 || (s3Raw > 0 ? s3Raw : null);
+
+        // Session fastest (Session / Record Benchmark)
+        const sessionFastestS1 = lapData.sessionFastestS1 || this.personalBestSectors.s1;
+        const sessionFastestS2 = lapData.sessionFastestS2 || this.personalBestSectors.s2;
+        const sessionFastestS3 = lapData.sessionFastestS3 || this.personalBestSectors.s3;
+
+        const sectors = [
+            { id: 's1', num: 1, raw: s1Raw, best: bestS1Raw, sessionFastest: sessionFastestS1 },
+            { id: 's2', num: 2, raw: s2Raw, best: bestS2Raw, sessionFastest: sessionFastestS2 },
+            { id: 's3', num: 3, raw: s3Raw, best: bestS3Raw, sessionFastest: sessionFastestS3 }
+        ];
+
+        sectors.forEach(s => {
+            const cardEl = document.getElementById(`ddu-sec-card-${s.num}`);
+            const timeEl = document.getElementById(`ddu-s1-time`.replace('s1', s.id));
+            const deltaEl = document.getElementById(`ddu-s1-delta`.replace('s1', s.id));
+            const statusEl = document.getElementById(`ddu-s1-status`.replace('s1', s.id));
+            const targetEl = document.getElementById(`ddu-s1-target`.replace('s1', s.id));
+
+            const isCurrentActive = (activeSector === s.num);
+            const hasTime = s.raw > 0;
+
+            if (cardEl) {
+                cardEl.classList.remove('active-sector', 'purple-sector', 'green-sector', 'yellow-sector');
+                if (isCurrentActive) cardEl.classList.add('active-sector');
+            }
+
+            if (timeEl) {
+                timeEl.textContent = this.formatSectorTime(s.raw);
+            }
+
+            if (targetEl) {
+                targetEl.textContent = s.best ? `BEST: ${this.formatSectorTime(s.best)}` : 'BEST: --.---';
+            }
+
+            if (hasTime && s.best) {
+                const sSec = s.raw > 500 ? s.raw / 1000 : s.raw;
+                const bSec = s.best > 500 ? s.best / 1000 : s.best;
+                const delta = sSec - bSec;
+
+                if (deltaEl) {
+                    deltaEl.textContent = this.formatSectorDelta(delta);
+                    deltaEl.style.color = delta <= 0 ? 'var(--fia-green)' : 'var(--fia-red)';
+                }
+
+                if (statusEl) {
+                    statusEl.className = 'ddu-sec-status-pill';
+                    if (s.sessionFastest && s.raw <= s.sessionFastest) {
+                        statusEl.classList.add('purple');
+                        statusEl.textContent = 'PURPLE';
+                        if (cardEl) cardEl.classList.add('purple-sector');
+                    } else if (delta <= 0) {
+                        statusEl.classList.add('green');
+                        statusEl.textContent = 'PB';
+                        if (cardEl) cardEl.classList.add('green-sector');
+                    } else {
+                        statusEl.classList.add('yellow');
+                        statusEl.textContent = '+SLOW';
+                        if (cardEl) cardEl.classList.add('yellow-sector');
+                    }
+                }
+            } else {
+                if (deltaEl) {
+                    deltaEl.textContent = isCurrentActive ? 'IN SECTOR' : 'Δ ±0.000';
+                    deltaEl.style.color = isCurrentActive ? 'var(--fia-cyan)' : 'var(--text-muted)';
+                }
+                if (statusEl) {
+                    statusEl.className = 'ddu-sec-status-pill';
+                    if (isCurrentActive) {
+                        statusEl.classList.add('active');
+                        statusEl.textContent = 'LIVE';
+                    } else {
+                        statusEl.textContent = '--';
+                    }
+                }
+            }
+        });
+
+        // Theoretical Optimal Lap (S1+S2+S3)
+        const optEl = document.getElementById('ddu-opt-lap');
+        const bestEl = document.getElementById('ddu-best-lap');
+        const pbS1 = this.personalBestSectors.s1;
+        const pbS2 = this.personalBestSectors.s2;
+        const pbS3 = this.personalBestSectors.s3;
+
+        if (optEl && pbS1 && pbS2 && pbS3) {
+            const optTotalMs = (pbS1 > 500 ? pbS1 : pbS1 * 1000) +
+                               (pbS2 > 500 ? pbS2 : pbS2 * 1000) +
+                               (pbS3 > 500 ? pbS3 : pbS3 * 1000);
+            const m = Math.floor(optTotalMs / 60000);
+            const s = Math.floor((optTotalMs % 60000) / 1000);
+            const ms = Math.floor(optTotalMs % 1000);
+            optEl.textContent = `${m}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+        }
+
+        if (bestEl) {
+            const bestMs = lapData.bestLapTimeMs || lapData.bestMs;
+            if (bestMs && bestMs > 0) {
+                const m = Math.floor(bestMs / 60000);
+                const s = Math.floor((bestMs % 60000) / 1000);
+                const ms = Math.floor(bestMs % 1000);
+                bestEl.textContent = `${m}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+            }
+        }
     }
 
     /**
@@ -212,6 +360,9 @@ class F1DduEngine {
                 dduContainer.style.boxShadow = '0 0 35px var(--theme-glow)';
             }
         }
+
+        // 11. 3-Sector Timing & Live Delta Comparator
+        this.updateSectors(data);
     }
 }
 

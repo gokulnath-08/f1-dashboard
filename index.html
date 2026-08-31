@@ -3246,6 +3246,50 @@
                             <span style="font-size:0.7rem; color:var(--text-muted); font-weight:700;" id="ddu-delta-lbl">DELTA (GHOST)</span>
                             <span class="ddu-delta-val" id="ddu-delta-val">±0.000</span>
                         </div>
+
+                        <!-- 3-Sector Live Timing & Comparison Pod -->
+                        <div class="ddu-sectors-container" id="ddu-sectors-container">
+                            <!-- Sector 1 -->
+                            <div class="ddu-sector-card" id="ddu-sec-card-1">
+                                <div class="ddu-sec-hdr">
+                                    <span class="ddu-sec-tag">SEC 1</span>
+                                    <span class="ddu-sec-status-pill" id="ddu-s1-status">--</span>
+                                </div>
+                                <div class="ddu-sec-time" id="ddu-s1-time">--.---</div>
+                                <div class="ddu-sec-delta" id="ddu-s1-delta">Δ ±0.000</div>
+                                <div class="ddu-sec-target" id="ddu-s1-target">BEST: --.---</div>
+                            </div>
+
+                            <!-- Sector 2 -->
+                            <div class="ddu-sector-card" id="ddu-sec-card-2">
+                                <div class="ddu-sec-hdr">
+                                    <span class="ddu-sec-tag">SEC 2</span>
+                                    <span class="ddu-sec-status-pill" id="ddu-s2-status">--</span>
+                                </div>
+                                <div class="ddu-sec-time" id="ddu-s2-time">--.---</div>
+                                <div class="ddu-sec-delta" id="ddu-s2-delta">Δ ±0.000</div>
+                                <div class="ddu-sec-target" id="ddu-s2-target">BEST: --.---</div>
+                            </div>
+
+                            <!-- Sector 3 -->
+                            <div class="ddu-sector-card" id="ddu-sec-card-3">
+                                <div class="ddu-sec-hdr">
+                                    <span class="ddu-sec-tag">SEC 3</span>
+                                    <span class="ddu-sec-status-pill" id="ddu-s3-status">--</span>
+                                </div>
+                                <div class="ddu-sec-time" id="ddu-s3-time">--.---</div>
+                                <div class="ddu-sec-delta" id="ddu-s3-delta">Δ ±0.000</div>
+                                <div class="ddu-sec-target" id="ddu-s3-target">BEST: --.---</div>
+                            </div>
+                        </div>
+
+                        <!-- Theoretical Optimal vs Best Comparison Mini-Banner -->
+                        <div class="ddu-optimal-banner">
+                            <div style="display:flex; justify-content:space-between; width:100%; font-size:0.68rem; font-family:'Roboto Mono',monospace;">
+                                <span style="color:var(--text-muted);">OPTIMAL (S1+S2+S3): <strong id="ddu-opt-lap" style="color:var(--fia-purple);">--:--.---</strong></span>
+                                <span style="color:var(--text-muted);">BEST: <strong id="ddu-best-lap" style="color:var(--fia-green);">--:--.---</strong></span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- RIGHT COLUMN: ERS, Fuel & Intervals -->

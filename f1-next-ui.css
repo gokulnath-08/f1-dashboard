@@ -324,7 +324,7 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: var(--radius-sm);
     padding: 8px 12px;
-    margin-top: 12px;
+    margin-top: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -334,6 +334,142 @@
 .ddu-delta-val {
     font-size: 1.6rem;
     font-weight: 800;
+}
+
+/* ══════════════════ DDU SECTORS & COMPARISON POD ══════════════════ */
+.ddu-sectors-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    max-width: 440px;
+    margin-top: 10px;
+}
+
+.ddu-sector-card {
+    background: rgba(4, 10, 24, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.ddu-sector-card.active-sector {
+    border-color: var(--fia-cyan);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+    background: rgba(0, 240, 255, 0.08);
+}
+
+.ddu-sector-card.purple-sector {
+    border-color: var(--fia-purple);
+    box-shadow: 0 0 14px var(--fia-purple-glow);
+    background: rgba(216, 180, 254, 0.08);
+}
+
+.ddu-sector-card.green-sector {
+    border-color: var(--fia-green);
+    box-shadow: 0 0 14px var(--fia-green-glow);
+    background: rgba(0, 230, 118, 0.08);
+}
+
+.ddu-sector-card.yellow-sector {
+    border-color: var(--fia-yellow);
+    background: rgba(255, 209, 0, 0.05);
+}
+
+.ddu-sec-hdr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 2px;
+}
+
+.ddu-sec-tag {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--text-muted);
+}
+
+.ddu-sec-status-pill {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.ddu-sec-status-pill.purple {
+    background: rgba(216, 180, 254, 0.25);
+    color: var(--fia-purple);
+    border: 1px solid var(--fia-purple);
+}
+
+.ddu-sec-status-pill.green {
+    background: rgba(0, 230, 118, 0.2);
+    color: var(--fia-green);
+    border: 1px solid var(--fia-green);
+}
+
+.ddu-sec-status-pill.yellow {
+    background: rgba(255, 209, 0, 0.2);
+    color: var(--fia-yellow);
+    border: 1px solid var(--fia-yellow);
+}
+
+.ddu-sec-status-pill.active {
+    background: rgba(0, 240, 255, 0.2);
+    color: var(--fia-cyan);
+    border: 1px solid var(--fia-cyan);
+    animation: activeSectorPulse 1s infinite alternate;
+}
+
+@keyframes activeSectorPulse {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+}
+
+.ddu-sec-time {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: -0.5px;
+}
+
+.ddu-sec-delta {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-top: 1px;
+}
+
+.ddu-sec-target {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.ddu-optimal-banner {
+    width: 100%;
+    max-width: 440px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-sm);
+    padding: 5px 8px;
+    margin-top: 6px;
 }
 
 /* DDU Side Modules */
@@ -506,6 +642,27 @@
     .ddu-tyre-press, .ddu-tyre-wear {
         font-size: 0.6rem;
     }
+    .ddu-sectors-container {
+        gap: 4px;
+        max-width: 100%;
+        margin-top: 6px;
+    }
+    .ddu-sector-card {
+        padding: 4px 5px;
+    }
+    .ddu-sec-time {
+        font-size: 0.84rem;
+    }
+    .ddu-sec-delta {
+        font-size: 0.62rem;
+    }
+    .ddu-sec-target {
+        font-size: 0.52rem;
+    }
+    .ddu-optimal-banner {
+        padding: 4px 6px;
+        margin-top: 4px;
+    }
 }
 
 @media (max-width: 950px) and (orientation: landscape) {
@@ -543,6 +700,27 @@
     }
     .ddu-delta-val {
         font-size: 1.1rem;
+    }
+    .ddu-sectors-container {
+        gap: 4px;
+        max-width: 100%;
+        margin-top: 4px;
+    }
+    .ddu-sector-card {
+        padding: 3px 4px;
+    }
+    .ddu-sec-time {
+        font-size: 0.78rem;
+    }
+    .ddu-sec-delta {
+        font-size: 0.58rem;
+    }
+    .ddu-sec-target {
+        font-size: 0.48rem;
+    }
+    .ddu-optimal-banner {
+        padding: 3px 4px;
+        margin-top: 3px;
     }
     .ddu-panel-card {
         padding: 6px;
