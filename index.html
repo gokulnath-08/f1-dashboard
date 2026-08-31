@@ -7,7 +7,6 @@
     <title>FIA F1 Official Telemetry Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link rel="stylesheet" href="f1-next-ui.css" />
-    <script src="audio-engineer.js"></script>
     <script src="ddu-wheel.js"></script>
     <script src="telemetry-analyzer.js"></script>
     <link
@@ -1166,22 +1165,41 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            z-index: 14;
+            z-index: 100 !important;
+            pointer-events: auto !important;
         }
 
         .map-zoom-controls button {
-            width: 34px;
-            height: 34px;
+            width: 36px;
+            height: 36px;
             border-radius: 8px;
             border: 1px solid var(--f1-border);
-            background: var(--f1-panel);
-            color: var(--text-main);
-            font-size: 1.2rem;
+            background: rgba(10, 22, 44, 0.95);
+            color: #FFFFFF;
+            font-size: 1.3rem;
+            font-weight: 700;
             cursor: pointer;
+            pointer-events: auto !important;
+            position: relative;
+            z-index: 101 !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+            user-select: none;
         }
 
         .map-zoom-controls button:hover {
             background: var(--f1-border-strong);
+            border-color: var(--theme-accent, #FFD100);
+            color: var(--theme-accent, #FFD100);
+            transform: scale(1.08);
+            box-shadow: 0 0 12px rgba(255, 209, 0, 0.4);
+        }
+
+        .map-zoom-controls button:active {
+            transform: scale(0.95);
         }
 
         .map-overlay {
@@ -2545,28 +2563,6 @@
                 <option value="astonmartin">Aston Martin</option>
                 <option value="stealth">Stealth Cyber</option>
             </select>
-        </div>
-
-        <!-- 15-LED RPM Shift Light Bar Center -->
-        <div class="f1-shift-light-bar" id="hdr-shift-light-bar">
-            <div class="shift-led-cluster">
-                <div class="shift-led green" data-index="0"></div>
-                <div class="shift-led green" data-index="1"></div>
-                <div class="shift-led green" data-index="2"></div>
-                <div class="shift-led green" data-index="3"></div>
-                <div class="shift-led green" data-index="4"></div>
-                <div class="shift-led red" data-index="5"></div>
-                <div class="shift-led red" data-index="6"></div>
-                <div class="shift-led red" data-index="7"></div>
-                <div class="shift-led red" data-index="8"></div>
-                <div class="shift-led red" data-index="9"></div>
-                <div class="shift-led blue" data-index="10"></div>
-                <div class="shift-led blue" data-index="11"></div>
-                <div class="shift-led blue" data-index="12"></div>
-                <div class="shift-led purple" data-index="13"></div>
-                <div class="shift-led purple" data-index="14"></div>
-            </div>
-            <div class="drs-status-pill" id="hdr-drs-pill">DRS</div>
         </div>
 
         <div class="rbr-header-actions">

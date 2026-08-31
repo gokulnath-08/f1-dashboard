@@ -523,6 +523,47 @@
     box-shadow: 0 0 10px var(--theme-glow);
 }
 
+/* ══════════════════ 3D RADAR CAMERA CONTROLS ══════════════════ */
+.radar-cam-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(10, 22, 44, 0.6);
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--f1-border-subtle);
+}
+
+.radar-cam-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.radar-cam-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #FFF;
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.radar-cam-btn.active {
+    background: var(--theme-badge-bg);
+    border-color: var(--theme-accent);
+    color: var(--theme-accent);
+    box-shadow: 0 0 10px var(--theme-glow);
+}
+
 /* ══════════════════ FULLSCREEN HUD OVERLAY ══════════════════ */
 :fullscreen .ddu-container {
     border-radius: 0 !important;
