@@ -2026,6 +2026,15 @@
             pointer-events: auto;
         }
 
+        @keyframes spinSync {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .spin-sync svg {
+            animation: spinSync 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
         #pb-badge {
             position: fixed;
             top: 70px;
@@ -2599,6 +2608,10 @@
                         <span class="label">Race Distance</span>
                         <span class="val" id="race-dist" style="font-size: 1.05rem">-- km</span>
                     </div>
+                    <div class="data-row">
+                        <span class="label">Top Speed</span>
+                        <span class="val" id="panel-top-speed" style="font-size: 1.05rem; color: var(--fia-green); font-weight: bold; font-family: 'Roboto Mono', monospace;">-- km/h</span>
+                    </div>
                 </div>
 
                 <div style="
@@ -2845,29 +2858,54 @@
                             <option value="">Load Track...</option>
                         </select>
                     </div>
-                    <button id="syncbttn" onclick="syncTrackLines()" style="
-                            background: rgba(255, 255, 255, 0.1);
-                            border: none;
-                            color: white;
-                            width: 32px;
-                            height: 32px;
-                            border-radius: 8px;
-                            cursor: pointer;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            backdrop-filter: blur(5px);
-                            z-index: 10;
-                            transition: background 0.2s;
-                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'"
-                        onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'"
-                        title="Sync Track Lines from Telemetry">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20"
-                            fill="currentColor">
-                            <path
-                                d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" />
-                        </svg>
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <button id="syncbttn" onclick="syncTrackLines()" style="
+                                background: rgba(255, 255, 255, 0.1);
+                                border: 1px solid rgba(255, 255, 255, 0.15);
+                                color: white;
+                                width: 32px;
+                                height: 32px;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                backdrop-filter: blur(5px);
+                                z-index: 10;
+                                transition: all 0.2s ease;
+                            " onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'"
+                            onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'"
+                            title="Sync Track Lines from Telemetry">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
+                                fill="currentColor">
+                                <path
+                                    d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" />
+                            </svg>
+                        </button>
+                        <button id="finalizebttn" onclick="toggleFinalizeTrack()" style="
+                                background: rgba(255, 255, 255, 0.1);
+                                border: 1px solid rgba(255, 255, 255, 0.15);
+                                color: white;
+                                width: 32px;
+                                height: 32px;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                backdrop-filter: blur(5px);
+                                z-index: 10;
+                                transition: all 0.2s ease;
+                            " onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'"
+                            onmouseout="this.style.background=this.classList.contains('finalized') ? 'rgba(0, 255, 102, 0.2)' : 'rgba(255, 255, 255, 0.1)'"
+                            title="Finalize Track Map (Lock lines & stop auto-sync)">
+                            <svg id="finalize-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
+                                fill="currentColor">
+                                <path id="finalize-path"
+                                    d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="map-wrapper">
                     <div id="track-map-container"></div>
@@ -2885,6 +2923,7 @@
                         <div class="hud-chip"><span class="hud-lbl">POS</span><span class="hud-val" id="hud-pos" style="color:var(--rbr-yellow);">P--</span></div>
                         <div class="hud-chip"><span class="hud-lbl">LAP</span><span class="hud-val" id="hud-lap">--:--.---</span></div>
                         <div class="hud-chip"><span class="hud-lbl">GAP</span><span class="hud-val" id="hud-gap" style="color:var(--fia-green);">+0.000</span></div>
+                        <div class="hud-chip"><span class="hud-lbl">TOP SPD</span><span class="hud-val" id="hud-top-speed" style="color:var(--fia-green);">--</span></div>
                     </div>
                     <div class="map-overlay">
                         <span style="color: var(--text-muted)">Uplink: </span><span id="ws-status"
@@ -2905,6 +2944,9 @@
                         <div style="display: flex; align-items: baseline; gap: 4px;">
                             <span class="val val-giant highlight" id="speed">0</span>
                             <span style="font-size: 0.75rem; color: var(--text-muted);">KM/H</span>
+                        </div>
+                        <div style="margin-top: 4px; font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.5px;">
+                            TOP: <span id="top-speed" style="color: var(--fia-green); font-weight: bold; font-family: 'Roboto Mono', monospace;">0</span> KM/H
                         </div>
                     </div>
                     <div class="data-row" style="flex-direction: column; align-items: center; justify-content: center; padding: 12px;">
@@ -5186,13 +5228,14 @@
 
         /**
          * Creates a visual sector line overlay for the track map.
+         * Rendered as a square-shaped marker across the track.
          */
         function createSectorLine(color) {
-            const geometry = new THREE.PlaneGeometry(60, 8);
+            const geometry = new THREE.PlaneGeometry(24, 24);
             const material = new THREE.MeshBasicMaterial({
                 color: color,
                 transparent: true,
-                opacity: 0.9,
+                opacity: 0.95,
                 side: THREE.DoubleSide,
                 blending: THREE.AdditiveBlending,
             });
@@ -5208,6 +5251,66 @@
         const sector1LineMesh = createSectorLine(0xff00ff); // Purple
         const sector2LineMesh = createSectorLine(0x00ffff); // Cyan
         const customSectorMeshes = [];
+        const drsZoneMeshes = [];
+
+        const OFFICIAL_DRS_ZONES = {
+            // Melbourne (Albert Park) - 3 zones
+            0:  [{ start: 0.96, end: 0.12, det: 0.91 }, { start: 0.22, end: 0.34, det: 0.18 }, { start: 0.53, end: 0.65, det: 0.49 }],
+            // Shanghai - 2 zones
+            2:  [{ start: 0.95, end: 0.12, det: 0.90 }, { start: 0.58, end: 0.78, det: 0.54 }],
+            // Bahrain (Sakhir) - 3 zones
+            3:  [{ start: 0.96, end: 0.13, det: 0.91 }, { start: 0.22, end: 0.34, det: 0.18 }, { start: 0.60, end: 0.72, det: 0.56 }],
+            // Catalunya (Barcelona) - 2 zones
+            4:  [{ start: 0.97, end: 0.13, det: 0.92 }, { start: 0.48, end: 0.64, det: 0.45 }],
+            // Monaco - 1 zone (pit straight)
+            5:  [{ start: 0.95, end: 0.08, det: 0.91 }],
+            // Montreal (Canada) - 2 zones: hairpin to T1 + back straight
+            6:  [{ start: 0.93, end: 0.09, det: 0.88 }, { start: 0.22, end: 0.40, det: 0.18 }],
+            // Silverstone - 2 zones
+            7:  [{ start: 0.28, end: 0.42, det: 0.24 }, { start: 0.68, end: 0.83, det: 0.64 }],
+            // Hungaroring - 2 zones
+            9:  [{ start: 0.96, end: 0.12, det: 0.91 }, { start: 0.16, end: 0.26, det: 0.13 }],
+            // Spa-Francorchamps - 2 zones: Raidillon + Kemmel
+            10: [{ start: 0.18, end: 0.35, det: 0.14 }, { start: 0.94, end: 0.06, det: 0.90 }],
+            // Monza - 2 zones
+            11: [{ start: 0.95, end: 0.13, det: 0.91 }, { start: 0.36, end: 0.49, det: 0.32 }],
+            // Singapore (Marina Bay) - 3 zones
+            12: [{ start: 0.96, end: 0.10, det: 0.92 }, { start: 0.30, end: 0.44, det: 0.26 }, { start: 0.65, end: 0.77, det: 0.61 }],
+            // Suzuka - 2 zones: main straight + esses back straight
+            13: [{ start: 0.93, end: 0.07, det: 0.88 }, { start: 0.35, end: 0.47, det: 0.31 }],
+            // Abu Dhabi (Yas Marina) - 2 zones
+            14: [{ start: 0.32, end: 0.46, det: 0.28 }, { start: 0.50, end: 0.63, det: 0.47 }],
+            // Texas (COTA) - 2 zones
+            15: [{ start: 0.96, end: 0.11, det: 0.92 }, { start: 0.38, end: 0.54, det: 0.34 }],
+            // Interlagos (Brazil) - 2 zones
+            16: [{ start: 0.88, end: 0.10, det: 0.84 }, { start: 0.22, end: 0.36, det: 0.18 }],
+            // Austria (Red Bull Ring) - 3 zones
+            17: [{ start: 0.96, end: 0.11, det: 0.92 }, { start: 0.20, end: 0.36, det: 0.16 }, { start: 0.45, end: 0.58, det: 0.42 }],
+            // Mexico City - 3 zones
+            19: [{ start: 0.92, end: 0.12, det: 0.88 }, { start: 0.18, end: 0.29, det: 0.15 }, { start: 0.62, end: 0.72, det: 0.58 }],
+            // Baku (Azerbaijan) - 2 zones
+            20: [{ start: 0.85, end: 0.14, det: 0.81 }, { start: 0.20, end: 0.30, det: 0.17 }],
+            // Zandvoort (Netherlands) - 2 zones
+            26: [{ start: 0.90, end: 0.09, det: 0.86 }, { start: 0.28, end: 0.38, det: 0.25 }],
+            // Imola (Emilia Romagna) - 2 zones: pit straight + back straight (Variante Tamburello area)
+            27: [{ start: 0.96, end: 0.10, det: 0.92 }, { start: 0.26, end: 0.31, det: 0.22 }],
+            // Jeddah (Saudi Arabia) - 3 zones along the Corniche circuit
+            29: [{ start: 0.93, end: 0.10, det: 0.88 }, { start: 0.18, end: 0.31, det: 0.14 }, { start: 0.59, end: 0.71, det: 0.55 }],
+            // Miami - 2 zones: pit straight + sector 3 straight
+            30: [{ start: 0.90, end: 0.06, det: 0.85 }, { start: 0.46, end: 0.62, det: 0.42 }],
+            // Las Vegas - 2 zones: Koval Lane (T4->T5) + The Strip (T13->T14)
+            31: [{ start: 0.15, end: 0.245, det: 0.12 }, { start: 0.60, end: 0.83, det: 0.55 }],
+            // Qatar (Losail) - 2 zones
+            32: [{ start: 0.93, end: 0.07, det: 0.88 }, { start: 0.46, end: 0.60, det: 0.42 }],
+            // Silverstone (Reversed) - approximate
+            39: [{ start: 0.58, end: 0.72, det: 0.54 }, { start: 0.18, end: 0.32, det: 0.14 }],
+            // Austria (Reversed) - approximate
+            40: [{ start: 0.42, end: 0.55, det: 0.38 }, { start: 0.64, end: 0.80, det: 0.60 }],
+            // Zandvoort (Reversed) - approximate
+            41: [{ start: 0.62, end: 0.72, det: 0.58 }, { start: 0.91, end: 0.10, det: 0.87 }],
+            // Madrid (IFEMA) - 2 zones
+            42: [{ start: 0.96, end: 0.12, det: 0.92 }, { start: 0.45, end: 0.60, det: 0.41 }]
+        };
 
         const F1_TRACK_MAP = {
             0: "Melbourne", 2: "Shanghai", 3: "Sakhir (Bahrain)", 4: "Catalunya", 5: "Monaco", 6: "Montreal", 7: "Silverstone",
@@ -5285,8 +5388,20 @@
             if (sector1LineMesh) sector1LineMesh.visible = false;
             if (sector2LineMesh) sector2LineMesh.visible = false;
 
+            if (Array.isArray(drsZoneMeshes)) {
+                drsZoneMeshes.forEach(mesh => {
+                    scene.remove(mesh);
+                    if (mesh.geometry) mesh.geometry.dispose();
+                    if (mesh.material) {
+                        if (Array.isArray(mesh.material)) mesh.material.forEach(m => m.dispose());
+                        else mesh.material.dispose();
+                    }
+                });
+                drsZoneMeshes.length = 0;
+            }
+
             if (window.liveRecordingLineMesh) {
-                trackScene.remove(window.liveRecordingLineMesh);
+                scene.remove(window.liveRecordingLineMesh);
                 if (window.liveRecordingLineMesh.geometry) window.liveRecordingLineMesh.geometry.dispose();
                 window.liveRecordingLineMesh = null;
             }
@@ -5328,7 +5443,7 @@
                     opacity: 0.95
                 });
                 window.liveRecordingLineMesh = new THREE.Line(geometry, material);
-                trackScene.add(window.liveRecordingLineMesh);
+                scene.add(window.liveRecordingLineMesh);
             } else {
                 window.liveRecordingLineMesh.geometry.dispose();
                 window.liveRecordingLineMesh.geometry = geometry;
@@ -5361,7 +5476,7 @@
 
             // Clear temporary live recording line when full geometry arrives
             if (window.liveRecordingLineMesh) {
-                trackScene.remove(window.liveRecordingLineMesh);
+                scene.remove(window.liveRecordingLineMesh);
                 if (window.liveRecordingLineMesh.geometry) window.liveRecordingLineMesh.geometry.dispose();
                 window.liveRecordingLineMesh = null;
             }
@@ -5380,6 +5495,7 @@
             currentTrackMap.startLine = mapData.startLine || null;
             currentTrackMap.sector1 = mapData.sector1 || null;
             currentTrackMap.sector2 = mapData.sector2 || null;
+            currentTrackMap.drsZones = Array.isArray(mapData.drsZones) ? mapData.drsZones : null;
 
             // Update Start Line Mesh
             if (mapData.startLine && mapData.startLine.yaw !== undefined && (mapData.startLine.x !== 0 || mapData.startLine.z !== 0)) {
@@ -5473,6 +5589,162 @@
                 } else {
                     trackLines[i].visible = false;
                 }
+            }
+
+            // ── RENDER DRS ACTIVATION ZONES & DETECTION CIRCLES ──
+            if (Array.isArray(drsZoneMeshes)) {
+                drsZoneMeshes.forEach(mesh => {
+                    scene.remove(mesh);
+                    if (mesh.geometry) mesh.geometry.dispose();
+                    if (mesh.material) {
+                        if (Array.isArray(mesh.material)) mesh.material.forEach(m => m.dispose());
+                        else mesh.material.dispose();
+                    }
+                });
+                drsZoneMeshes.length = 0;
+            }
+
+            // Only render DRS zones for tracks with known official data — no fallback to prevent wrong zones
+            const currentDrsZones = Array.isArray(mapData.drsZones) && mapData.drsZones.length > 0 ? mapData.drsZones : null;
+
+            if (orderedPts.length >= 10 && currentDrsZones && currentDrsZones.length > 0) {
+                // Calculate cumulative distances along circuit loop
+                const cumDist = [0];
+                for (let i = 1; i < orderedPts.length; i++) {
+                    cumDist.push(cumDist[i - 1] + Math.hypot(orderedPts[i].x - orderedPts[i - 1].x, orderedPts[i].z - orderedPts[i - 1].z));
+                }
+                const totalCircDist = cumDist[cumDist.length - 1];
+
+                // Determine outward normal orientation relative to track centroid
+                const cTrackX = (minX + maxX) / 2;
+                const cTrackZ = (minZ + maxZ) / 2;
+                let outwardVotes = 0;
+                for (let i = 1; i < orderedPts.length - 1; i++) {
+                    const dx = orderedPts[i + 1].x - orderedPts[i - 1].x;
+                    const dz = orderedPts[i + 1].z - orderedPts[i - 1].z;
+                    const len = Math.hypot(dx, dz) || 1;
+                    const d1 = Math.hypot(orderedPts[i].x - (dz / len) * 20 - cTrackX, orderedPts[i].z + (dx / len) * 20 - cTrackZ);
+                    const d2 = Math.hypot(orderedPts[i].x + (dz / len) * 20 - cTrackX, orderedPts[i].z - (dx / len) * 20 - cTrackZ);
+                    if (d1 > d2) outwardVotes++; else outwardVotes--;
+                }
+                const normalSign = outwardVotes >= 0 ? 1 : -1;
+
+                const normalizeTrackDistance = (distance) => ((distance % totalCircDist) + totalCircDist) % totalCircDist;
+                const distanceFromZoneValue = (zone, distanceKey, fractionKey) => {
+                    const explicitDistance = Number(zone[distanceKey]);
+                    if (Number.isFinite(explicitDistance)) return normalizeTrackDistance(explicitDistance);
+
+                    const val = zone[fractionKey];
+                    if (typeof val === 'object' && val !== null && Number.isFinite(val.d)) {
+                        return normalizeTrackDistance(val.d);
+                    }
+                    const fraction = Number(val);
+                    if (Number.isFinite(fraction)) {
+                        return normalizeTrackDistance(((fraction % 1 + 1) % 1) * totalCircDist);
+                    }
+                    return 0;
+                };
+
+                const getPointAtDistance = (distance) => {
+                    const target = normalizeTrackDistance(distance);
+                    let idx = cumDist.findIndex(d => d >= target);
+                    if (idx < 0) idx = orderedPts.length - 1;
+                    if (idx === 0) return new THREE.Vector3(orderedPts[0].x, 0.4, orderedPts[0].z);
+                    const p0 = orderedPts[idx - 1], p1 = orderedPts[idx];
+                    const segLen = cumDist[idx] - cumDist[idx - 1] || 1;
+                    const t = (target - cumDist[idx - 1]) / segLen;
+                    return new THREE.Vector3(
+                        p0.x + (p1.x - p0.x) * t,
+                        0.4,
+                        p0.z + (p1.z - p0.z) * t
+                    );
+                };
+
+                const drsLineMat = new THREE.MeshBasicMaterial({
+                    color: 0x00ff66,
+                    transparent: true,
+                    opacity: 0.95
+                });
+                const drsDetRingMat = new THREE.MeshBasicMaterial({
+                    color: 0x00ff66,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.95,
+                    blending: THREE.AdditiveBlending
+                });
+
+                currentDrsZones.forEach((z) => {
+                    const startDistance = distanceFromZoneValue(z, 'startDistance', 'start');
+                    const endDistance = distanceFromZoneValue(z, 'endDistance', 'end');
+                    let zoneSpan = endDistance - startDistance;
+                    if (zoneSpan <= 0) zoneSpan += totalCircDist;
+
+                    const rawZonePts = [];
+                    const sampleCount = Math.max(2, Math.ceil(zoneSpan / 18));
+                    for (let i = 0; i <= sampleCount; i++) {
+                        rawZonePts.push(getPointAtDistance(startDistance + (zoneSpan * i / sampleCount)));
+                    }
+
+                    if (rawZonePts.length >= 2) {
+                        const offsetZonePts = [];
+                        const offsetDist = 20;
+                        for (let i = 0; i < rawZonePts.length; i++) {
+                            const prev = rawZonePts[Math.max(0, i - 1)];
+                            const next = rawZonePts[Math.min(rawZonePts.length - 1, i + 1)];
+                            const dx = next.x - prev.x;
+                            const dz = next.z - prev.z;
+                            const len = Math.hypot(dx, dz) || 1;
+                            const nx = -(dz / len) * normalSign;
+                            const nz = (dx / len) * normalSign;
+                            offsetZonePts.push(new THREE.Vector3(
+                                rawZonePts[i].x + nx * offsetDist,
+                                0.35,
+                                rawZonePts[i].z + nz * offsetDist
+                            ));
+                        }
+
+                        const zoneCurve = new THREE.CatmullRomCurve3(offsetZonePts, false, 'catmullrom', 0.5);
+                        const zoneGeo = new THREE.TubeGeometry(zoneCurve, offsetZonePts.length * 2, 4.5, 8, false);
+                        const zoneMesh = new THREE.Mesh(zoneGeo, drsLineMat);
+                        zoneMesh.renderOrder = 0;
+                        scene.add(zoneMesh);
+                        drsZoneMeshes.push(zoneMesh);
+                    }
+
+                    // DRS Detection Point Circle
+                    const hasDet = (z.det !== undefined || z.detDistance !== undefined || z.detection !== undefined);
+                    if (hasDet) {
+                        let detPos = null;
+                        if (typeof z.detection === 'object' && z.detection !== null && Number.isFinite(z.detection.x) && Number.isFinite(z.detection.z)) {
+                            detPos = new THREE.Vector3(z.detection.x, 0.45, z.detection.z);
+                        } else if (typeof z.det === 'object' && z.det !== null && Number.isFinite(z.det.x) && Number.isFinite(z.det.z)) {
+                            detPos = new THREE.Vector3(z.det.x, 0.45, z.det.z);
+                        } else {
+                            detPos = getPointAtDistance(distanceFromZoneValue(z, 'detDistance', 'det'));
+                        }
+
+                        if (detPos) {
+                            const ringGeo = new THREE.RingGeometry(6, 12, 24);
+                            const ringMesh = new THREE.Mesh(ringGeo, drsDetRingMat);
+                            ringMesh.rotation.order = "YXZ";
+                            ringMesh.rotation.x = -Math.PI / 2;
+                            ringMesh.position.set(detPos.x, 0.45, detPos.z);
+                            ringMesh.renderOrder = 1;
+                            scene.add(ringMesh);
+                            drsZoneMeshes.push(ringMesh);
+
+                            // Inner solid dot for crisp FIA radar look
+                            const innerDotGeo = new THREE.CircleGeometry(4, 16);
+                            const innerDotMesh = new THREE.Mesh(innerDotGeo, drsDetRingMat);
+                            innerDotMesh.rotation.order = "YXZ";
+                            innerDotMesh.rotation.x = -Math.PI / 2;
+                            innerDotMesh.position.set(detPos.x, 0.46, detPos.z);
+                            innerDotMesh.renderOrder = 2;
+                            scene.add(innerDotMesh);
+                            drsZoneMeshes.push(innerDotMesh);
+                        }
+                    }
+                });
             }
 
             const centerX = (minX + maxX) / 2;
@@ -6893,21 +7165,124 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         }
 
         function syncTrackLines() {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                const trackId = document.getElementById("track-selector")?.value || (window.lastTelemetryData?.session?.trackId ?? 16);
-                if (!trackId || trackId === -1 || trackId === "-1") {
-                    alert("Please select a track first.");
-                    return;
-                }
-                ws.send(JSON.stringify({ action: "syncTrackLines", trackId: parseInt(trackId, 10) }));
-                showToast("Track lines synchronized with latest lap telemetry!");
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                showToast("⚠️ WebSocket not connected. Check server connection.");
+                return;
             }
+
+            // Visual feedback: spin sync icon during sync
+            const syncBtn = document.getElementById("syncbttn");
+            if (syncBtn) {
+                syncBtn.classList.add("spin-sync");
+                setTimeout(() => syncBtn.classList.remove("spin-sync"), 1000);
+            }
+
+            // Intelligent Track ID Resolution Hierarchy:
+            // 1. Live session track from UDP telemetry
+            let resolvedTrackId = null;
+            const liveTrackId = window.lastTelemetryData?.session?.trackId;
+            if (liveTrackId !== undefined && liveTrackId !== null && liveTrackId !== -1 && liveTrackId !== "-1" && !isNaN(parseInt(liveTrackId, 10))) {
+                resolvedTrackId = parseInt(liveTrackId, 10);
+            }
+
+            // 2. Currently active track ID in Three.js radar
+            if (resolvedTrackId === null && currentTrackMap.trackId !== null && currentTrackMap.trackId !== -1 && !isNaN(parseInt(currentTrackMap.trackId, 10))) {
+                resolvedTrackId = parseInt(currentTrackMap.trackId, 10);
+            }
+
+            // 3. Track selector dropdown (if user explicitly selected a valid track)
+            const selVal = document.getElementById("track-selector")?.value;
+            if (resolvedTrackId === null && selVal !== undefined && selVal !== null && selVal !== "" && selVal !== "-1" && !isNaN(parseInt(selVal, 10))) {
+                resolvedTrackId = parseInt(selVal, 10);
+            }
+
+            // CRITICAL: Reset offline preview override so live game tracking resumes
+            currentTrackMap.isOfflineOverride = false;
+
+            if (resolvedTrackId !== null && resolvedTrackId !== -1) {
+                const trackName = F1_TRACK_MAP[resolvedTrackId] || window.lastTelemetryData?.session?.trackName || `TRACK ${resolvedTrackId}`;
+                showToast(`🏎️ Auto-detecting & syncing ${trackName.toUpperCase()} with game...`);
+                ws.send(JSON.stringify({ action: "syncTrackLines", trackId: resolvedTrackId }));
+                ws.send(JSON.stringify({ action: "getTrackData", trackId: resolvedTrackId }));
+                const trackSel = document.getElementById("track-selector");
+                if (trackSel && trackSel.value != resolvedTrackId) {
+                    trackSel.value = resolvedTrackId;
+                }
+            } else {
+                // Let server auto-detect the track from UDP session
+                showToast("🔍 Auto-detecting active track from game UDP stream...");
+                ws.send(JSON.stringify({ action: "syncTrackLines" }));
+                ws.send(JSON.stringify({ action: "getTrackData" }));
+            }
+        }
+
+        function updateFinalizeButtonState(isFinalized) {
+            const btn = document.getElementById("finalizebttn");
+            const path = document.getElementById("finalize-path");
+            if (!btn) return;
+            if (isFinalized) {
+                btn.classList.add("finalized");
+                btn.style.background = "rgba(0, 255, 102, 0.25)";
+                btn.style.borderColor = "rgba(0, 255, 102, 0.6)";
+                btn.style.color = "#00ff66";
+                btn.title = "Track Map Finalized (Timing lines locked & auto-sync stopped). Click to unlock.";
+                if (path) {
+                    // Closed lock icon
+                    path.setAttribute("d", "M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z");
+                }
+            } else {
+                btn.classList.remove("finalized");
+                btn.style.background = "rgba(255, 255, 255, 0.1)";
+                btn.style.borderColor = "rgba(255, 255, 255, 0.15)";
+                btn.style.color = "white";
+                btn.title = "Finalize Track Map (Lock lines & stop auto-sync)";
+                if (path) {
+                    // Open unlock icon
+                    path.setAttribute("d", "M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5-2.28 0-4.27 1.54-4.84 3.75-.14.54.18 1.08.72 1.22.53.14 1.08-.18 1.22-.72C10.51 3.66 11.98 2.9 12 2.9c1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z");
+                }
+            }
+        }
+
+        function toggleFinalizeTrack() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                showToast("⚠️ WebSocket not connected.");
+                return;
+            }
+
+            let resolvedTrackId = null;
+            const liveTrackId = window.lastTelemetryData?.session?.trackId;
+            if (liveTrackId !== undefined && liveTrackId !== null && liveTrackId !== -1 && liveTrackId !== "-1" && !isNaN(parseInt(liveTrackId, 10))) {
+                resolvedTrackId = parseInt(liveTrackId, 10);
+            }
+            if (resolvedTrackId === null && currentTrackMap.trackId !== null && currentTrackMap.trackId !== -1 && !isNaN(parseInt(currentTrackMap.trackId, 10))) {
+                resolvedTrackId = parseInt(currentTrackMap.trackId, 10);
+            }
+            const selVal = document.getElementById("track-selector")?.value;
+            if (resolvedTrackId === null && selVal !== undefined && selVal !== null && selVal !== "" && selVal !== "-1" && !isNaN(parseInt(selVal, 10))) {
+                resolvedTrackId = parseInt(selVal, 10);
+            }
+
+            if (resolvedTrackId === null || resolvedTrackId === -1) {
+                showToast("⚠️ No active track to finalize.");
+                return;
+            }
+
+            const btn = document.getElementById("finalizebttn");
+            const currentlyFinalized = btn ? btn.classList.contains("finalized") : false;
+            updateFinalizeButtonState(!currentlyFinalized);
+
+            ws.send(JSON.stringify({
+                action: "toggleFinalizeTrack",
+                trackId: resolvedTrackId
+            }));
         }
 
         document.getElementById("track-selector")?.addEventListener('change', function () {
             if (document.getElementById("track-selector").value !== -1 && document.getElementById("track-selector").value !== "-1") {
                 const syncBtn = document.getElementById("syncbttn");
                 if (syncBtn) syncBtn.style.display = "flex";
+                const finBtn = document.getElementById("finalizebttn");
+                if (finBtn) finBtn.style.display = "flex";
             }
         });
 
@@ -6935,6 +7310,11 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         function handleTelemetryMessage(event) {
             const data = JSON.parse(event.data);
             window.lastTelemetryData = data;
+
+            if (data.type === "toast" && data.message) {
+                showToast(data.message);
+                return;
+            }
 
             if (data.type === "availableTracks") {
                 const select = document.getElementById("track-selector");
@@ -6974,8 +7354,13 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     trackPoints: trackData.trackPoints,
                     startLine: trackData.startLine,
                     sector1: trackData.sector1,
-                    sector2: trackData.sector2
+                    sector2: trackData.sector2,
+                    drsZones: trackData.drsZones
                 }, true);
+
+                if (trackData.finalized !== undefined) {
+                    updateFinalizeButtonState(!!trackData.finalized);
+                }
 
                 const select = document.getElementById("track-selector");
                 if (trackId !== null && select && select.value != trackId) {
@@ -6984,6 +7369,14 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 if (trackId !== null && trackId !== -1) {
                     const name = F1_TRACK_MAP[trackId] || `TRACK ${trackId}`;
                     setText("track-name", name.toUpperCase());
+                }
+                return;
+            }
+
+            if (data.type === "trackFinalizedState") {
+                const trackId = data.trackId !== undefined && data.trackId !== null ? parseInt(data.trackId, 10) : null;
+                if (trackId === null || currentTrackMap.trackId === trackId) {
+                    updateFinalizeButtonState(!!data.finalized);
                 }
                 return;
             }
@@ -6998,13 +7391,17 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             if (data.type === "trackLinesUpdated") {
                 const trackId = data.trackId !== undefined && data.trackId !== null ? parseInt(data.trackId, 10) : null;
+                if (data.finalized !== undefined) {
+                    updateFinalizeButtonState(!!data.finalized);
+                }
                 if (currentTrackMap.trackPoints && (trackId === null || currentTrackMap.trackId === trackId)) {
                     renderTrackGeometry({
                         trackId: currentTrackMap.trackId,
                         trackPoints: currentTrackMap.trackPoints,
                         startLine: data.startLine || currentTrackMap.startLine,
                         sector1: data.sector1 || currentTrackMap.sector1,
-                        sector2: data.sector2 || currentTrackMap.sector2
+                        sector2: data.sector2 || currentTrackMap.sector2,
+                        drsZones: Array.isArray(data.drsZones) ? data.drsZones : currentTrackMap.drsZones
                     }, true);
                 }
                 return;
@@ -7424,6 +7821,16 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             // Telemetry Inputs & Powertrain
             setText("speed", data.inputs.speed || 0);
+            if (data.inputs.topSpeed !== undefined && data.inputs.topSpeed !== null) {
+                window.playerTopSpeed = Math.max(window.playerTopSpeed || 0, data.inputs.topSpeed);
+            } else if (data.inputs.speed) {
+                window.playerTopSpeed = Math.max(window.playerTopSpeed || 0, data.inputs.speed);
+            }
+            if (window.playerTopSpeed) {
+                setText("top-speed", window.playerTopSpeed);
+                setText("panel-top-speed", `${window.playerTopSpeed} km/h`);
+                setText("hud-top-speed", `${window.playerTopSpeed} km/h`);
+            }
             setText("gear", data.inputs.gear || 'N');
             setText("rpm", data.inputs.rpm || 0);
             setText("thr-val", `${Math.round(data.inputs.throttle || 0)}%`);
@@ -7651,7 +8058,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     trackPoints: data.trackPoints,
                     startLine: data.startLine,
                     sector1: data.sector1,
-                    sector2: data.sector2
+                    sector2: data.sector2,
+                    drsZones: data.drsZones
                 });
             }
 

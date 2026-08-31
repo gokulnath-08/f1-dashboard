@@ -9,7 +9,7 @@ const OFFICIAL_TRACK_SECTOR_DISTANCES = {
     2:  { s1: 1418, s2: 2985, len: 5451 }, // Shanghai
     3:  { s1: 1800, s2: 4001, len: 5412 }, // Sakhir (Bahrain)
     4:  { s1: 1512, s2: 3194, len: 4657 }, // Catalunya (Barcelona)
-    5:  { s1: 1098, s2: 2190, len: 3337 }, // Monaco
+    5:  { s1: 1059, s2: 2470, len: 3337 }, // Monaco
     6:  { s1: 1450, s2: 3100, len: 4361 }, // Montreal (Circuit Gilles Villeneuve)
     7:  { s1: 1750, s2: 3980, len: 5891 }, // Silverstone
     9:  { s1: 1268, s2: 2953, len: 4381 }, // Hungaroring
@@ -27,7 +27,7 @@ const OFFICIAL_TRACK_SECTOR_DISTANCES = {
     27: { s1: 1660, s2: 3520, len: 4909 }, // Imola
     29: { s1: 1890, s2: 4210, len: 6174 }, // Jeddah
     30: { s1: 1750, s2: 3850, len: 5412 }, // Miami
-    31: { s1: 1950, s2: 4650, len: 6201 }, // Las Vegas
+    31: { s1: 1704, s2: 3376, len: 6201 }, // Las Vegas
     32: { s1: 1680, s2: 3720, len: 5419 }, // Losail (Qatar)
     42: { s1: 1215, s2: 3162, len: 5474 }  // Madrid
 };

@@ -1079,7 +1079,7 @@ const OFFICIAL_TRACK_SECTOR_DISTANCES = {
     2:  { s1: 1418, s2: 2985, len: 5451 }, // Shanghai
     3:  { s1: 1800, s2: 4001, len: 5412 }, // Sakhir (Bahrain)
     4:  { s1: 1512, s2: 3194, len: 4657 }, // Catalunya (Barcelona)
-    5:  { s1: 1098, s2: 2190, len: 3337 }, // Monaco
+    5:  { s1: 1059, s2: 2470, len: 3337 }, // Monaco
     6:  { s1: 1450, s2: 3100, len: 4361 }, // Montreal (Circuit Gilles Villeneuve)
     7:  { s1: 1750, s2: 3980, len: 5891 }, // Silverstone
     9:  { s1: 1268, s2: 2953, len: 4381 }, // Hungaroring
@@ -1097,10 +1097,64 @@ const OFFICIAL_TRACK_SECTOR_DISTANCES = {
     27: { s1: 1660, s2: 3520, len: 4909 }, // Imola
     29: { s1: 1890, s2: 4210, len: 6174 }, // Jeddah
     30: { s1: 1750, s2: 3850, len: 5412 }, // Miami
-    31: { s1: 1950, s2: 4650, len: 6201 }, // Las Vegas
+    31: { s1: 1704, s2: 3376, len: 6201 }, // Las Vegas
     32: { s1: 1680, s2: 3720, len: 5419 }, // Losail (Qatar)
     42: { s1: 1215, s2: 3162, len: 5474 }  // Madrid
 };
+
+/**
+ * Official F1 DRS Zones Catalog.
+ * Contains FIA activation zones and detection points by circuit fraction and approximate distance.
+ */
+const OFFICIAL_TRACK_DRS_ZONES = {
+    0:  [{ start: 0.96, end: 0.12, det: 0.91 }, { start: 0.22, end: 0.34, det: 0.18 }, { start: 0.53, end: 0.65, det: 0.49 }],
+    2:  [{ start: 0.95, end: 0.12, det: 0.90 }, { start: 0.58, end: 0.78, det: 0.54 }],
+    3:  [{ start: 0.96, end: 0.13, det: 0.91 }, { start: 0.22, end: 0.34, det: 0.18 }, { start: 0.60, end: 0.72, det: 0.56 }],
+    4:  [{ start: 0.97, end: 0.13, det: 0.92 }, { start: 0.48, end: 0.64, det: 0.45 }],
+    5:  [{ start: 0.95, end: 0.08, det: 0.91 }],
+    6:  [{ start: 0.93, end: 0.09, det: 0.88 }, { start: 0.75, end: 0.90, det: 0.72 }],
+    7:  [{ start: 0.28, end: 0.42, det: 0.24 }, { start: 0.68, end: 0.83, det: 0.64 }],
+    9:  [{ start: 0.96, end: 0.12, det: 0.91 }, { start: 0.16, end: 0.26, det: 0.13 }],
+    10: [{ start: 0.18, end: 0.35, det: 0.14 }, { start: 0.94, end: 0.06, det: 0.90 }],
+    11: [{ start: 0.95, end: 0.13, det: 0.91 }, { start: 0.36, end: 0.49, det: 0.32 }],
+    12: [{ start: 0.96, end: 0.10, det: 0.92 }, { start: 0.25, end: 0.36, det: 0.21 }, { start: 0.60, end: 0.72, det: 0.56 }],
+    13: [{ start: 0.93, end: 0.07, det: 0.88 }],
+    14: [{ start: 0.32, end: 0.46, det: 0.28 }, { start: 0.50, end: 0.63, det: 0.47 }],
+    15: [{ start: 0.96, end: 0.11, det: 0.92 }, { start: 0.38, end: 0.54, det: 0.34 }],
+    16: [{ start: 0.88, end: 0.10, det: 0.84 }, { start: 0.18, end: 0.31, det: 0.14 }],
+    17: [{ start: 0.96, end: 0.11, det: 0.92 }, { start: 0.17, end: 0.31, det: 0.13 }, { start: 0.39, end: 0.49, det: 0.35 }],
+    19: [{ start: 0.92, end: 0.12, det: 0.88 }, { start: 0.18, end: 0.29, det: 0.15 }, { start: 0.62, end: 0.72, det: 0.58 }],
+    20: [{ start: 0.85, end: 0.14, det: 0.81 }, { start: 0.20, end: 0.30, det: 0.17 }],
+    26: [{ start: 0.90, end: 0.09, det: 0.86 }, { start: 0.28, end: 0.38, det: 0.25 }],
+    27: [{ start: 0.96, end: 0.10, det: 0.92 }],
+    29: [{ start: 0.93, end: 0.10, det: 0.88 }, { start: 0.18, end: 0.31, det: 0.14 }, { start: 0.59, end: 0.71, det: 0.55 }],
+    30: [{ start: 0.90, end: 0.06, det: 0.85 }, { start: 0.22, end: 0.36, det: 0.18 }, { start: 0.58, end: 0.80, det: 0.54 }],
+    31: [{ start: 0.14, end: 0.243, det: 0.119 }, { start: 0.593, end: 0.822, det: 0.543 }],
+    32: [{ start: 0.93, end: 0.07, det: 0.88 }],
+    39: [{ start: 0.58, end: 0.72, det: 0.54 }, { start: 0.18, end: 0.32, det: 0.14 }],
+    40: [{ start: 0.42, end: 0.55, det: 0.38 }, { start: 0.64, end: 0.80, det: 0.60 }],
+    41: [{ start: 0.62, end: 0.72, det: 0.58 }, { start: 0.91, end: 0.10, det: 0.87 }],
+    42: [{ start: 0.96, end: 0.12, det: 0.92 }, { start: 0.45, end: 0.60, det: 0.41 }]
+};
+
+function buildSyncedDrsZones(tId, totalDist) {
+    const zones = OFFICIAL_TRACK_DRS_ZONES[tId];
+    if (!Array.isArray(zones) || zones.length === 0 || !Number.isFinite(totalDist) || totalDist <= 0) return [];
+
+    return zones.map(zone => {
+        const synced = {
+            start: zone.start,
+            end: zone.end,
+            startDistance: Math.round(zone.start * totalDist),
+            endDistance: Math.round(zone.end * totalDist)
+        };
+        if (zone.det !== undefined) {
+            synced.det = zone.det;
+            synced.detDistance = Math.round(zone.det * totalDist);
+        }
+        return synced;
+    });
+}
 
 /**
  * Extracts a coordinate from recorded telemetry by EXACT DISTANCE along the track.
@@ -1135,11 +1189,132 @@ function extractCoordinateFromTelemetryByDistance(telemetry, targetDistance) {
 }
 
 /**
- * Re-synchronizes start line, sector 1, and sector 2 lines for a circuit using EXACT TRACK DISTANCES.
- * Uses official session sector markers from the game engine or the official FIA catalog.
+ * Detects and synchronizes DRS activation zones and detection points using:
+ * 1. Live/Recorded telemetry points where DRS was active (drs / drsOpen / drsAvailable)
+ * 2. Exact track distance interpolation from the official FIA catalog
+ * 
+ * Uses the exact same coordinate extraction mechanism as timing sector lines.
  */
-function syncTrackLinesForTrack(tId) {
+function getTelemetryDrsZonesForTrack(tId, totalDist, telData = null, fallbackZones = null) {
+    if (!Number.isFinite(totalDist) || totalDist <= 0) {
+        totalDist = OFFICIAL_TRACK_SECTOR_DISTANCES[tId]?.len || (state.session?.trackLength > 0 ? state.session.trackLength : 5000);
+    }
+
+    // 1. Check if telData has explicit DRS telemetry events (drs === 1 / drsOpen === 1 / drsAvailable === 1)
+    if (Array.isArray(telData) && telData.length > 50) {
+        const drsIntervals = [];
+        let curInterval = null;
+        for (let i = 0; i < telData.length; i++) {
+            const pt = telData[i];
+            const isDrs = (pt.drs === 1 || pt.drs === true || pt.drsOpen === 1 || pt.drsAvailable === 1);
+            if (isDrs && Number.isFinite(pt.d)) {
+                if (!curInterval) curInterval = { startD: pt.d, endD: pt.d, pts: [pt] };
+                else { curInterval.endD = pt.d; curInterval.pts.push(pt); }
+            } else {
+                if (curInterval) {
+                    if (curInterval.endD - curInterval.startD > 100) {
+                        drsIntervals.push(curInterval);
+                    }
+                    curInterval = null;
+                }
+            }
+        }
+        if (curInterval && (curInterval.endD - curInterval.startD > 100)) {
+            drsIntervals.push(curInterval);
+        }
+
+        if (drsIntervals.length > 0) {
+            return drsIntervals.map(inter => {
+                const sCoord = extractCoordinateFromTelemetryByDistance(telData, inter.startD);
+                const eCoord = extractCoordinateFromTelemetryByDistance(telData, inter.endD);
+                const detD = Math.max(0, inter.startD - 150);
+                const detCoord = extractCoordinateFromTelemetryByDistance(telData, detD);
+                return {
+                    start: sCoord || { x: 0, z: 0, yaw: 0, d: Math.round(inter.startD) },
+                    end: eCoord || { x: 0, z: 0, yaw: 0, d: Math.round(inter.endD) },
+                    detection: detCoord || { x: 0, z: 0, yaw: 0, d: Math.round(detD) },
+                    startDistance: Math.round(inter.startD),
+                    endDistance: Math.round(inter.endD),
+                    detDistance: Math.round(detD),
+                    startFrac: inter.startD / totalDist,
+                    endFrac: inter.endD / totalDist,
+                    detFrac: detD / totalDist
+                };
+            });
+        }
+    }
+
+    // 2. Official catalog by distance & fraction
+    const catalog = (Array.isArray(fallbackZones) && fallbackZones.length > 0) ? fallbackZones : OFFICIAL_TRACK_DRS_ZONES[tId];
+    if (Array.isArray(catalog) && catalog.length > 0) {
+        return catalog.map(z => {
+            const sD = (z.startDistance !== undefined && Number.isFinite(z.startDistance))
+                ? z.startDistance
+                : (typeof z.start === 'object' && Number.isFinite(z.start?.d) ? z.start.d : (Number.isFinite(z.start) ? (z.start * totalDist) : 0));
+            const eD = (z.endDistance !== undefined && Number.isFinite(z.endDistance))
+                ? z.endDistance
+                : (typeof z.end === 'object' && Number.isFinite(z.end?.d) ? z.end.d : (Number.isFinite(z.end) ? (z.end * totalDist) : 0));
+            const detD = (z.detDistance !== undefined && Number.isFinite(z.detDistance))
+                ? z.detDistance
+                : (typeof z.det === 'object' && Number.isFinite(z.det?.d) ? z.det.d : (typeof z.detection === 'object' && Number.isFinite(z.detection?.d) ? z.detection.d : (Number.isFinite(z.det) ? (z.det * totalDist) : Math.max(0, sD - 150))));
+
+            let sCoord = null, eCoord = null, detCoord = null;
+            if (Array.isArray(telData) && telData.length > 10) {
+                sCoord = extractCoordinateFromTelemetryByDistance(telData, sD);
+                eCoord = extractCoordinateFromTelemetryByDistance(telData, eD);
+                detCoord = extractCoordinateFromTelemetryByDistance(telData, detD);
+            }
+
+            return {
+                start: sCoord || (typeof z.start === 'object' ? z.start : { x: 0, z: 0, yaw: 0, d: Math.round(sD) }),
+                end: eCoord || (typeof z.end === 'object' ? z.end : { x: 0, z: 0, yaw: 0, d: Math.round(eD) }),
+                detection: detCoord || (typeof z.det === 'object' ? z.det : (typeof z.detection === 'object' ? z.detection : { x: 0, z: 0, yaw: 0, d: Math.round(detD) })),
+                startDistance: Math.round(sD),
+                endDistance: Math.round(eD),
+                detDistance: Math.round(detD),
+                startFrac: z.startFrac !== undefined ? z.startFrac : (Number.isFinite(z.start) ? z.start : (sD / totalDist)),
+                endFrac: z.endFrac !== undefined ? z.endFrac : (Number.isFinite(z.end) ? z.end : (eD / totalDist)),
+                detFrac: z.detFrac !== undefined ? z.detFrac : (Number.isFinite(z.det) ? z.det : (detD / totalDist))
+            };
+        });
+    }
+
+    return [];
+}
+
+// Cache for finalized tracks (tracks where auto-sync has been locked/stopped)
+const finalizedTracks = {};
+
+/**
+ * Checks if a track map has been finalized
+ */
+function isTrackFinalized(tId) {
+    if (tId === undefined || tId === null || tId === -1) return false;
+    if (finalizedTracks[tId] !== undefined) return !!finalizedTracks[tId];
+    const mapPath = path.join(trackMapsDir, `track_${tId}.json`);
+    if (fs.existsSync(mapPath)) {
+        try {
+            const data = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+            finalizedTracks[tId] = !!data.finalized;
+            return finalizedTracks[tId];
+        } catch (e) { }
+    }
+    finalizedTracks[tId] = false;
+    return false;
+}
+
+/**
+ * Re-synchronizes start line, sector 1, sector 2, and DRS lines for a circuit using EXACT TRACK DISTANCES.
+ * Uses official session sector markers from the game engine, recorded telemetry, or the official FIA catalog.
+ * @param {number} tId Track ID
+ * @param {boolean} force Force sync even if finalized
+ */
+function syncTrackLinesForTrack(tId, force = false) {
     if (tId === undefined || tId === null || tId === -1) return null;
+    if (!force && isTrackFinalized(tId)) {
+        console.log(`🔒 Track ${tId} is finalized. Auto-sync skipped.`);
+        return null;
+    }
     const telPath = path.join(telemetryDir, `telemetry_${tId}.json`);
     const mapPath = path.join(trackMapsDir, `track_${tId}.json`);
 
@@ -1208,8 +1383,16 @@ function syncTrackLinesForTrack(tId) {
 
         // Priority 1: Live official sector distance from game engine (PacketSessionData) if track matches
         if (tId === currentTrackId && state.session.sector2Distance > 100 && state.session.sector3Distance > state.session.sector2Distance) {
-            targetS1Distance = state.session.sector2Distance;
-            targetS2Distance = state.session.sector3Distance;
+            const liveS1 = state.session.sector2Distance;
+            const liveS2 = state.session.sector3Distance;
+            if (liveS1 > (totalDist * 0.15) && liveS1 < (totalDist * 0.55) && liveS2 > (liveS1 + 500) && liveS2 < (totalDist * 0.95)) {
+                targetS1Distance = liveS1;
+                targetS2Distance = liveS2;
+                if (OFFICIAL_TRACK_SECTOR_DISTANCES[tId]) {
+                    OFFICIAL_TRACK_SECTOR_DISTANCES[tId].s1 = Math.round(liveS1);
+                    OFFICIAL_TRACK_SECTOR_DISTANCES[tId].s2 = Math.round(liveS2);
+                }
+            }
         }
 
         // Priority 2: Official FIA sector distance catalog
@@ -1251,10 +1434,14 @@ function syncTrackLinesForTrack(tId) {
         const newS1 = coordS1 ? { x: coordS1.x, z: coordS1.z, yaw: coordS1.yaw || 0, d: coordS1.d || targetS1Distance } : null;
         const newS2 = coordS2 ? { x: coordS2.x, z: coordS2.z, yaw: coordS2.yaw || 0, d: coordS2.d || targetS2Distance } : null;
 
+        // Synchronize DRS zones using exact telemetry interpolation
+        const syncedDrsZones = getTelemetryDrsZonesForTrack(tId, totalDist, telData);
+
         if (tId === currentTrackId) {
             if (newStart) state.startLine = newStart;
             if (newS1) state.sector1 = newS1;
             if (newS2) state.sector2 = newS2;
+            state.drsZones = syncedDrsZones;
             trackPointsDirty = true;
         }
 
@@ -1272,10 +1459,12 @@ function syncTrackLinesForTrack(tId) {
             trackPoints: trackPoints,
             startLine: newStart,
             sector1: newS1,
-            sector2: newS2
+            sector2: newS2,
+            drsZones: syncedDrsZones,
+            finalized: isTrackFinalized(tId)
         };
         safeSaveTrackMap(mapPath, updatedData);
-        console.log(`✅ Synced track lines for Map ${tId} using exact distance (S1: d=${Math.round(newS1?.d || 0)}m, S2: d=${Math.round(newS2?.d || 0)}m of ${Math.round(totalDist)}m)`);
+        console.log(`✅ Synced track lines for Map ${tId} using exact distance (S1: d=${Math.round(newS1?.d || 0)}m, S2: d=${Math.round(newS2?.d || 0)}m of ${Math.round(totalDist)}m, DRS zones: ${syncedDrsZones.length})`);
 
         // Broadcast to clients
         const msg = JSON.stringify({
@@ -1283,7 +1472,9 @@ function syncTrackLinesForTrack(tId) {
             trackId: tId,
             startLine: newStart,
             sector1: newS1,
-            sector2: newS2
+            sector2: newS2,
+            drsZones: updatedData.drsZones,
+            finalized: updatedData.finalized
         });
         const tMsg = JSON.stringify({
             type: 'trackDataResponse',
@@ -1325,7 +1516,9 @@ function handleWsConnection(ws) {
                     pitLanePoints: state.pitLanePoints || [],
                     startLine: state.startLine,
                     sector1: state.sector1,
-                    sector2: state.sector2
+                    sector2: state.sector2,
+                    drsZones: (Array.isArray(state.drsZones) && state.drsZones.length > 0) ? state.drsZones : getTelemetryDrsZonesForTrack(currentTrackId, state.session.trackLength || OFFICIAL_TRACK_SECTOR_DISTANCES[currentTrackId]?.len || 0, null, state.drsZones),
+                    finalized: isTrackFinalized(currentTrackId)
                 }
             }));
         } catch (e) { }
@@ -1340,7 +1533,9 @@ function handleWsConnection(ws) {
                     pitLanePoints: [],
                     startLine: null,
                     sector1: null,
-                    sector2: null
+                    sector2: null,
+                    drsZones: [],
+                    finalized: isTrackFinalized(currentTrackId)
                 }
             }));
         } catch (e) { }
@@ -1364,6 +1559,58 @@ function handleWsConnection(ws) {
                 return;
             }
 
+            if (data.action === 'toggleFinalizeTrack') {
+                let trackId = data.trackId !== undefined && data.trackId !== null ? parseInt(data.trackId, 10) : currentTrackId;
+                if (!isNaN(trackId) && trackId !== -1) {
+                    const isCurrentlyFinalized = isTrackFinalized(trackId);
+                    const newFinalizedState = !isCurrentlyFinalized;
+                    finalizedTracks[trackId] = newFinalizedState;
+
+                    const mapPath = path.join(trackMapsDir, `track_${trackId}.json`);
+                    if (fs.existsSync(mapPath)) {
+                        try {
+                            const mapData = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+                            mapData.finalized = newFinalizedState;
+                            safeSaveTrackMap(mapPath, mapData);
+                        } catch (e) { }
+                    }
+
+                    console.log(`🔒 Track ${trackId} finalized state toggled to: ${newFinalizedState}`);
+
+                    const statusMsg = JSON.stringify({
+                        type: 'trackFinalizedState',
+                        trackId: trackId,
+                        finalized: newFinalizedState
+                    });
+                    const toastMsg = JSON.stringify({
+                        type: 'toast',
+                        message: newFinalizedState ? `Track ${trackId} Map Locked & Finalized! Auto-sync disabled.` : `Track ${trackId} Map Unlocked! Auto-sync re-enabled.`
+                    });
+
+                    clients.forEach(c => {
+                        if (c.readyState === WebSocket.OPEN) {
+                            try {
+                                c.send(statusMsg);
+                                c.send(toastMsg);
+                            } catch (e) { }
+                        }
+                    });
+                }
+                return;
+            }
+
+            if (data.action === 'getTrackFinalizedState') {
+                let trackId = data.trackId !== undefined && data.trackId !== null ? parseInt(data.trackId, 10) : currentTrackId;
+                if (!isNaN(trackId) && trackId !== -1) {
+                    ws.send(JSON.stringify({
+                        type: 'trackFinalizedState',
+                        trackId: trackId,
+                        finalized: isTrackFinalized(trackId)
+                    }));
+                }
+                return;
+            }
+
             if (data.action === 'getTrackData') {
                 let trackId = data.trackId !== undefined ? parseInt(data.trackId, 10) : currentTrackId;
                 if (isNaN(trackId) || trackId === -1) {
@@ -1379,6 +1626,12 @@ function handleWsConnection(ws) {
                                 const tData = JSON.parse(raw);
                                 const pts = Array.isArray(tData) ? tData : (tData.trackPoints || []);
                                 if (pts.length >= 20) {
+                                    if (tData && typeof tData === 'object' && !Array.isArray(tData)) {
+                                        tData.finalized = isTrackFinalized(trackId);
+                                        if (!Array.isArray(tData.drsZones) || tData.drsZones.length === 0) {
+                                            tData.drsZones = getTelemetryDrsZonesForTrack(trackId, tData.trackLength || OFFICIAL_TRACK_SECTOR_DISTANCES[trackId]?.len || state.session.trackLength || 0, null, tData.drsZones);
+                                        }
+                                    }
                                     ws.send(JSON.stringify({ type: 'trackDataResponse', trackId, data: tData }));
                                     return;
                                 }
@@ -1396,7 +1649,9 @@ function handleWsConnection(ws) {
                                 pitLanePoints: state.pitLanePoints || [],
                                 startLine: state.startLine,
                                 sector1: state.sector1,
-                                sector2: state.sector2
+                                sector2: state.sector2,
+                                drsZones: (Array.isArray(state.drsZones) && state.drsZones.length > 0) ? state.drsZones : getTelemetryDrsZonesForTrack(currentTrackId, state.session.trackLength || OFFICIAL_TRACK_SECTOR_DISTANCES[currentTrackId]?.len || 0, null, state.drsZones),
+                                finalized: isTrackFinalized(currentTrackId)
                             }
                         }));
                         return;
@@ -1406,7 +1661,7 @@ function handleWsConnection(ws) {
                     ws.send(JSON.stringify({
                         type: 'trackDataResponse',
                         trackId: trackId,
-                        data: { trackPoints: [], pitLanePoints: [], startLine: null, sector1: null, sector2: null }
+                        data: { trackPoints: [], pitLanePoints: [], startLine: null, sector1: null, sector2: null, drsZones: [], finalized: false }
                     }));
                     return;
                 }
@@ -1415,7 +1670,7 @@ function handleWsConnection(ws) {
                 ws.send(JSON.stringify({
                     type: 'trackDataResponse',
                     trackId: -1,
-                    data: { trackPoints: [], pitLanePoints: [], startLine: null, sector1: null, sector2: null }
+                    data: { trackPoints: [], pitLanePoints: [], startLine: null, sector1: null, sector2: null, drsZones: [], finalized: false }
                 }));
                 return;
             }
@@ -1453,7 +1708,7 @@ function handleWsConnection(ws) {
 
             if (data.action === 'syncTrackLines') {
                 const tId = data.trackId !== undefined ? data.trackId : currentTrackId;
-                syncTrackLinesForTrack(tId);
+                syncTrackLinesForTrack(tId, data.force === true);
                 return;
             }
 
@@ -1848,7 +2103,7 @@ let state = {
         penalties: 0, warnings: 0, cornerCutting: 0, unservedDT: 0, unservedSG: 0, scDelta: 0, invalid: false
     },
     motion: { pitch: 0, roll: 0, gLat: 0, gLong: 0, gVert: 0, susp: { fl: 0, fr: 0, rl: 0, rr: 0 }, gEnvelopeArray: gForceData.envelopeArray, gHistory: gForceData.history, maxGSeen: gForceData.maxGSeen },
-    inputs: { speed: 0, gear: 'N', rpm: 0, throttle: 0, brake: 0, clutch: 0, steer: 0, drs: 'CLOSED' },
+    inputs: { speed: 0, gear: 'N', rpm: 0, throttle: 0, brake: 0, clutch: 0, steer: 0, drs: 'CLOSED', drsAvailable: false, drsActivationDistance: null },
     ers: {
         mode: 'Medium',
         battery: 100,
@@ -1928,6 +2183,10 @@ function resetSessionData() {
     state.customSectorLines = [0];
     state.weatherForecast = [];
     state.damage = null;
+    state.drsZones = [];
+    state.inputs.drs = 'CLOSED';
+    state.inputs.drsAvailable = false;
+    state.inputs.drsActivationDistance = null;
     state.penalties = { timePenalties: 0, warnings: 0, cornerCuts: 0, driveThrough: 0, stopGo: 0, invalidLap: 0 };
     state.lap = {
         currentMs: 0, lastMs: 0, bestMs: 0, s1: 0, s2: 0, s3: 0, liveS1: 0, liveS2: 0, liveS3: 0,
@@ -2801,7 +3060,7 @@ f1Client.on('lapData', (data) => {
 
         // Lap Transition Logic
         if (lap.m_currentLapNum > carPhysics[i].lapNum) {
-            // Crossed the line - copy full rich telemetry trace including throttle, brake, steer, speed, gear, y elevation, pitch, roll
+            // Crossed the line - copy full rich telemetry trace including throttle, brake, steer, speed, gear, y elevation, pitch, roll, DRS
             lastLapTelemetry[i] = (currentLapTelemetry[i] || []).map(pt => ({
                 d: pt.d,
                 t: pt.t,
@@ -2815,7 +3074,11 @@ f1Client.on('lapData', (data) => {
                 brake: pt.brake !== undefined ? pt.brake : 0,
                 speed: pt.speed !== undefined ? pt.speed : 0,
                 steer: pt.steer !== undefined ? pt.steer : 0,
-                gear: pt.gear !== undefined ? pt.gear : 0
+                gear: pt.gear !== undefined ? pt.gear : 0,
+                drs: pt.drs !== undefined ? pt.drs : 0,
+                drsOpen: pt.drsOpen !== undefined ? pt.drsOpen : 0,
+                drsAvailable: pt.drsAvailable !== undefined ? pt.drsAvailable : 0,
+                drsActivationDistance: pt.drsActivationDistance !== undefined ? pt.drsActivationDistance : null
             }));
             currentLapTelemetry[i] = [];
 
@@ -3030,7 +3293,8 @@ f1Client.on('lapData', (data) => {
                         yaw: Math.round((carObj.yaw || 0) * 1000) / 1000,
                         pitch: Math.round((carObj.pitch || 0) * 1000) / 1000,
                         roll: Math.round((carObj.roll || 0) * 1000) / 1000,
-                        throttle: 0, brake: 0, speed: Math.round(carObj.speed || 0), steer: 0, gear: 0
+                        throttle: 0, brake: 0, speed: Math.round(carObj.speed || 0), steer: 0, gear: 0,
+                        drs: 0, drsOpen: 0, drsAvailable: 0, drsActivationDistance: null
                     };
                     if (i === state.playerIndex) {
                         pt.throttle = Math.round(state.inputs.throttle);
@@ -3038,6 +3302,10 @@ f1Client.on('lapData', (data) => {
                         pt.speed = Math.round(state.inputs.speed);
                         pt.steer = Math.round(state.inputs.steer * 100) / 100;
                         pt.gear = state.inputs.gear;
+                        pt.drs = state.inputs.drs === 'OPEN' ? 1 : 0;
+                        pt.drsOpen = pt.drs;
+                        pt.drsAvailable = state.inputs.drsAvailable ? 1 : 0;
+                        pt.drsActivationDistance = Number.isFinite(state.inputs.drsActivationDistance) ? state.inputs.drsActivationDistance : null;
                     }
                     arr.push(pt);
                     if (arr.length > 3000) {
@@ -3356,6 +3624,8 @@ f1Client.on('carStatus', (data) => {
     if (pStat) {
         state.car.compound = carDataTracker[pIdx].tyre;
         state.car.flag = flagMap[pStat.m_vehicleFiaFlags] || 'GREEN';
+        state.inputs.drsAvailable = pStat.m_drsAllowed === 1;
+        state.inputs.drsActivationDistance = (pStat.m_drsActivationDistance !== undefined && Number.isFinite(pStat.m_drsActivationDistance)) ? pStat.m_drsActivationDistance : null;
 
         // ERS Deep Telemetry & Strategy
         const ersStore = pStat.m_ersStoreEnergy !== undefined ? pStat.m_ersStoreEnergy : 0;
