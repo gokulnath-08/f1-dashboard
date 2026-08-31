@@ -561,7 +561,7 @@ function getAvailableTelemetryTracks() {
                                 item.lapTimeMs = content[content.length - 1].t;
                             }
                         }
-                    } catch (e) {}
+                    } catch (e) { }
                 }
             }
         }
@@ -587,12 +587,12 @@ function getAvailableTelemetryTracks() {
                             if (pts.length > 0 && pts[pts.length - 1].t > 0) {
                                 item.lapTimeMs = pts[pts.length - 1].t;
                             }
-                        } catch (e) {}
+                        } catch (e) { }
                     }
                 }
             }
         }
-    } catch (e) {}
+    } catch (e) { }
 
     // 3. Scan track_maps directory
     try {
@@ -608,7 +608,7 @@ function getAvailableTelemetryTracks() {
                 }
             }
         }
-    } catch (e) {}
+    } catch (e) { }
 
     // 4. Incorporate all records from allTimeFastest
     for (const [tIdStr, rec] of Object.entries(allTimeFastest)) {
@@ -1075,14 +1075,14 @@ let broadcastTick = 0;
  * Represents the official FIA timing line locations along the circuit.
  */
 const OFFICIAL_TRACK_SECTOR_DISTANCES = {
-    0:  { s1: 1720, s2: 3680, len: 5278 }, // Melbourne (Albert Park)
-    2:  { s1: 1418, s2: 2985, len: 5451 }, // Shanghai
-    3:  { s1: 1800, s2: 4001, len: 5412 }, // Sakhir (Bahrain)
-    4:  { s1: 1512, s2: 3194, len: 4657 }, // Catalunya (Barcelona)
-    5:  { s1: 1059, s2: 2470, len: 3337 }, // Monaco
-    6:  { s1: 1450, s2: 3100, len: 4361 }, // Montreal (Circuit Gilles Villeneuve)
-    7:  { s1: 1750, s2: 3980, len: 5891 }, // Silverstone
-    9:  { s1: 1268, s2: 2953, len: 4381 }, // Hungaroring
+    0: { s1: 1720, s2: 3680, len: 5278 }, // Melbourne (Albert Park)
+    2: { s1: 1418, s2: 2985, len: 5451 }, // Shanghai
+    3: { s1: 1800, s2: 4001, len: 5412 }, // Sakhir (Bahrain)
+    4: { s1: 1512, s2: 3194, len: 4657 }, // Catalunya (Barcelona)
+    5: { s1: 1059, s2: 2470, len: 3337 }, // Monaco
+    6: { s1: 1450, s2: 3100, len: 4361 }, // Montreal (Circuit Gilles Villeneuve)
+    7: { s1: 1750, s2: 3980, len: 5891 }, // Silverstone
+    9: { s1: 1268, s2: 2953, len: 4381 }, // Hungaroring
     10: { s1: 2323, s2: 5150, len: 7004 }, // Spa-Francorchamps
     11: { s1: 1898, s2: 3726, len: 5793 }, // Monza
     12: { s1: 1464, s2: 3133, len: 4940 }, // Singapore (Marina Bay)
@@ -1107,14 +1107,14 @@ const OFFICIAL_TRACK_SECTOR_DISTANCES = {
  * Contains FIA activation zones and detection points by circuit fraction and approximate distance.
  */
 const OFFICIAL_TRACK_DRS_ZONES = {
-    0:  [{ start: 0.96, end: 0.12, det: 0.91 }, { start: 0.22, end: 0.34, det: 0.18 }, { start: 0.53, end: 0.65, det: 0.49 }],
-    2:  [{ start: 0.95, end: 0.12, det: 0.90 }, { start: 0.58, end: 0.78, det: 0.54 }],
-    3:  [{ start: 0.96, end: 0.13, det: 0.91 }, { start: 0.22, end: 0.34, det: 0.18 }, { start: 0.60, end: 0.72, det: 0.56 }],
-    4:  [{ start: 0.97, end: 0.13, det: 0.92 }, { start: 0.48, end: 0.64, det: 0.45 }],
-    5:  [{ start: 0.95, end: 0.08, det: 0.91 }],
-    6:  [{ start: 0.93, end: 0.09, det: 0.88 }, { start: 0.75, end: 0.90, det: 0.72 }],
-    7:  [{ start: 0.28, end: 0.42, det: 0.24 }, { start: 0.68, end: 0.83, det: 0.64 }],
-    9:  [{ start: 0.96, end: 0.12, det: 0.91 }, { start: 0.16, end: 0.26, det: 0.13 }],
+    0: [{ start: 0.96, end: 0.12, det: 0.91 }, { start: 0.22, end: 0.34, det: 0.18 }, { start: 0.53, end: 0.65, det: 0.49 }],
+    2: [{ start: 0.95, end: 0.12, det: 0.90 }, { start: 0.58, end: 0.78, det: 0.54 }],
+    3: [{ start: 0.96, end: 0.13, det: 0.91 }, { start: 0.22, end: 0.34, det: 0.18 }, { start: 0.60, end: 0.72, det: 0.56 }],
+    4: [{ start: 0.97, end: 0.13, det: 0.92 }, { start: 0.48, end: 0.64, det: 0.45 }],
+    5: [{ start: 0.95, end: 0.08, det: 0.91 }],
+    6: [{ start: 0.93, end: 0.09, det: 0.88 }, { start: 0.75, end: 0.90, det: 0.72 }],
+    7: [{ start: 0.28, end: 0.42, det: 0.24 }, { start: 0.68, end: 0.83, det: 0.64 }],
+    9: [{ start: 0.96, end: 0.12, det: 0.91 }, { start: 0.16, end: 0.26, det: 0.13 }],
     10: [{ start: 0.18, end: 0.35, det: 0.14 }, { start: 0.94, end: 0.06, det: 0.90 }],
     11: [{ start: 0.95, end: 0.13, det: 0.91 }, { start: 0.36, end: 0.49, det: 0.32 }],
     12: [{ start: 0.96, end: 0.10, det: 0.92 }, { start: 0.25, end: 0.36, det: 0.21 }, { start: 0.60, end: 0.72, det: 0.56 }],
@@ -1347,10 +1347,10 @@ function syncTrackLinesForTrack(tId, force = false) {
                 let cumulative = 0;
                 telData = [{ x: trackPoints[0].x, z: trackPoints[0].z, yaw: 0, d: 0 }];
                 for (let i = 1; i < trackPoints.length; i++) {
-                    const seg = Math.hypot(trackPoints[i].x - trackPoints[i-1].x, trackPoints[i].z - trackPoints[i-1].z);
+                    const seg = Math.hypot(trackPoints[i].x - trackPoints[i - 1].x, trackPoints[i].z - trackPoints[i - 1].z);
                     cumulative += seg;
-                    const dx = trackPoints[i].x - trackPoints[i-1].x;
-                    const dz = trackPoints[i].z - trackPoints[i-1].z;
+                    const dx = trackPoints[i].x - trackPoints[i - 1].x;
+                    const dz = trackPoints[i].z - trackPoints[i - 1].z;
                     const yaw = Math.atan2(dx, dz);
                     telData.push({ x: trackPoints[i].x, z: trackPoints[i].z, yaw, d: cumulative });
                 }
@@ -2444,54 +2444,54 @@ f1Client.on('motion', (data) => {
             }
         }
 
-/**
- * Completes and saves a newly mapped circuit from live recorded telemetry.
- * Automatically closes the loop, computes pit lane, sets official sector lines,
- * saves to disk, and broadcasts the completed circuit map to all clients.
- */
-function completeLiveTrackMapping() {
-    if (isTrackMapped || currentTrackId === -1 || !state.trackPoints || state.trackPoints.length < 50) return;
-    isTrackMapped = true;
+        /**
+         * Completes and saves a newly mapped circuit from live recorded telemetry.
+         * Automatically closes the loop, computes pit lane, sets official sector lines,
+         * saves to disk, and broadcasts the completed circuit map to all clients.
+         */
+        function completeLiveTrackMapping() {
+            if (isTrackMapped || currentTrackId === -1 || !state.trackPoints || state.trackPoints.length < 50) return;
+            isTrackMapped = true;
 
-    const pts = state.trackPoints;
-    const firstPt = pts[0];
-    const lastPt = pts[pts.length - 1];
-    if (Math.hypot(lastPt.x - firstPt.x, lastPt.z - firstPt.z) > 5) {
-        pts.push({ x: firstPt.x, z: firstPt.z });
-    }
+            const pts = state.trackPoints;
+            const firstPt = pts[0];
+            const lastPt = pts[pts.length - 1];
+            if (Math.hypot(lastPt.x - firstPt.x, lastPt.z - firstPt.z) > 5) {
+                pts.push({ x: firstPt.x, z: firstPt.z });
+            }
 
-    state.pitLanePoints = buildApproxPitLane(pts);
+            state.pitLanePoints = buildApproxPitLane(pts);
 
-    const filePath = path.join(trackMapsDir, `track_${currentTrackId}.json`);
-    safeSaveTrackMap(filePath, {
-        trackPoints: pts,
-        startLine: state.startLine,
-        sector1: state.sector1,
-        sector2: state.sector2
-    });
+            const filePath = path.join(trackMapsDir, `track_${currentTrackId}.json`);
+            safeSaveTrackMap(filePath, {
+                trackPoints: pts,
+                startLine: state.startLine,
+                sector1: state.sector1,
+                sector2: state.sector2
+            });
 
-    // Synchronize official sector lines using exact distance
-    syncTrackLinesForTrack(currentTrackId);
+            // Synchronize official sector lines using exact distance
+            syncTrackLinesForTrack(currentTrackId);
 
-    // Broadcast full trackDataResponse to all clients
-    const completeMsg = JSON.stringify({
-        type: 'trackDataResponse',
-        trackId: currentTrackId,
-        data: {
-            trackPoints: state.trackPoints,
-            pitLanePoints: state.pitLanePoints || [],
-            startLine: state.startLine,
-            sector1: state.sector1,
-            sector2: state.sector2
+            // Broadcast full trackDataResponse to all clients
+            const completeMsg = JSON.stringify({
+                type: 'trackDataResponse',
+                trackId: currentTrackId,
+                data: {
+                    trackPoints: state.trackPoints,
+                    pitLanePoints: state.pitLanePoints || [],
+                    startLine: state.startLine,
+                    sector1: state.sector1,
+                    sector2: state.sector2
+                }
+            });
+            clients.forEach(c => {
+                if (c.readyState === WebSocket.OPEN) {
+                    try { c.send(completeMsg); } catch (e) { }
+                }
+            });
+            console.log(`🎉 Track ID ${currentTrackId} fully mapped, synchronized and saved! (${pts.length} pts)`);
         }
-    });
-    clients.forEach(c => {
-        if (c.readyState === WebSocket.OPEN) {
-            try { c.send(completeMsg); } catch (e) { }
-        }
-    });
-    console.log(`🎉 Track ID ${currentTrackId} fully mapped, synchronized and saved! (${pts.length} pts)`);
-}
 
         if (!isTrackMapped && currentTrackId !== -1) {
             const currentSpeed = carPhysics[pIdx] ? carPhysics[pIdx].speed : 0;
@@ -2562,7 +2562,7 @@ function loadTrackDeltaReference(trackId) {
 
     const telPath = path.join(telemetryDir, `telemetry_${trackId}.json`);
     const trackFastestPath = path.join(lapTimeDir, `fastest_${trackId}.json`);
-    
+
     let loadedTelemetry = [];
     if (fs.existsSync(telPath)) {
         try {
@@ -2700,77 +2700,77 @@ f1Client.on('session', (data) => {
             isTrackMapped = false;
             const filePath = path.join(trackMapsDir, `track_${tId}.json`);
 
-        if (fs.existsSync(filePath)) {
-            try {
-                const raw = fs.readFileSync(filePath, 'utf8').trim();
-                if (raw && raw.length > 2) {
-                    const parsedData = JSON.parse(raw);
-                    if (Array.isArray(parsedData)) {
-                        state.trackPoints = parsedData;
-                        state.startLine = null;
-                        state.sector1 = null;
-                        state.sector2 = null;
-                        isTrackMapped = true;
-                    } else {
-                        state.trackPoints = parsedData.trackPoints || [];
-                        state.startLine = parsedData.startLine || null;
-                        state.sector1 = (parsedData.sector1 && typeof parsedData.sector1 === 'object') ? parsedData.sector1 : ((parsedData.sector1Line && typeof parsedData.sector1Line === 'object') ? parsedData.sector1Line : null);
-                        state.sector2 = (parsedData.sector2 && typeof parsedData.sector2 === 'object') ? parsedData.sector2 : ((parsedData.sector2Line && typeof parsedData.sector2Line === 'object') ? parsedData.sector2Line : null);
-                        if (state.trackPoints.length > 0) isTrackMapped = true;
+            if (fs.existsSync(filePath)) {
+                try {
+                    const raw = fs.readFileSync(filePath, 'utf8').trim();
+                    if (raw && raw.length > 2) {
+                        const parsedData = JSON.parse(raw);
+                        if (Array.isArray(parsedData)) {
+                            state.trackPoints = parsedData;
+                            state.startLine = null;
+                            state.sector1 = null;
+                            state.sector2 = null;
+                            isTrackMapped = true;
+                        } else {
+                            state.trackPoints = parsedData.trackPoints || [];
+                            state.startLine = parsedData.startLine || null;
+                            state.sector1 = (parsedData.sector1 && typeof parsedData.sector1 === 'object') ? parsedData.sector1 : ((parsedData.sector1Line && typeof parsedData.sector1Line === 'object') ? parsedData.sector1Line : null);
+                            state.sector2 = (parsedData.sector2 && typeof parsedData.sector2 === 'object') ? parsedData.sector2 : ((parsedData.sector2Line && typeof parsedData.sector2Line === 'object') ? parsedData.sector2Line : null);
+                            if (state.trackPoints.length > 0) isTrackMapped = true;
+                        }
+                        state.pitLanePoints = buildApproxPitLane(state.trackPoints);
+                        trackPointsDirty = true;
+                        // Broadcast trackDataResponse to all clients so they immediately have the track map
+                        const tMsg = JSON.stringify({
+                            type: 'trackDataResponse',
+                            trackId: currentTrackId,
+                            data: {
+                                trackPoints: state.trackPoints,
+                                pitLanePoints: state.pitLanePoints || [],
+                                startLine: state.startLine,
+                                sector1: state.sector1,
+                                sector2: state.sector2
+                            }
+                        });
+                        clients.forEach(c => {
+                            if (c.readyState === WebSocket.OPEN) {
+                                try { c.send(tMsg); } catch (e) { }
+                            }
+                        });
                     }
-                    state.pitLanePoints = buildApproxPitLane(state.trackPoints);
-                    trackPointsDirty = true;
-                    // Broadcast trackDataResponse to all clients so they immediately have the track map
-                    const tMsg = JSON.stringify({
-                        type: 'trackDataResponse',
-                        trackId: currentTrackId,
-                        data: {
-                            trackPoints: state.trackPoints,
-                            pitLanePoints: state.pitLanePoints || [],
-                            startLine: state.startLine,
-                            sector1: state.sector1,
-                            sector2: state.sector2
-                        }
-                    });
-                    clients.forEach(c => {
-                        if (c.readyState === WebSocket.OPEN) {
-                            try { c.send(tMsg); } catch (e) { }
-                        }
-                    });
+                } catch (e) {
+                    console.error('Error parsing track map JSON:', e);
                 }
-            } catch (e) {
-                console.error('Error parsing track map JSON:', e);
+            } else {
+                state.trackPoints = [];
+                state.pitLanePoints = [];
+                state.customSectorLines = [0];
+                state.startLine = null;
+                state.sector1 = null;
+                state.sector2 = null;
+                isTrackMapped = false;
+                trackPointsDirty = true;
+
+                // Broadcast empty track to all clients so they immediately clear old track
+                const clearMsg = JSON.stringify({
+                    type: 'trackDataResponse',
+                    trackId: currentTrackId,
+                    data: {
+                        trackPoints: [],
+                        pitLanePoints: [],
+                        startLine: null,
+                        sector1: null,
+                        sector2: null
+                    }
+                });
+                clients.forEach(c => {
+                    if (c.readyState === WebSocket.OPEN) {
+                        try { c.send(clearMsg); } catch (e) { }
+                    }
+                });
             }
-        } else {
-            state.trackPoints = [];
-            state.pitLanePoints = [];
-            state.customSectorLines = [0];
-            state.startLine = null;
-            state.sector1 = null;
-            state.sector2 = null;
-            isTrackMapped = false;
-            trackPointsDirty = true;
 
-            // Broadcast empty track to all clients so they immediately clear old track
-            const clearMsg = JSON.stringify({
-                type: 'trackDataResponse',
-                trackId: currentTrackId,
-                data: {
-                    trackPoints: [],
-                    pitLanePoints: [],
-                    startLine: null,
-                    sector1: null,
-                    sector2: null
-                }
-            });
-            clients.forEach(c => {
-                if (c.readyState === WebSocket.OPEN) {
-                    try { c.send(clearMsg); } catch (e) { }
-                }
-            });
-        }
-
-        if (currentTrackId !== -1) loadTrackDeltaReference(currentTrackId);
+            if (currentTrackId !== -1) loadTrackDeltaReference(currentTrackId);
         }
     }
 
@@ -3208,44 +3208,44 @@ f1Client.on('lapData', (data) => {
                 state.lap.s3Status = 'pending';
             }
 
-                // Save setup at the end of the lap for the player
-                if (i === pIdx && currentTrackId !== -1) {
-                    try {
-                        const sPath = path.join(setupsDir, `setups_y${currentGameYear}_t${currentTrackId}.json`);
-                        let setupsData = [];
-                        if (fs.existsSync(sPath)) {
-                            setupsData = JSON.parse(fs.readFileSync(sPath, 'utf8'));
-                        }
-
-                        // Check if lap already exists to avoid duplicates
-                        const existingLapIndex = setupsData.findIndex(s => s.lapNum === carPhysics[i].lapNum);
-                        const setupEntry = {
-                            lapNum: carPhysics[i].lapNum,
-                            time: lastTime,
-                            setup: { ...state.setup },
-                            timestamp: Date.now()
-                        };
-
-                        if (existingLapIndex >= 0) {
-                            setupsData[existingLapIndex] = setupEntry;
-                        } else {
-                            setupsData.push(setupEntry);
-                        }
-
-                        fs.writeFileSync(sPath, JSON.stringify(setupsData, null, 2), 'utf8');
-
-                        // Broadcast updated setups to all clients
-                        const setupMsg = JSON.stringify({ type: 'trackSetupsResponse', trackId: currentTrackId, data: setupsData });
-                        clients.forEach(c => {
-                            if (c.readyState === WebSocket.OPEN) {
-                                c.send(setupMsg);
-                            }
-                        });
-                    } catch (e) {
-                        console.error('⚠️ Error saving setup for lap:', e);
+            // Save setup at the end of the lap for the player
+            if (i === pIdx && currentTrackId !== -1) {
+                try {
+                    const sPath = path.join(setupsDir, `setups_y${currentGameYear}_t${currentTrackId}.json`);
+                    let setupsData = [];
+                    if (fs.existsSync(sPath)) {
+                        setupsData = JSON.parse(fs.readFileSync(sPath, 'utf8'));
                     }
+
+                    // Check if lap already exists to avoid duplicates
+                    const existingLapIndex = setupsData.findIndex(s => s.lapNum === carPhysics[i].lapNum);
+                    const setupEntry = {
+                        lapNum: carPhysics[i].lapNum,
+                        time: lastTime,
+                        setup: { ...state.setup },
+                        timestamp: Date.now()
+                    };
+
+                    if (existingLapIndex >= 0) {
+                        setupsData[existingLapIndex] = setupEntry;
+                    } else {
+                        setupsData.push(setupEntry);
+                    }
+
+                    fs.writeFileSync(sPath, JSON.stringify(setupsData, null, 2), 'utf8');
+
+                    // Broadcast updated setups to all clients
+                    const setupMsg = JSON.stringify({ type: 'trackSetupsResponse', trackId: currentTrackId, data: setupsData });
+                    clients.forEach(c => {
+                        if (c.readyState === WebSocket.OPEN) {
+                            c.send(setupMsg);
+                        }
+                    });
+                } catch (e) {
+                    console.error('⚠️ Error saving setup for lap:', e);
                 }
             }
+        }
 
         carPhysics[i].lapDistance = lap.m_lapDistance;
         carPhysics[i].lapNum = lap.m_currentLapNum;
@@ -3864,7 +3864,7 @@ setInterval(() => {
 
     if (playerLbInfo) {
         state.lap.gapFront = playerLbInfo.gapText || '+0.000';
-        
+
         // Driver Ahead Info (Race Interval or Quali Target)
         if (playerLbIndex > 0) {
             const carAhead = state.leaderboard[playerLbIndex - 1];

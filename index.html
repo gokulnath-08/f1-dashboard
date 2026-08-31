@@ -61,6 +61,7 @@
                 opacity: 0;
                 transform: translateY(6px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -68,27 +69,55 @@
         }
 
         @keyframes rbrPulse {
-            0% { transform: scale(0.95); opacity: 0.7; box-shadow: 0 0 4px var(--rbr-red); }
-            50% { transform: scale(1.18); opacity: 1; box-shadow: 0 0 14px var(--rbr-red), 0 0 20px var(--rbr-yellow); }
-            100% { transform: scale(0.95); opacity: 0.7; box-shadow: 0 0 4px var(--rbr-red); }
+            0% {
+                transform: scale(0.95);
+                opacity: 0.7;
+                box-shadow: 0 0 4px var(--rbr-red);
+            }
+
+            50% {
+                transform: scale(1.18);
+                opacity: 1;
+                box-shadow: 0 0 14px var(--rbr-red), 0 0 20px var(--rbr-yellow);
+            }
+
+            100% {
+                transform: scale(0.95);
+                opacity: 0.7;
+                box-shadow: 0 0 4px var(--rbr-red);
+            }
         }
 
         @keyframes purplePulse {
-            0% { text-shadow: 0 0 8px var(--fia-purple-glow); }
-            50% { text-shadow: 0 0 18px var(--fia-purple), 0 0 26px var(--fia-purple-glow); color: #F3E8FF !important; }
-            100% { text-shadow: 0 0 8px var(--fia-purple-glow); }
+            0% {
+                text-shadow: 0 0 8px var(--fia-purple-glow);
+            }
+
+            50% {
+                text-shadow: 0 0 18px var(--fia-purple), 0 0 26px var(--fia-purple-glow);
+                color: #F3E8FF !important;
+            }
+
+            100% {
+                text-shadow: 0 0 8px var(--fia-purple-glow);
+            }
         }
 
         @keyframes scGlow {
-            0% { box-shadow: 0 0 6px rgba(255, 176, 0, 0.6); }
-            100% { box-shadow: 0 0 20px rgba(255, 215, 0, 1); }
+            0% {
+                box-shadow: 0 0 6px rgba(255, 176, 0, 0.6);
+            }
+
+            100% {
+                box-shadow: 0 0 20px rgba(255, 215, 0, 1);
+            }
         }
 
         body {
             margin: 0;
             padding: 8px 12px;
             background-color: var(--f1-dark);
-            background-image: 
+            background-image:
                 radial-gradient(circle at 15% 10%, rgba(0, 102, 255, 0.12) 0%, transparent 45%),
                 radial-gradient(circle at 85% 90%, rgba(255, 30, 0, 0.1) 0%, transparent 45%),
                 radial-gradient(circle at 50% 0%, rgba(255, 209, 0, 0.05) 0%, transparent 50%),
@@ -798,7 +827,7 @@
             background: linear-gradient(135deg, rgba(10, 22, 44, 0.9) 0%, rgba(5, 12, 28, 0.95) 100%);
             border: 1px solid var(--f1-border-strong);
             border-radius: var(--bento-radius);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
             flex-wrap: wrap;
         }
 
@@ -819,7 +848,7 @@
             font-weight: 900;
             font-size: 1.45rem;
             border: 3px solid currentColor;
-            box-shadow: 0 0 16px currentColor, inset 0 0 8px rgba(0,0,0,0.6);
+            box-shadow: 0 0 16px currentColor, inset 0 0 8px rgba(0, 0, 0, 0.6);
             flex-shrink: 0;
         }
 
@@ -850,7 +879,7 @@
             align-items: center;
             gap: 2px;
             padding: 5px 10px;
-            background: rgba(255,255,255,0.04);
+            background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--f1-border);
             border-radius: 8px;
             min-width: 65px;
@@ -878,7 +907,7 @@
         }
 
         .tyre-card {
-            background: linear-gradient(145deg, rgba(10,22,44,0.95), rgba(5,12,26,0.98));
+            background: linear-gradient(145deg, rgba(10, 22, 44, 0.95), rgba(5, 12, 26, 0.98));
             border: 1px solid var(--f1-border);
             border-radius: 12px;
             padding: 12px 14px;
@@ -886,7 +915,7 @@
             flex-direction: column;
             gap: 8px;
             position: relative;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         }
 
         .tyre-card-header {
@@ -918,7 +947,7 @@
 
         .tyre-ring-bg {
             fill: none;
-            stroke: rgba(255,255,255,0.07);
+            stroke: rgba(255, 255, 255, 0.07);
             stroke-width: 7;
         }
 
@@ -943,7 +972,7 @@
         .tyre-ring-sub {
             font-family: 'Roboto Mono', monospace;
             font-size: 6.5px;
-            fill: rgba(255,255,255,0.45);
+            fill: rgba(255, 255, 255, 0.45);
             dominant-baseline: middle;
             text-anchor: middle;
         }
@@ -983,7 +1012,7 @@
         .tyre-temp-bar-track {
             width: 100%;
             height: 3px;
-            background: rgba(255,255,255,0.07);
+            background: rgba(255, 255, 255, 0.07);
             border-radius: 2px;
             overflow: hidden;
         }
@@ -1058,8 +1087,15 @@
         }
 
         @keyframes scPulse {
-            0% { box-shadow: 0 0 8px rgba(255, 176, 0, 0.7); transform: translate(-50%, calc(-100% - 12px)) scale(1); }
-            100% { box-shadow: 0 0 20px rgba(255, 215, 0, 1); transform: translate(-50%, calc(-100% - 12px)) scale(1.15); }
+            0% {
+                box-shadow: 0 0 8px rgba(255, 176, 0, 0.7);
+                transform: translate(-50%, calc(-100% - 12px)) scale(1);
+            }
+
+            100% {
+                box-shadow: 0 0 20px rgba(255, 215, 0, 1);
+                transform: translate(-50%, calc(-100% - 12px)) scale(1.15);
+            }
         }
 
         .track-popup {
@@ -1339,7 +1375,9 @@
             flex-shrink: 1;
         }
 
-        .col-s1, .col-s2, .col-s3 {
+        .col-s1,
+        .col-s2,
+        .col-s3 {
             width: 50px;
             text-align: center;
             font-family: "Roboto Mono", monospace;
@@ -1449,10 +1487,30 @@
             margin-left: 4px;
             vertical-align: middle;
         }
-        .badge-pen.time-pen { background: rgba(225, 6, 0, 0.25); border: 1px solid var(--f1-red); color: #FF6B6B; }
-        .badge-pen.dt-pen { background: rgba(255, 209, 0, 0.25); border: 1px solid var(--fia-yellow); color: #FFD54F; }
-        .badge-pen.sg-pen { background: rgba(255, 112, 67, 0.25); border: 1px solid #FF7043; color: #FF8A65; }
-        .badge-pen.warn-pen { background: rgba(255, 255, 255, 0.15); border: 1px solid var(--text-muted); color: #E2E8F0; }
+
+        .badge-pen.time-pen {
+            background: rgba(225, 6, 0, 0.25);
+            border: 1px solid var(--f1-red);
+            color: #FF6B6B;
+        }
+
+        .badge-pen.dt-pen {
+            background: rgba(255, 209, 0, 0.25);
+            border: 1px solid var(--fia-yellow);
+            color: #FFD54F;
+        }
+
+        .badge-pen.sg-pen {
+            background: rgba(255, 112, 67, 0.25);
+            border: 1px solid #FF7043;
+            color: #FF8A65;
+        }
+
+        .badge-pen.warn-pen {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid var(--text-muted);
+            color: #E2E8F0;
+        }
 
         /* ══════════ RESTORED HISTORY TABLE STYLING ══════════ */
         .history-table-wrapper {
@@ -1760,8 +1818,19 @@
             background: var(--f1-border);
         }
 
-        .stick-pad::before { width: 100%; height: 1px; top: 50%; left: 0; }
-        .stick-pad::after { width: 1px; height: 100%; top: 0; left: 50%; }
+        .stick-pad::before {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            left: 0;
+        }
+
+        .stick-pad::after {
+            width: 1px;
+            height: 100%;
+            top: 0;
+            left: 50%;
+        }
 
         .stick-dot {
             width: 14px;
@@ -1886,7 +1955,7 @@
             position: relative;
             width: 100%;
             height: 150px;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 8px;
             border: 1px solid var(--f1-border);
             margin-bottom: 10px;
@@ -1917,7 +1986,7 @@
         }
 
         .rival-panel {
-            background: linear-gradient(135deg, rgba(10,20,40,0.9), rgba(5,12,26,0.95));
+            background: linear-gradient(135deg, rgba(10, 20, 40, 0.9), rgba(5, 12, 26, 0.95));
             border: 1px solid var(--f1-border);
             border-radius: 10px;
             padding: 12px;
@@ -1959,7 +2028,7 @@
         }
 
         .rival-vs-badge {
-            background: rgba(255,255,255,0.08);
+            background: rgba(255, 255, 255, 0.08);
             border-radius: 50%;
             width: 24px;
             height: 24px;
@@ -1979,13 +2048,13 @@
 
         .rival-lap-chip {
             flex: 1;
-            background: rgba(255,255,255,0.04);
+            background: rgba(255, 255, 255, 0.04);
             border-radius: 6px;
             padding: 4px;
             text-align: center;
             font-size: 0.65rem;
             font-family: 'Roboto Mono', monospace;
-            border: 1px solid rgba(255,255,255,0.06);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         /* ══════════ ERS & FUEL STRATEGY ══════════ */
@@ -1994,6 +2063,7 @@
             cursor: default;
             user-select: none;
         }
+
         .ers-mode-card.active {
             box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
         }
@@ -2027,8 +2097,13 @@
         }
 
         @keyframes spinSync {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .spin-sync svg {
@@ -2040,7 +2115,7 @@
             top: 70px;
             left: 50%;
             transform: translateX(-50%) translateY(-20px);
-            background: linear-gradient(135deg, rgba(187,0,255,0.95), rgba(100,0,200,0.95));
+            background: linear-gradient(135deg, rgba(187, 0, 255, 0.95), rgba(100, 0, 200, 0.95));
             border: 1px solid var(--fia-purple);
             border-radius: 12px;
             padding: 8px 18px;
@@ -2048,19 +2123,21 @@
             font-weight: 700;
             color: #fff;
             letter-spacing: 1.5px;
-            box-shadow: 0 0 35px rgba(187,0,255,0.6);
+            box-shadow: 0 0 35px rgba(187, 0, 255, 0.6);
             z-index: 9998;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease, transform 0.3s ease;
             white-space: nowrap;
         }
+
         #pb-badge.pb-show {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
         }
 
-        select, input[type="number"] {
+        select,
+        input[type="number"] {
             background: var(--f1-dark) !important;
             border: 1px solid var(--f1-border) !important;
             color: var(--text-main) !important;
@@ -2209,6 +2286,7 @@
             #tab-radar[data-mobile-view="map"] .radar-timing-panel {
                 display: none !important;
             }
+
             #tab-radar[data-mobile-view="map"] .radar-map-panel {
                 display: flex !important;
                 height: 68vh;
@@ -2218,6 +2296,7 @@
             #tab-radar[data-mobile-view="timing"] .radar-map-panel {
                 display: none !important;
             }
+
             #tab-radar[data-mobile-view="timing"] .radar-timing-panel {
                 display: flex !important;
             }
@@ -2227,6 +2306,7 @@
                 height: 350px;
                 min-height: 280px;
             }
+
             #tab-radar[data-mobile-view="dual"] .radar-timing-panel {
                 display: flex !important;
             }
@@ -2272,30 +2352,36 @@
         }
 
         @media (max-width: 768px) {
+
             .view-all .lb-header,
             .view-all .lb-row {
                 min-width: 600px;
             }
+
             .view-all .col-pos {
                 position: sticky;
                 left: 0;
                 background: var(--f1-dark);
                 z-index: 2;
             }
+
             .view-all .col-driver {
                 position: sticky;
                 left: 26px;
                 background: var(--f1-dark);
                 z-index: 2;
             }
+
             .view-all .lb-row .col-pos,
             .view-all .lb-row .col-driver {
                 background: var(--f1-dark-alt);
             }
+
             .view-all .lb-row.is-player .col-pos,
             .view-all .lb-row.is-player .col-driver {
                 background: #252316;
             }
+
             .view-all .lb-row.is-ref-driver .col-pos,
             .view-all .lb-row.is-ref-driver .col-driver {
                 background: #0b2229;
@@ -2325,7 +2411,8 @@
                 font-size: 0.74rem;
             }
 
-            .col-laps, .col-stat {
+            .col-laps,
+            .col-stat {
                 display: none;
             }
 
@@ -2333,31 +2420,42 @@
                 font-size: 0.82rem;
                 min-width: 90px;
             }
-            .col-s1, .col-s2, .col-s3 {
+
+            .col-s1,
+            .col-s2,
+            .col-s3 {
                 width: 46px;
                 font-size: 0.70rem;
             }
+
             .sector-badge {
                 padding: 2px 2px;
                 font-size: 0.70rem;
             }
-            .col-gap, .col-int {
+
+            .col-gap,
+            .col-int {
                 width: 58px;
                 font-size: 0.78rem;
             }
+
             .col-best {
                 width: 68px;
                 font-size: 0.80rem;
             }
+
             .col-tyre {
                 width: 30px;
                 font-size: 0.75rem;
             }
+
             .col-pos {
                 width: 22px;
                 font-size: 0.80rem;
             }
-            .lb-header, .lb-row {
+
+            .lb-header,
+            .lb-row {
                 padding: 6px 8px;
                 gap: 4px;
             }
@@ -2380,23 +2478,32 @@
                 font-size: 0.78rem;
                 min-width: 80px;
             }
-            .col-s1, .col-s2, .col-s3 {
+
+            .col-s1,
+            .col-s2,
+            .col-s3 {
                 width: 42px;
                 font-size: 0.68rem;
             }
+
             .sector-badge {
                 padding: 1px 1px;
                 font-size: 0.68rem;
             }
-            .col-gap, .col-int {
+
+            .col-gap,
+            .col-int {
                 width: 52px;
                 font-size: 0.74rem;
             }
+
             .col-best {
                 width: 62px;
                 font-size: 0.74rem;
             }
-            .lb-header, .lb-row {
+
+            .lb-header,
+            .lb-row {
                 padding: 5px 6px;
                 gap: 3px;
             }
@@ -2409,7 +2516,9 @@
     <div class="rbr-branding-bar">
         <div class="rbr-brand-title">
             <svg viewBox="0 0 100 60" width="28" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10 30 C 25 10, 45 10, 50 30 C 55 10, 75 10, 90 30 C 75 50, 55 50, 50 30 C 45 50, 25 50, 10 30 Z" fill="url(#rbrGrad)" />
+                <path
+                    d="M10 30 C 25 10, 45 10, 50 30 C 55 10, 75 10, 90 30 C 75 50, 55 50, 50 30 C 45 50, 25 50, 10 30 Z"
+                    fill="url(#rbrGrad)" />
                 <circle cx="50" cy="30" r="14" fill="#FFD100" />
                 <path d="M35 30 L 45 22 L 45 38 Z M 65 30 L 55 22 L 55 38 Z" fill="#FF1E00" />
                 <defs>
@@ -2425,24 +2534,33 @@
         </div>
 
         <div class="rbr-header-actions">
-            <button id="btn-refresh-session" class="rbr-tool-btn" onclick="refreshTelemetryConnection()" title="Quick Refresh / Reconnect Telemetry">
-                <svg id="refresh-spinner-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            <button id="btn-refresh-session" class="rbr-tool-btn" onclick="refreshTelemetryConnection()"
+                title="Quick Refresh / Reconnect Telemetry">
+                <svg id="refresh-spinner-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13"
+                    height="13" fill="currentColor">
+                    <path
+                        d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
                 </svg>
                 <span>REFRESH</span>
             </button>
-            <button id="btn-download-session" class="rbr-download-btn" onclick="downloadSessionJson()" title="Download Complete Session Data (JSON)">
+            <button id="btn-download-session" class="rbr-download-btn" onclick="downloadSessionJson()"
+                title="Download Complete Session Data (JSON)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-                    <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+                    <path
+                        d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z" />
                 </svg>
                 <span>EXPORT JSON</span>
             </button>
-            <div class="rbr-kpi-pill" title="ERS Battery State of Charge" onclick="switchTab('tab-ers-fuel', document.getElementById('nav-btn-ers-fuel'))" style="cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; background: rgba(0,240,255,0.08); border: 1px solid rgba(0,240,255,0.25); font-family: 'Roboto Mono', monospace; font-size: 0.72rem; font-weight: 700;">
+            <div class="rbr-kpi-pill" title="ERS Battery State of Charge"
+                onclick="switchTab('tab-ers-fuel', document.getElementById('nav-btn-ers-fuel'))"
+                style="cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; background: rgba(0,240,255,0.08); border: 1px solid rgba(0,240,255,0.25); font-family: 'Roboto Mono', monospace; font-size: 0.72rem; font-weight: 700;">
                 <span style="color:#00F0FF;">⚡</span>
                 <span id="hdr-ers-soc">--</span>%
                 <span id="hdr-ers-mode" style="font-size:0.58rem; color:var(--text-muted); padding-left:2px;">MED</span>
             </div>
-            <div class="rbr-kpi-pill" title="Fuel Delta Laps" onclick="switchTab('tab-ers-fuel', document.getElementById('nav-btn-ers-fuel'))" style="cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; background: rgba(255,209,0,0.08); border: 1px solid rgba(255,209,0,0.25); font-family: 'Roboto Mono', monospace; font-size: 0.72rem; font-weight: 700;">
+            <div class="rbr-kpi-pill" title="Fuel Delta Laps"
+                onclick="switchTab('tab-ers-fuel', document.getElementById('nav-btn-ers-fuel'))"
+                style="cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; background: rgba(255,209,0,0.08); border: 1px solid rgba(255,209,0,0.25); font-family: 'Roboto Mono', monospace; font-size: 0.72rem; font-weight: 700;">
                 <span style="color:var(--rbr-yellow);">⛽</span>
                 <span id="hdr-fuel-delta">--</span>
             </div>
@@ -2465,31 +2583,37 @@
         </div>
 
         <div class="hero-kpi-card">
-            <div class="kpi-lbl"><span>SESSION</span><span id="session-badge-type" style="color:var(--rbr-yellow);">LIVE</span></div>
+            <div class="kpi-lbl"><span>SESSION</span><span id="session-badge-type"
+                    style="color:var(--rbr-yellow);">LIVE</span></div>
             <div class="kpi-val" id="session-type">--</div>
             <div class="kpi-sub" id="track-temp-sub">Track: -- °C</div>
         </div>
 
         <div class="hero-kpi-card" style="border-color: rgba(255, 209, 0, 0.4);">
-            <div class="kpi-lbl"><span id="hero-pos-lbl">POSITION</span><span style="color:var(--rbr-yellow);">RANK</span></div>
+            <div class="kpi-lbl"><span id="hero-pos-lbl">POSITION</span><span
+                    style="color:var(--rbr-yellow);">RANK</span></div>
             <div class="kpi-val highlight" style="color:var(--rbr-yellow);">P<span id="pos">--</span></div>
-            <div class="kpi-sub" id="hero-lap-progress">Lap <span id="lap-num">0</span>/<span id="laps-total">0</span></div>
+            <div class="kpi-sub" id="hero-lap-progress">Lap <span id="lap-num">0</span>/<span id="laps-total">0</span>
+            </div>
         </div>
 
         <div class="hero-kpi-card" id="hero-target-card">
-            <div class="kpi-lbl"><span id="hero-target-title">CAR AHEAD</span><span id="hero-target-tag">INTERVAL</span></div>
+            <div class="kpi-lbl"><span id="hero-target-title">CAR AHEAD</span><span id="hero-target-tag">INTERVAL</span>
+            </div>
             <div class="kpi-val" id="hero-target-val" style="color:var(--fia-green);">+0.000</div>
             <div class="kpi-sub" id="hero-target-sub">Leader</div>
         </div>
 
         <div class="hero-kpi-card" id="hero-behind-card">
-            <div class="kpi-lbl"><span id="hero-behind-title">CAR BEHIND</span><span id="hero-behind-tag">GAP</span></div>
+            <div class="kpi-lbl"><span id="hero-behind-title">CAR BEHIND</span><span id="hero-behind-tag">GAP</span>
+            </div>
             <div class="kpi-val" id="hero-behind-val" style="color:#93C5FD;">--</div>
             <div class="kpi-sub" id="hero-behind-sub">None</div>
         </div>
 
         <div class="hero-kpi-card" style="border-color: rgba(216, 180, 254, 0.35);">
-            <div class="kpi-lbl"><span style="color:var(--fia-purple);">SESSION FASTEST</span><span style="color:var(--fia-purple);">⏱</span></div>
+            <div class="kpi-lbl"><span style="color:var(--fia-purple);">SESSION FASTEST</span><span
+                    style="color:var(--fia-purple);">⏱</span></div>
             <div class="kpi-val purple" id="hdr-fastest-lap">--:--.---</div>
             <div class="kpi-sub" id="hdr-fastest-driver">--</div>
         </div>
@@ -2499,7 +2623,8 @@
     <div class="nav-bar">
         <button class="nav-btn active" onclick="switchTab('tab-radar', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm1-13h-2v6h6v-2h-4z" />
+                <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm1-13h-2v6h6v-2h-4z" />
             </svg>
             <span class="nav-label">Timing &amp; Radar</span>
         </button>
@@ -2511,19 +2636,22 @@
         </button>
         <button class="nav-btn" onclick="switchTab('tab-tyres', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
+                <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
             </svg>
             <span class="nav-label">Tyre Data</span>
         </button>
         <button class="nav-btn" id="nav-btn-ers-fuel" onclick="switchTab('tab-ers-fuel', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.58 11 21 11 21z"/>
+                <path
+                    d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.58 11 21 11 21z" />
             </svg>
             <span class="nav-label">ERS &amp; Fuel</span>
         </button>
         <button class="nav-btn" onclick="switchTab('tab-setup', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+                <path
+                    d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z" />
             </svg>
             <span class="nav-label">Car Setup</span>
         </button>
@@ -2535,13 +2663,14 @@
         </button>
         <button class="nav-btn" onclick="switchTab('tab-laptimes', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                <path
+                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
             </svg>
             <span class="nav-label">Lap History</span>
         </button>
         <button class="nav-btn" onclick="switchTab('tab-session-history', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+                <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" />
             </svg>
             <span class="nav-label">Pace Analysis</span>
         </button>
@@ -2553,13 +2682,15 @@
         </button>
         <button class="nav-btn" onclick="switchTab('tab-weather', this)">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z" />
+                <path
+                    d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z" />
             </svg>
             <span class="nav-label">Weather</span>
         </button>
         <button class="nav-btn" onclick="openGamepadModal()" title="Gamepad Vibration Test">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 1c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 8 18.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                <path
+                    d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 1c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 8 18.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
             </svg>
             <span class="nav-label">Gamepad Test</span>
         </button>
@@ -2571,16 +2702,29 @@
         <div id="tab-radar" class="tab-content active" data-mobile-view="map">
             <!-- Mobile Viewport Switcher -->
             <div class="radar-mobile-toggle-bar" id="radar-mobile-toggle-bar">
-                <button type="button" class="radar-toggle-btn" id="radar-btn-timing" onclick="setRadarMobileView('timing')">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm1-13h-2v6h6v-2h-4z"/></svg>
+                <button type="button" class="radar-toggle-btn" id="radar-btn-timing"
+                    onclick="setRadarMobileView('timing')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"
+                        fill="currentColor">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm1-13h-2v6h6v-2h-4z" />
+                    </svg>
                     <span>TIMING &amp; DATA</span>
                 </button>
-                <button type="button" class="radar-toggle-btn active" id="radar-btn-map" onclick="setRadarMobileView('map')">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+                <button type="button" class="radar-toggle-btn active" id="radar-btn-map"
+                    onclick="setRadarMobileView('map')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"
+                        fill="currentColor">
+                        <path
+                            d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z" />
+                    </svg>
                     <span>CIRCUIT MAP</span>
                 </button>
                 <button type="button" class="radar-toggle-btn" id="radar-btn-dual" onclick="setRadarMobileView('dual')">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 3h8v8H3V3zm0 10h8v8H3v-8zM13 3h8v8h-8V3zm0 10h8v8h-8v-8z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"
+                        fill="currentColor">
+                        <path d="M3 3h8v8H3V3zm0 10h8v8H3v-8zM13 3h8v8h-8V3zm0 10h8v8h-8v-8z" />
+                    </svg>
                     <span>COMBINED</span>
                 </button>
             </div>
@@ -2610,7 +2754,9 @@
                     </div>
                     <div class="data-row">
                         <span class="label">Top Speed</span>
-                        <span class="val" id="panel-top-speed" style="font-size: 1.05rem; color: var(--fia-green); font-weight: bold; font-family: 'Roboto Mono', monospace;">-- km/h</span>
+                        <span class="val" id="panel-top-speed"
+                            style="font-size: 1.05rem; color: var(--fia-green); font-weight: bold; font-family: 'Roboto Mono', monospace;">--
+                            km/h</span>
                     </div>
                 </div>
 
@@ -2661,16 +2807,20 @@
                         </div>
                     </div>
                     <div class="data-row" style="align-items: flex-start;">
-                        <span class="label" style="margin-top: 4px; color: var(--fia-purple);">Session Best Sectors</span>
+                        <span class="label" style="margin-top: 4px; color: var(--fia-purple);">Session Best
+                            Sectors</span>
                         <div style="text-align: right">
                             <div class="sector-delta">
-                                <span style="padding-left: 4px; color: var(--fia-purple);">S1 </span><span id="sb-s1" class="purple" style="font-weight:700;">--:--.---</span>
+                                <span style="padding-left: 4px; color: var(--fia-purple);">S1 </span><span id="sb-s1"
+                                    class="purple" style="font-weight:700;">--:--.---</span>
                             </div>
                             <div class="sector-delta">
-                                <span style="padding-left: 4px; color: var(--fia-purple);">S2 </span><span id="sb-s2" class="purple" style="font-weight:700;">--:--.---</span>
+                                <span style="padding-left: 4px; color: var(--fia-purple);">S2 </span><span id="sb-s2"
+                                    class="purple" style="font-weight:700;">--:--.---</span>
                             </div>
                             <div class="sector-delta">
-                                <span style="padding-left: 4px; color: var(--fia-purple);">S3 </span><span id="sb-s3" class="purple" style="font-weight:700;">--:--.---</span>
+                                <span style="padding-left: 4px; color: var(--fia-purple);">S3 </span><span id="sb-s3"
+                                    class="purple" style="font-weight:700;">--:--.---</span>
                             </div>
                         </div>
                     </div>
@@ -2724,7 +2874,8 @@
                     </div>
                     <div class="data-row" style="margin-top: 8px">
                         <span class="label1" style="color: var(--fia-purple)">Session Fastest
-                            <span id="session-fastest-driver" style="font-size: 0.8rem; color: var(--text-muted)"></span></span>
+                            <span id="session-fastest-driver"
+                                style="font-size: 0.8rem; color: var(--text-muted)"></span></span>
                         <div style="text-align: right">
                             <span class="val purple" id="session-fastest-lap" style="
                     color: var(--fia-purple);
@@ -2736,7 +2887,8 @@
                     <div class="data-row">
                         <span class="label">Δ vs Session Best</span>
                         <div style="text-align: right">
-                            <span class="val" id="delta-session-best" style="font-weight: bold; font-family: 'Roboto Mono', monospace; color: var(--text-main);">--</span>
+                            <span class="val" id="delta-session-best"
+                                style="font-weight: bold; font-family: 'Roboto Mono', monospace; color: var(--text-main);">--</span>
                         </div>
                     </div>
                     <div class="data-row">
@@ -2760,21 +2912,27 @@
                     <div class="panel-header">Strategy & Battle Radar</div>
                     <div class="data-row">
                         <span class="label">Car Ahead</span>
-                        <span class="val" id="driver-ahead-wrap" style="color: var(--fia-green); display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                        <span class="val" id="driver-ahead-wrap"
+                            style="color: var(--fia-green); display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
                             <span id="ahead-name" style="font-weight: 700;">LEADER</span>
-                            <span id="ahead-gap" style="font-family: 'Roboto Mono', monospace; font-size: 0.85rem; color: var(--fia-green); background: rgba(0,230,118,0.1); padding: 1px 5px; border-radius: 3px;">+0.000s</span>
+                            <span id="ahead-gap"
+                                style="font-family: 'Roboto Mono', monospace; font-size: 0.85rem; color: var(--fia-green); background: rgba(0,230,118,0.1); padding: 1px 5px; border-radius: 3px;">+0.000s</span>
                         </span>
                     </div>
                     <div class="data-row">
                         <span class="label">Car Behind</span>
-                        <span class="val" id="driver-behind-wrap" style="color: #93C5FD; display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                        <span class="val" id="driver-behind-wrap"
+                            style="color: #93C5FD; display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
                             <span id="behind-name" style="font-weight: 700;">NONE</span>
-                            <span id="behind-gap" style="font-family: 'Roboto Mono', monospace; font-size: 0.85rem; color: #93C5FD; background: rgba(59,130,246,0.1); padding: 1px 5px; border-radius: 3px;">--</span>
+                            <span id="behind-gap"
+                                style="font-family: 'Roboto Mono', monospace; font-size: 0.85rem; color: #93C5FD; background: rgba(59,130,246,0.1); padding: 1px 5px; border-radius: 3px;">--</span>
                         </span>
                     </div>
                     <div class="data-row" id="drs-threat-row" style="display: none;">
                         <span class="label" style="color: var(--fia-yellow); font-weight: 700;">DRS Threat</span>
-                        <span class="val" style="background: rgba(255, 209, 0, 0.2); color: var(--fia-yellow); border: 1px solid var(--fia-yellow); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; animation: rbrPulse 1s infinite;">⚠️ BEHIND IN DRS RANGE (&lt;1.0s)</span>
+                        <span class="val"
+                            style="background: rgba(255, 209, 0, 0.2); color: var(--fia-yellow); border: 1px solid var(--fia-yellow); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; animation: rbrPulse 1s infinite;">⚠️
+                            BEHIND IN DRS RANGE (&lt;1.0s)</span>
                     </div>
                     <div class="data-row">
                         <span class="label">Compound</span>
@@ -2830,7 +2988,8 @@
                     </div>
                     <div class="data-row" id="lap-invalid-row" style="display: none">
                         <span class="label" style="color: var(--f1-red); font-weight: 700;">Lap Status</span>
-                        <span class="val" id="lap-invalid-status" style="color: var(--f1-red); font-weight: bold; background: rgba(225,6,0,0.15); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--f1-red);">INVALIDATED</span>
+                        <span class="val" id="lap-invalid-status"
+                            style="color: var(--f1-red); font-weight: bold; background: rgba(225,6,0,0.15); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--f1-red);">INVALIDATED</span>
                     </div>
                 </div>
             </div>
@@ -2899,8 +3058,8 @@
                             " onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'"
                             onmouseout="this.style.background=this.classList.contains('finalized') ? 'rgba(0, 255, 102, 0.2)' : 'rgba(255, 255, 255, 0.1)'"
                             title="Finalize Track Map (Lock lines & stop auto-sync)">
-                            <svg id="finalize-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                                fill="currentColor">
+                            <svg id="finalize-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
                                 <path id="finalize-path"
                                     d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
                             </svg>
@@ -2920,10 +3079,14 @@
                     </div>
                     <!-- Mini HUD over circuit map -->
                     <div class="map-floating-hud" id="map-floating-hud">
-                        <div class="hud-chip"><span class="hud-lbl">POS</span><span class="hud-val" id="hud-pos" style="color:var(--rbr-yellow);">P--</span></div>
-                        <div class="hud-chip"><span class="hud-lbl">LAP</span><span class="hud-val" id="hud-lap">--:--.---</span></div>
-                        <div class="hud-chip"><span class="hud-lbl">GAP</span><span class="hud-val" id="hud-gap" style="color:var(--fia-green);">+0.000</span></div>
-                        <div class="hud-chip"><span class="hud-lbl">TOP SPD</span><span class="hud-val" id="hud-top-speed" style="color:var(--fia-green);">--</span></div>
+                        <div class="hud-chip"><span class="hud-lbl">POS</span><span class="hud-val" id="hud-pos"
+                                style="color:var(--rbr-yellow);">P--</span></div>
+                        <div class="hud-chip"><span class="hud-lbl">LAP</span><span class="hud-val"
+                                id="hud-lap">--:--.---</span></div>
+                        <div class="hud-chip"><span class="hud-lbl">GAP</span><span class="hud-val" id="hud-gap"
+                                style="color:var(--fia-green);">+0.000</span></div>
+                        <div class="hud-chip"><span class="hud-lbl">TOP SPD</span><span class="hud-val"
+                                id="hud-top-speed" style="color:var(--fia-green);">--</span></div>
                     </div>
                     <div class="map-overlay">
                         <span style="color: var(--text-muted)">Uplink: </span><span id="ws-status"
@@ -2937,19 +3100,24 @@
         <div id="tab-telemetry" class="tab-content">
             <div class="panel">
                 <div class="panel-header">Powertrain &amp; Driver Inputs</div>
-                
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                    <div class="data-row" style="flex-direction: column; align-items: center; justify-content: center; padding: 12px;">
+                    <div class="data-row"
+                        style="flex-direction: column; align-items: center; justify-content: center; padding: 12px;">
                         <span class="label">SPEED</span>
                         <div style="display: flex; align-items: baseline; gap: 4px;">
                             <span class="val val-giant highlight" id="speed">0</span>
                             <span style="font-size: 0.75rem; color: var(--text-muted);">KM/H</span>
                         </div>
-                        <div style="margin-top: 4px; font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.5px;">
-                            TOP: <span id="top-speed" style="color: var(--fia-green); font-weight: bold; font-family: 'Roboto Mono', monospace;">0</span> KM/H
+                        <div
+                            style="margin-top: 4px; font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.5px;">
+                            TOP: <span id="top-speed"
+                                style="color: var(--fia-green); font-weight: bold; font-family: 'Roboto Mono', monospace;">0</span>
+                            KM/H
                         </div>
                     </div>
-                    <div class="data-row" style="flex-direction: column; align-items: center; justify-content: center; padding: 12px;">
+                    <div class="data-row"
+                        style="flex-direction: column; align-items: center; justify-content: center; padding: 12px;">
                         <span class="label">GEAR</span>
                         <span class="val val-giant highlight" id="gear" style="color: var(--f1-red);">N</span>
                     </div>
@@ -2985,9 +3153,15 @@
                     Steering Angle <span id="steer-val" style="float: right; color: var(--text-main);">0.00</span>
                 </div>
                 <div class="bar-bg" style="position: relative; display: flex; justify-content: center;">
-                    <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.4); z-index: 2; transform: translateX(-50%);"></div>
-                    <div class="fill-bar" id="steer-left" style="background: var(--fia-green); width: 0%; position: absolute; right: 50%; top: 0; bottom: 0; border-radius: 4px 0 0 4px;"></div>
-                    <div class="fill-bar" id="steer-right" style="background: var(--fia-green); width: 0%; position: absolute; left: 50%; top: 0; bottom: 0; border-radius: 0 4px 4px 0;"></div>
+                    <div
+                        style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.4); z-index: 2; transform: translateX(-50%);">
+                    </div>
+                    <div class="fill-bar" id="steer-left"
+                        style="background: var(--fia-green); width: 0%; position: absolute; right: 50%; top: 0; bottom: 0; border-radius: 4px 0 0 4px;">
+                    </div>
+                    <div class="fill-bar" id="steer-right"
+                        style="background: var(--fia-green); width: 0%; position: absolute; left: 50%; top: 0; bottom: 0; border-radius: 0 4px 4px 0;">
+                    </div>
                 </div>
 
                 <div class="data-row">
@@ -3004,7 +3178,8 @@
                             <span style="color:var(--f1-red);">● Brake</span>
                         </div>
                     </div>
-                    <canvas id="input-trace-canvas" style="width: 100%; height: 75px; background: rgba(0,0,0,0.3); border-radius: 6px; border: 1px solid var(--f1-border);"></canvas>
+                    <canvas id="input-trace-canvas"
+                        style="width: 100%; height: 75px; background: rgba(0,0,0,0.3); border-radius: 6px; border: 1px solid var(--f1-border);"></canvas>
                 </div>
             </div>
 
@@ -3012,7 +3187,8 @@
                 <div class="panel-header">Chassis Dynamics &amp; G-Force Friction Oval</div>
                 <div class="data-row">
                     <span class="label">Lat | Long | Vert G</span>
-                    <span class="val"><span id="g-lat">0.00</span> | <span id="g-long">0.00</span> | <span id="g-vert">0.00</span></span>
+                    <span class="val"><span id="g-lat">0.00</span> | <span id="g-long">0.00</span> | <span
+                            id="g-vert">0.00</span></span>
                 </div>
                 <div class="data-row">
                     <span class="label">Total G Load</span>
@@ -3025,22 +3201,31 @@
 
                 <!-- G-Force Graph with Restored Weird Oval / Bounding Shield Friction Envelope -->
                 <div style="display: flex; justify-content: center; margin: 10px 0;">
-                    <canvas id="g-graph" style="width: 100%; max-width: 320px; aspect-ratio: 1; background: #06060e; border-radius: var(--card-radius); border: 1px solid var(--f1-border); box-shadow: inset 0 0 20px rgba(0,0,0,0.5);"></canvas>
+                    <canvas id="g-graph"
+                        style="width: 100%; max-width: 320px; aspect-ratio: 1; background: #06060e; border-radius: var(--card-radius); border: 1px solid var(--f1-border); box-shadow: inset 0 0 20px rgba(0,0,0,0.5);"></canvas>
                 </div>
 
                 <div class="panel-header" style="margin-top: 6px;">Suspension Travel</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div>
                         <div class="label">FL</div>
-                        <div class="bar-bg"><div class="fill-bar" id="susp-fl" style="background: var(--fia-blue);"></div></div>
+                        <div class="bar-bg">
+                            <div class="fill-bar" id="susp-fl" style="background: var(--fia-blue);"></div>
+                        </div>
                         <div class="label">RL</div>
-                        <div class="bar-bg"><div class="fill-bar" id="susp-rl" style="background: var(--fia-blue);"></div></div>
+                        <div class="bar-bg">
+                            <div class="fill-bar" id="susp-rl" style="background: var(--fia-blue);"></div>
+                        </div>
                     </div>
                     <div>
                         <div class="label">FR</div>
-                        <div class="bar-bg"><div class="fill-bar" id="susp-fr" style="background: var(--fia-blue);"></div></div>
+                        <div class="bar-bg">
+                            <div class="fill-bar" id="susp-fr" style="background: var(--fia-blue);"></div>
+                        </div>
                         <div class="label">RR</div>
-                        <div class="bar-bg"><div class="fill-bar" id="susp-rr" style="background: var(--fia-blue);"></div></div>
+                        <div class="bar-bg">
+                            <div class="fill-bar" id="susp-rr" style="background: var(--fia-blue);"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3078,25 +3263,36 @@
                     <div class="tyre-card" id="tyre-card-fl">
                         <div class="tyre-card-header">
                             <span class="tyre-corner-label">Front Left</span>
-                            <span id="tyre-compound-circle-fl" style="font-family:'Roboto Mono',monospace;font-size:0.75rem;font-weight:700;">-</span>
+                            <span id="tyre-compound-circle-fl"
+                                style="font-family:'Roboto Mono',monospace;font-size:0.75rem;font-weight:700;">-</span>
                         </div>
                         <div class="tyre-ring-wrap">
                             <svg class="tyre-ring-svg" viewBox="0 0 68 68">
-                                <circle class="tyre-ring-bg" cx="34" cy="34" r="28"/>
-                                <circle class="tyre-ring-arc" id="tyre-ring-fl" cx="34" cy="34" r="28" stroke="#00e676" stroke-dasharray="0 176"/>
+                                <circle class="tyre-ring-bg" cx="34" cy="34" r="28" />
+                                <circle class="tyre-ring-arc" id="tyre-ring-fl" cx="34" cy="34" r="28" stroke="#00e676"
+                                    stroke-dasharray="0 176" />
                                 <text class="tyre-ring-text" x="34" y="31" id="tyre-pct-fl">0%</text>
                                 <text class="tyre-ring-sub" x="34" y="42">WEAR</text>
                             </svg>
                             <div class="tyre-data-col">
-                                <div class="tyre-data-row"><span class="tyre-data-lbl">Pressure</span><span class="tyre-data-val"><span id="press-fl">0.0</span> psi</span></div>
-                                <div class="tyre-data-row"><span class="tyre-data-lbl">Brake</span><span class="tyre-data-val" style="color:var(--fia-blue);"><span id="brake-temp-fl">0</span>°C</span></div>
+                                <div class="tyre-data-row"><span class="tyre-data-lbl">Pressure</span><span
+                                        class="tyre-data-val"><span id="press-fl">0.0</span> psi</span></div>
+                                <div class="tyre-data-row"><span class="tyre-data-lbl">Brake</span><span
+                                        class="tyre-data-val" style="color:var(--fia-blue);"><span
+                                            id="brake-temp-fl">0</span>°C</span></div>
                                 <div class="tyre-temp-bar-wrap">
-                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Surface</span><span class="tyre-temp-val" id="temp-surf-fl">0°C</span></div>
-                                    <div class="tyre-temp-bar-track"><div class="tyre-temp-bar-fill" id="tsurf-bar-fl" style="width:0%;"></div></div>
+                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Surface</span><span
+                                            class="tyre-temp-val" id="temp-surf-fl">0°C</span></div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tsurf-bar-fl" style="width:0%;"></div>
+                                    </div>
                                 </div>
                                 <div class="tyre-temp-bar-wrap">
-                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Inner</span><span class="tyre-temp-val" id="temp-in-fl">0°C</span></div>
-                                    <div class="tyre-temp-bar-track"><div class="tyre-temp-bar-fill" id="tin-bar-fl" style="width:0%;"></div></div>
+                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Inner</span><span
+                                            class="tyre-temp-val" id="temp-in-fl">0°C</span></div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tin-bar-fl" style="width:0%;"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -3106,25 +3302,36 @@
                     <div class="tyre-card" id="tyre-card-fr">
                         <div class="tyre-card-header">
                             <span class="tyre-corner-label">Front Right</span>
-                            <span id="tyre-compound-circle-fr" style="font-family:'Roboto Mono',monospace;font-size:0.75rem;font-weight:700;">-</span>
+                            <span id="tyre-compound-circle-fr"
+                                style="font-family:'Roboto Mono',monospace;font-size:0.75rem;font-weight:700;">-</span>
                         </div>
                         <div class="tyre-ring-wrap">
                             <svg class="tyre-ring-svg" viewBox="0 0 68 68">
-                                <circle class="tyre-ring-bg" cx="34" cy="34" r="28"/>
-                                <circle class="tyre-ring-arc" id="tyre-ring-fr" cx="34" cy="34" r="28" stroke="#00e676" stroke-dasharray="0 176"/>
+                                <circle class="tyre-ring-bg" cx="34" cy="34" r="28" />
+                                <circle class="tyre-ring-arc" id="tyre-ring-fr" cx="34" cy="34" r="28" stroke="#00e676"
+                                    stroke-dasharray="0 176" />
                                 <text class="tyre-ring-text" x="34" y="31" id="tyre-pct-fr">0%</text>
                                 <text class="tyre-ring-sub" x="34" y="42">WEAR</text>
                             </svg>
                             <div class="tyre-data-col">
-                                <div class="tyre-data-row"><span class="tyre-data-lbl">Pressure</span><span class="tyre-data-val"><span id="press-fr">0.0</span> psi</span></div>
-                                <div class="tyre-data-row"><span class="tyre-data-lbl">Brake</span><span class="tyre-data-val" style="color:var(--fia-blue);"><span id="brake-temp-fr">0</span>°C</span></div>
+                                <div class="tyre-data-row"><span class="tyre-data-lbl">Pressure</span><span
+                                        class="tyre-data-val"><span id="press-fr">0.0</span> psi</span></div>
+                                <div class="tyre-data-row"><span class="tyre-data-lbl">Brake</span><span
+                                        class="tyre-data-val" style="color:var(--fia-blue);"><span
+                                            id="brake-temp-fr">0</span>°C</span></div>
                                 <div class="tyre-temp-bar-wrap">
-                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Surface</span><span class="tyre-temp-val" id="temp-surf-fr">0°C</span></div>
-                                    <div class="tyre-temp-bar-track"><div class="tyre-temp-bar-fill" id="tsurf-bar-fr" style="width:0%;"></div></div>
+                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Surface</span><span
+                                            class="tyre-temp-val" id="temp-surf-fr">0°C</span></div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tsurf-bar-fr" style="width:0%;"></div>
+                                    </div>
                                 </div>
                                 <div class="tyre-temp-bar-wrap">
-                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Inner</span><span class="tyre-temp-val" id="temp-in-fr">0°C</span></div>
-                                    <div class="tyre-temp-bar-track"><div class="tyre-temp-bar-fill" id="tin-bar-fr" style="width:0%;"></div></div>
+                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Inner</span><span
+                                            class="tyre-temp-val" id="temp-in-fr">0°C</span></div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tin-bar-fr" style="width:0%;"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -3134,25 +3341,36 @@
                     <div class="tyre-card" id="tyre-card-rl">
                         <div class="tyre-card-header">
                             <span class="tyre-corner-label">Rear Left</span>
-                            <span id="tyre-compound-circle-rl" style="font-family:'Roboto Mono',monospace;font-size:0.75rem;font-weight:700;">-</span>
+                            <span id="tyre-compound-circle-rl"
+                                style="font-family:'Roboto Mono',monospace;font-size:0.75rem;font-weight:700;">-</span>
                         </div>
                         <div class="tyre-ring-wrap">
                             <svg class="tyre-ring-svg" viewBox="0 0 68 68">
-                                <circle class="tyre-ring-bg" cx="34" cy="34" r="28"/>
-                                <circle class="tyre-ring-arc" id="tyre-ring-rl" cx="34" cy="34" r="28" stroke="#00e676" stroke-dasharray="0 176"/>
+                                <circle class="tyre-ring-bg" cx="34" cy="34" r="28" />
+                                <circle class="tyre-ring-arc" id="tyre-ring-rl" cx="34" cy="34" r="28" stroke="#00e676"
+                                    stroke-dasharray="0 176" />
                                 <text class="tyre-ring-text" x="34" y="31" id="tyre-pct-rl">0%</text>
                                 <text class="tyre-ring-sub" x="34" y="42">WEAR</text>
                             </svg>
                             <div class="tyre-data-col">
-                                <div class="tyre-data-row"><span class="tyre-data-lbl">Pressure</span><span class="tyre-data-val"><span id="press-rl">0.0</span> psi</span></div>
-                                <div class="tyre-data-row"><span class="tyre-data-lbl">Brake</span><span class="tyre-data-val" style="color:var(--fia-blue);"><span id="brake-temp-rl">0</span>°C</span></div>
+                                <div class="tyre-data-row"><span class="tyre-data-lbl">Pressure</span><span
+                                        class="tyre-data-val"><span id="press-rl">0.0</span> psi</span></div>
+                                <div class="tyre-data-row"><span class="tyre-data-lbl">Brake</span><span
+                                        class="tyre-data-val" style="color:var(--fia-blue);"><span
+                                            id="brake-temp-rl">0</span>°C</span></div>
                                 <div class="tyre-temp-bar-wrap">
-                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Surface</span><span class="tyre-temp-val" id="temp-surf-rl">0°C</span></div>
-                                    <div class="tyre-temp-bar-track"><div class="tyre-temp-bar-fill" id="tsurf-bar-rl" style="width:0%;"></div></div>
+                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Surface</span><span
+                                            class="tyre-temp-val" id="temp-surf-rl">0°C</span></div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tsurf-bar-rl" style="width:0%;"></div>
+                                    </div>
                                 </div>
                                 <div class="tyre-temp-bar-wrap">
-                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Inner</span><span class="tyre-temp-val" id="temp-in-rl">0°C</span></div>
-                                    <div class="tyre-temp-bar-track"><div class="tyre-temp-bar-fill" id="tin-bar-rl" style="width:0%;"></div></div>
+                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Inner</span><span
+                                            class="tyre-temp-val" id="temp-in-rl">0°C</span></div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tin-bar-rl" style="width:0%;"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -3162,25 +3380,36 @@
                     <div class="tyre-card" id="tyre-card-rr">
                         <div class="tyre-card-header">
                             <span class="tyre-corner-label">Rear Right</span>
-                            <span id="tyre-compound-circle-rr" style="font-family:'Roboto Mono',monospace;font-size:0.75rem;font-weight:700;">-</span>
+                            <span id="tyre-compound-circle-rr"
+                                style="font-family:'Roboto Mono',monospace;font-size:0.75rem;font-weight:700;">-</span>
                         </div>
                         <div class="tyre-ring-wrap">
                             <svg class="tyre-ring-svg" viewBox="0 0 68 68">
-                                <circle class="tyre-ring-bg" cx="34" cy="34" r="28"/>
-                                <circle class="tyre-ring-arc" id="tyre-ring-rr" cx="34" cy="34" r="28" stroke="#00e676" stroke-dasharray="0 176"/>
+                                <circle class="tyre-ring-bg" cx="34" cy="34" r="28" />
+                                <circle class="tyre-ring-arc" id="tyre-ring-rr" cx="34" cy="34" r="28" stroke="#00e676"
+                                    stroke-dasharray="0 176" />
                                 <text class="tyre-ring-text" x="34" y="31" id="tyre-pct-rr">0%</text>
                                 <text class="tyre-ring-sub" x="34" y="42">WEAR</text>
                             </svg>
                             <div class="tyre-data-col">
-                                <div class="tyre-data-row"><span class="tyre-data-lbl">Pressure</span><span class="tyre-data-val"><span id="press-rr">0.0</span> psi</span></div>
-                                <div class="tyre-data-row"><span class="tyre-data-lbl">Brake</span><span class="tyre-data-val" style="color:var(--fia-blue);"><span id="brake-temp-rr">0</span>°C</span></div>
+                                <div class="tyre-data-row"><span class="tyre-data-lbl">Pressure</span><span
+                                        class="tyre-data-val"><span id="press-rr">0.0</span> psi</span></div>
+                                <div class="tyre-data-row"><span class="tyre-data-lbl">Brake</span><span
+                                        class="tyre-data-val" style="color:var(--fia-blue);"><span
+                                            id="brake-temp-rr">0</span>°C</span></div>
                                 <div class="tyre-temp-bar-wrap">
-                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Surface</span><span class="tyre-temp-val" id="temp-surf-rr">0°C</span></div>
-                                    <div class="tyre-temp-bar-track"><div class="tyre-temp-bar-fill" id="tsurf-bar-rr" style="width:0%;"></div></div>
+                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Surface</span><span
+                                            class="tyre-temp-val" id="temp-surf-rr">0°C</span></div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tsurf-bar-rr" style="width:0%;"></div>
+                                    </div>
                                 </div>
                                 <div class="tyre-temp-bar-wrap">
-                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Inner</span><span class="tyre-temp-val" id="temp-in-rr">0°C</span></div>
-                                    <div class="tyre-temp-bar-track"><div class="tyre-temp-bar-fill" id="tin-bar-rr" style="width:0%;"></div></div>
+                                    <div class="tyre-temp-label-row"><span class="tyre-temp-label">Inner</span><span
+                                            class="tyre-temp-val" id="temp-in-rr">0°C</span></div>
+                                    <div class="tyre-temp-bar-track">
+                                        <div class="tyre-temp-bar-fill" id="tin-bar-rr" style="width:0%;"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -3204,10 +3433,12 @@
                         </div>
                         <div class="hero-stat">
                             <span class="hero-stat-lbl">Pace Status</span>
-                            <span class="hero-stat-val" id="tyre-cliff-warning" style="color:var(--fia-green);">OPTIMAL</span>
+                            <span class="hero-stat-val" id="tyre-cliff-warning"
+                                style="color:var(--fia-green);">OPTIMAL</span>
                         </div>
                     </div>
-                    <div id="tyre-pit-window-msg" style="margin-top: 8px; padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; font-family:'Roboto Mono',monospace; font-weight:700; text-align:center; border: 1px solid var(--fia-green); color: var(--fia-green); background: rgba(0,230,118,0.08);">
+                    <div id="tyre-pit-window-msg"
+                        style="margin-top: 8px; padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; font-family:'Roboto Mono',monospace; font-weight:700; text-align:center; border: 1px solid var(--fia-green); color: var(--fia-green); background: rgba(0,230,118,0.08);">
                         Pace Stable: Tyres operating in peak performance window.
                     </div>
                 </div>
@@ -3220,21 +3451,29 @@
             <div class="panel" style="gap: 14px;">
                 <div class="panel-header">
                     <span>⚡ ERS Energy Store &amp; Hybrid Powertrain</span>
-                    <span class="badge" id="ers-rec-badge" style="background:rgba(0, 240, 255, 0.15); color:#00F0FF; border:1px solid rgba(0, 240, 255, 0.35); font-size:0.65rem; padding:3px 8px; border-radius:4px;">BALANCED</span>
+                    <span class="badge" id="ers-rec-badge"
+                        style="background:rgba(0, 240, 255, 0.15); color:#00F0FF; border:1px solid rgba(0, 240, 255, 0.35); font-size:0.65rem; padding:3px 8px; border-radius:4px;">BALANCED</span>
                 </div>
 
                 <!-- ERS Battery Gauge & Store Details -->
-                <div style="display: flex; gap: 16px; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 14px;">
+                <div
+                    style="display: flex; gap: 16px; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 14px;">
                     <!-- Circular SVG Battery Dial -->
                     <div style="position: relative; width: 110px; height: 110px; flex-shrink: 0;">
                         <svg viewBox="0 0 100 100" style="width: 100%; height: 100%; transform: rotate(-90deg);">
-                            <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8" />
-                            <circle id="ers-battery-circle" cx="50" cy="50" r="42" fill="none" stroke="#00F0FF" stroke-width="8"
-                                stroke-dasharray="263.89" stroke-dashoffset="0" stroke-linecap="round" style="transition: stroke-dashoffset 0.3s, stroke 0.3s;" />
+                            <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)"
+                                stroke-width="8" />
+                            <circle id="ers-battery-circle" cx="50" cy="50" r="42" fill="none" stroke="#00F0FF"
+                                stroke-width="8" stroke-dasharray="263.89" stroke-dashoffset="0" stroke-linecap="round"
+                                style="transition: stroke-dashoffset 0.3s, stroke 0.3s;" />
                         </svg>
-                        <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                            <span id="ers-soc-pct" style="font-family: 'Roboto Mono', monospace; font-size: 1.4rem; font-weight: 800; color: #00F0FF;">100%</span>
-                            <span style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">BATTERY SOC</span>
+                        <div
+                            style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <span id="ers-soc-pct"
+                                style="font-family: 'Roboto Mono', monospace; font-size: 1.4rem; font-weight: 800; color: #00F0FF;">100%</span>
+                            <span
+                                style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">BATTERY
+                                SOC</span>
                         </div>
                     </div>
 
@@ -3242,59 +3481,101 @@
                     <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: baseline;">
                             <span style="font-size: 0.72rem; color: var(--text-muted);">ENERGY STORE:</span>
-                            <span id="ers-store-mj" style="font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.95rem; color: #FFF;">4.00 MJ</span>
+                            <span id="ers-store-mj"
+                                style="font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.95rem; color: #FFF;">4.00
+                                MJ</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: baseline;">
                             <span style="font-size: 0.72rem; color: var(--text-muted);">DEPLOYMENT MODE:</span>
-                            <span id="ers-mode-text" style="font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.9rem; color: var(--rbr-yellow);">MEDIUM</span>
+                            <span id="ers-mode-text"
+                                style="font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.9rem; color: var(--rbr-yellow);">MEDIUM</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: baseline;">
                             <span style="font-size: 0.72rem; color: var(--text-muted);">STRATEGY CALLOUT:</span>
-                            <span id="ers-advisory-text" style="font-size: 0.72rem; font-weight: 600; color: #00E676;">MAINTAIN PACE</span>
+                            <span id="ers-advisory-text"
+                                style="font-size: 0.72rem; font-weight: 600; color: #00E676;">MAINTAIN PACE</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Deployment Modes Bar Selector -->
                 <div>
-                    <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">ERS Deployment Modes</div>
+                    <div
+                        style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        ERS Deployment Modes</div>
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" id="ers-mode-buttons">
-                        <div class="ers-mode-card" id="ers-mode-0" style="padding: 8px 4px; text-align: center; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);"><div style="font-size:0.7rem; font-weight:700;">NONE</div><div style="font-size:0.55rem; color:var(--text-muted);">0% Deploy</div></div>
-                        <div class="ers-mode-card active" id="ers-mode-1" style="padding: 8px 4px; text-align: center; border-radius: 6px; background: rgba(0,240,255,0.12); border: 1px solid #00F0FF; color:#00F0FF;"><div style="font-size:0.7rem; font-weight:700;">MEDIUM</div><div style="font-size:0.55rem;">Race Balance</div></div>
-                        <div class="ers-mode-card" id="ers-mode-2" style="padding: 8px 4px; text-align: center; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);"><div style="font-size:0.7rem; font-weight:700;">HOTLAP</div><div style="font-size:0.55rem; color:var(--text-muted);">Quali Max</div></div>
-                        <div class="ers-mode-card" id="ers-mode-3" style="padding: 8px 4px; text-align: center; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);"><div style="font-size:0.7rem; font-weight:700;">OVERTAKE</div><div style="font-size:0.55rem; color:var(--text-muted);">OT Button</div></div>
+                        <div class="ers-mode-card" id="ers-mode-0"
+                            style="padding: 8px 4px; text-align: center; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size:0.7rem; font-weight:700;">NONE</div>
+                            <div style="font-size:0.55rem; color:var(--text-muted);">0% Deploy</div>
+                        </div>
+                        <div class="ers-mode-card active" id="ers-mode-1"
+                            style="padding: 8px 4px; text-align: center; border-radius: 6px; background: rgba(0,240,255,0.12); border: 1px solid #00F0FF; color:#00F0FF;">
+                            <div style="font-size:0.7rem; font-weight:700;">MEDIUM</div>
+                            <div style="font-size:0.55rem;">Race Balance</div>
+                        </div>
+                        <div class="ers-mode-card" id="ers-mode-2"
+                            style="padding: 8px 4px; text-align: center; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size:0.7rem; font-weight:700;">HOTLAP</div>
+                            <div style="font-size:0.55rem; color:var(--text-muted);">Quali Max</div>
+                        </div>
+                        <div class="ers-mode-card" id="ers-mode-3"
+                            style="padding: 8px 4px; text-align: center; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size:0.7rem; font-weight:700;">OVERTAKE</div>
+                            <div style="font-size:0.55rem; color:var(--text-muted);">OT Button</div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- FIA Lap Deployment Limit Meter (4.00 MJ regulation) -->
-                <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px;">
+                <div
+                    style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.72rem;">
                         <span style="color: var(--text-muted);">FIA LAP DEPLOYMENT (4.0 MJ MAX):</span>
-                        <span id="ers-lap-deploy-val" style="font-family: 'Roboto Mono', monospace; font-weight: 700; color: #FFF;">0.00 MJ (0%)</span>
+                        <span id="ers-lap-deploy-val"
+                            style="font-family: 'Roboto Mono', monospace; font-weight: 700; color: #FFF;">0.00 MJ
+                            (0%)</span>
                     </div>
-                    <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
-                        <div id="ers-lap-deploy-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #00F0FF, #FFD100); transition: width 0.2s;"></div>
+                    <div
+                        style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                        <div id="ers-lap-deploy-bar"
+                            style="width: 0%; height: 100%; background: linear-gradient(90deg, #00F0FF, #FFD100); transition: width 0.2s;">
+                        </div>
                     </div>
                 </div>
 
                 <!-- MGU-K & MGU-H Energy Recovery & Power Split -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px;">
-                        <div style="font-size: 0.65rem; color: #00E676; font-weight: 700; margin-bottom: 4px;">⚡ MGU-K (BRAKING HARVEST)</div>
-                        <div id="ers-mguk-harvest" style="font-family: 'Roboto Mono', monospace; font-size: 1.1rem; font-weight: 700;">0.00 MJ</div>
-                        <div id="ers-mguk-power" style="font-size: 0.62rem; color: var(--text-muted); margin-top: 2px;">Boost: 0 kW (0 HP)</div>
+                    <div
+                        style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px;">
+                        <div style="font-size: 0.65rem; color: #00E676; font-weight: 700; margin-bottom: 4px;">⚡ MGU-K
+                            (BRAKING HARVEST)</div>
+                        <div id="ers-mguk-harvest"
+                            style="font-family: 'Roboto Mono', monospace; font-size: 1.1rem; font-weight: 700;">0.00 MJ
+                        </div>
+                        <div id="ers-mguk-power" style="font-size: 0.62rem; color: var(--text-muted); margin-top: 2px;">
+                            Boost: 0 kW (0 HP)</div>
                     </div>
-                    <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px;">
-                        <div style="font-size: 0.65rem; color: #FF9100; font-weight: 700; margin-bottom: 4px;">🔥 MGU-H (TURBO HARVEST)</div>
-                        <div id="ers-mguh-harvest" style="font-family: 'Roboto Mono', monospace; font-size: 1.1rem; font-weight: 700;">0.00 MJ</div>
-                        <div id="ers-ice-power" style="font-size: 0.62rem; color: var(--text-muted); margin-top: 2px;">ICE: 0 kW (0 HP)</div>
+                    <div
+                        style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px;">
+                        <div style="font-size: 0.65rem; color: #FF9100; font-weight: 700; margin-bottom: 4px;">🔥 MGU-H
+                            (TURBO HARVEST)</div>
+                        <div id="ers-mguh-harvest"
+                            style="font-family: 'Roboto Mono', monospace; font-size: 1.1rem; font-weight: 700;">0.00 MJ
+                        </div>
+                        <div id="ers-ice-power" style="font-size: 0.62rem; color: var(--text-muted); margin-top: 2px;">
+                            ICE: 0 kW (0 HP)</div>
                     </div>
                 </div>
 
                 <!-- Total Powertrain Combined Output -->
-                <div style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.75rem; color: #00F0FF; font-weight: 700;">COMBINED POWERTRAIN OUTPUT:</span>
-                    <span id="ers-total-power" style="font-family: 'Roboto Mono', monospace; font-size: 1.15rem; font-weight: 800; color: #FFF;">STANDBY / IDLE</span>
+                <div
+                    style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; color: #00F0FF; font-weight: 700;">COMBINED POWERTRAIN
+                        OUTPUT:</span>
+                    <span id="ers-total-power"
+                        style="font-family: 'Roboto Mono', monospace; font-size: 1.15rem; font-weight: 800; color: #FFF;">STANDBY
+                        / IDLE</span>
                 </div>
             </div>
 
@@ -3302,65 +3583,93 @@
             <div class="panel" style="gap: 14px;">
                 <div class="panel-header">
                     <span>⛽ Fuel Strategy &amp; Delta Engine</span>
-                    <span class="badge" id="fuel-status-badge" style="background:rgba(0, 230, 118, 0.15); color:#00E676; border:1px solid rgba(0, 230, 118, 0.35); font-size:0.65rem; padding:3px 8px; border-radius:4px;">OPTIMAL</span>
+                    <span class="badge" id="fuel-status-badge"
+                        style="background:rgba(0, 230, 118, 0.15); color:#00E676; border:1px solid rgba(0, 230, 118, 0.35); font-size:0.65rem; padding:3px 8px; border-radius:4px;">OPTIMAL</span>
                 </div>
 
                 <!-- Big Fuel Delta Display -->
-                <div style="display: flex; gap: 16px; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 14px;">
+                <div
+                    style="display: flex; gap: 16px; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 14px;">
                     <!-- Large Fuel Delta Meter -->
-                    <div style="text-align: center; min-width: 120px; border-right: 1px solid rgba(255,255,255,0.08); padding-right: 14px;">
-                        <div style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">FUEL DELTA</div>
-                        <div id="fuel-delta-laps" style="font-family: 'Roboto Mono', monospace; font-size: 1.8rem; font-weight: 900; color: #00E676;">+0.00</div>
-                        <div id="fuel-delta-sub" style="font-size: 0.65rem; color: var(--text-muted);">LAPS OF FUEL</div>
+                    <div
+                        style="text-align: center; min-width: 120px; border-right: 1px solid rgba(255,255,255,0.08); padding-right: 14px;">
+                        <div
+                            style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+                            FUEL DELTA</div>
+                        <div id="fuel-delta-laps"
+                            style="font-family: 'Roboto Mono', monospace; font-size: 1.8rem; font-weight: 900; color: #00E676;">
+                            +0.00</div>
+                        <div id="fuel-delta-sub" style="font-size: 0.65rem; color: var(--text-muted);">LAPS OF FUEL
+                        </div>
                     </div>
 
                     <!-- Tank Mass & Burn Target -->
                     <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px;">
                         <div style="display: flex; justify-content: space-between; align-items: baseline;">
                             <span style="font-size: 0.72rem; color: var(--text-muted);">TANK MASS:</span>
-                            <span id="fuel-mass-kg" style="font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.95rem; color: #FFF;">0.00 kg</span>
+                            <span id="fuel-mass-kg"
+                                style="font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.95rem; color: #FFF;">0.00
+                                kg</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: baseline;">
                             <span style="font-size: 0.72rem; color: var(--text-muted);">CAPACITY / LEVEL:</span>
-                            <span id="fuel-level-pct" style="font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.85rem; color: var(--rbr-yellow);">0% (110 kg)</span>
+                            <span id="fuel-level-pct"
+                                style="font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.85rem; color: var(--rbr-yellow);">0%
+                                (110 kg)</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: baseline;">
                             <span style="font-size: 0.72rem; color: var(--text-muted);">ACTIVE FUEL MIX:</span>
-                            <span id="fuel-mix-name" style="font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.85rem; color: #FFF;">STANDARD</span>
+                            <span id="fuel-mix-name"
+                                style="font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.85rem; color: #FFF;">STANDARD</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Fuel Gauge Bar -->
                 <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.68rem; color: var(--text-muted);">
+                    <div
+                        style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.68rem; color: var(--text-muted);">
                         <span>FUEL TANK CAPACITY</span>
                         <span id="fuel-bar-label">0.0 / 110.0 KG</span>
                     </div>
-                    <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden;">
-                        <div id="fuel-tank-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #FF1801, #FFD100, #00E676); transition: width 0.3s;"></div>
+                    <div
+                        style="width: 100%; height: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden;">
+                        <div id="fuel-tank-bar"
+                            style="width: 0%; height: 100%; background: linear-gradient(90deg, #FF1801, #FFD100, #00E676); transition: width 0.3s;">
+                        </div>
                     </div>
                 </div>
 
                 <!-- Strategy Burn Matrix -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-                    <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; text-align: center;">
+                    <div
+                        style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; text-align: center;">
                         <div style="font-size: 0.58rem; color: var(--text-muted);">TARGET BURN</div>
-                        <div id="fuel-target-burn" style="font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: 700; color: #FFF; margin-top: 2px;">-- kg/L</div>
+                        <div id="fuel-target-burn"
+                            style="font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: 700; color: #FFF; margin-top: 2px;">
+                            -- kg/L</div>
                     </div>
-                    <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; text-align: center;">
+                    <div
+                        style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; text-align: center;">
                         <div style="font-size: 0.58rem; color: var(--text-muted);">LAPS LEFT</div>
-                        <div id="fuel-laps-left" style="font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: 700; color: var(--rbr-yellow); margin-top: 2px;">0</div>
+                        <div id="fuel-laps-left"
+                            style="font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: 700; color: var(--rbr-yellow); margin-top: 2px;">
+                            0</div>
                     </div>
-                    <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; text-align: center;">
+                    <div
+                        style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; text-align: center;">
                         <div style="font-size: 0.58rem; color: var(--text-muted);">LIFT &amp; COAST</div>
-                        <div id="fuel-lift-coast" style="font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: 700; color: #00E676; margin-top: 2px;">NONE</div>
+                        <div id="fuel-lift-coast"
+                            style="font-family: 'Roboto Mono', monospace; font-size: 0.95rem; font-weight: 700; color: #00E676; margin-top: 2px;">
+                            NONE</div>
                     </div>
                 </div>
 
                 <!-- Interactive Strategic Planner & Calculator -->
-                <div style="background: rgba(255, 209, 0, 0.05); border: 1px solid rgba(255, 209, 0, 0.2); border-radius: 8px; padding: 12px;">
-                    <div style="font-size: 0.72rem; color: var(--rbr-yellow); font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                <div
+                    style="background: rgba(255, 209, 0, 0.05); border: 1px solid rgba(255, 209, 0, 0.2); border-radius: 8px; padding: 12px;">
+                    <div
+                        style="font-size: 0.72rem; color: var(--rbr-yellow); font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between;">
                         <span>🎯 RACE STRATEGY SIMULATOR</span>
                         <span id="sim-fuel-status" style="font-size: 0.65rem; color: #00E676;">ON TARGET</span>
                     </div>
@@ -3368,9 +3677,14 @@
                         Simulate Safety Car (SC) laps to evaluate fuel saving window:
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <span style="font-size: 0.7rem; color: #FFF; white-space: nowrap;">SC Laps: <strong id="sc-laps-sim-val">0</strong></span>
-                        <input id="sc-laps-slider" type="range" min="0" max="15" value="0" style="flex-grow: 1; accent-color: var(--rbr-yellow);" oninput="onScLapsSimChanged(this.value)">
-                        <span id="sc-saving-badge" style="font-family: 'Roboto Mono', monospace; font-size: 0.72rem; color: #00E676; font-weight: 700; white-space: nowrap;">+0.0 kg</span>
+                        <span style="font-size: 0.7rem; color: #FFF; white-space: nowrap;">SC Laps: <strong
+                                id="sc-laps-sim-val">0</strong></span>
+                        <input id="sc-laps-slider" type="range" min="0" max="15" value="0"
+                            style="flex-grow: 1; accent-color: var(--rbr-yellow);"
+                            oninput="onScLapsSimChanged(this.value)">
+                        <span id="sc-saving-badge"
+                            style="font-family: 'Roboto Mono', monospace; font-size: 0.72rem; color: #00E676; font-weight: 700; white-space: nowrap;">+0.0
+                            kg</span>
                     </div>
                 </div>
             </div>
@@ -3490,21 +3804,24 @@
                                 <span class="setup-param-title">Front / Rear Suspension</span>
                                 <span class="setup-param-desc">Spring stiffness over kerbs</span>
                             </div>
-                            <span class="setup-param-value"><span id="setup-susp-f">0</span> / <span id="setup-susp-r">0</span></span>
+                            <span class="setup-param-value"><span id="setup-susp-f">0</span> / <span
+                                    id="setup-susp-r">0</span></span>
                         </div>
                         <div class="setup-param-row">
                             <div class="setup-param-info">
                                 <span class="setup-param-title">Anti-Roll Bars (F / R)</span>
                                 <span class="setup-param-desc">Lateral weight transfer roll stiffness</span>
                             </div>
-                            <span class="setup-param-value"><span id="setup-arb-f">0</span> / <span id="setup-arb-r">0</span></span>
+                            <span class="setup-param-value"><span id="setup-arb-f">0</span> / <span
+                                    id="setup-arb-r">0</span></span>
                         </div>
                         <div class="setup-param-row">
                             <div class="setup-param-info">
                                 <span class="setup-param-title">Ride Height (Front / Rear)</span>
                                 <span class="setup-param-desc">Underfloor aero ground clearance</span>
                             </div>
-                            <span class="setup-param-value"><span id="setup-height-f">0</span> / <span id="setup-height-r">0</span></span>
+                            <span class="setup-param-value"><span id="setup-height-f">0</span> / <span
+                                    id="setup-height-r">0</span></span>
                         </div>
                     </div>
 
@@ -3596,14 +3913,20 @@
                         <span id="lb-mode-tag" class="panel-header-badge">RACE STANDINGS</span>
                     </div>
                     <div class="lb-view-controls">
-                        <span id="lb-ref-indicator" class="lb-ref-indicator" style="display:none;" onclick="clearSelectedRefDriver()" title="Click to reset reference to race leader">
+                        <span id="lb-ref-indicator" class="lb-ref-indicator" style="display:none;"
+                            onclick="clearSelectedRefDriver()" title="Click to reset reference to race leader">
                             REF: <span id="lb-ref-name">--</span>
                             <span class="lb-ref-clear">&times;</span>
                         </span>
                         <div class="lb-toggle-group">
-                            <button type="button" class="lb-toggle-btn active" id="lb-btn-timing" onclick="setLeaderboardViewMode('timing')" title="Show Gap, Interval, Best & Tyre">TIMING</button>
-                            <button type="button" class="lb-toggle-btn" id="lb-btn-sectors" onclick="setLeaderboardViewMode('sectors')" title="Show S1, S2, S3 Sector Times">SECTORS</button>
-                            <button type="button" class="lb-toggle-btn" id="lb-btn-all" onclick="setLeaderboardViewMode('all')" title="Show All Columns">ALL</button>
+                            <button type="button" class="lb-toggle-btn active" id="lb-btn-timing"
+                                onclick="setLeaderboardViewMode('timing')"
+                                title="Show Gap, Interval, Best & Tyre">TIMING</button>
+                            <button type="button" class="lb-toggle-btn" id="lb-btn-sectors"
+                                onclick="setLeaderboardViewMode('sectors')"
+                                title="Show S1, S2, S3 Sector Times">SECTORS</button>
+                            <button type="button" class="lb-toggle-btn" id="lb-btn-all"
+                                onclick="setLeaderboardViewMode('all')" title="Show All Columns">ALL</button>
                         </div>
                     </div>
                 </div>
@@ -3611,7 +3934,8 @@
                     <div class="lb-container" id="lb-main-container">
                         <div id="leaderboard-headers" class="lb-header"></div>
                         <div id="leaderboard-container" style="display:flex; flex-direction:column; gap:4px;">
-                            <div style="text-align:center; color:var(--text-muted); padding:30px; font-family:'Roboto Mono',monospace;">
+                            <div
+                                style="text-align:center; color:var(--text-muted); padding:30px; font-family:'Roboto Mono',monospace;">
                                 Waiting for live session timing data...
                             </div>
                         </div>
@@ -3623,11 +3947,14 @@
         <!-- ── TAB 6: LAPTIME HISTORY ── -->
         <div id="tab-laptimes" class="tab-content">
             <div class="panel" style="flex-grow: 1; padding: 0">
-                <div class="panel-header" style="margin: 12px 14px 0 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="panel-header"
+                    style="margin: 12px 14px 0 14px; display: flex; justify-content: space-between; align-items: center;">
                     <span>Laptime History</span>
                     <button class="rbr-download-btn" onclick="downloadSessionJson()">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13"
+                            fill="currentColor">
+                            <path
+                                d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z" />
                         </svg>
                         Export JSON
                     </button>
@@ -3653,8 +3980,10 @@
                 <div class="panel-header">
                     <span>Session History &amp; Pace Analysis</span>
                     <button class="rbr-download-btn" onclick="downloadSessionJson()">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13"
+                            fill="currentColor">
+                            <path
+                                d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z" />
                         </svg>
                         Download Full Session JSON
                     </button>
@@ -3663,7 +3992,8 @@
                 <div style="margin-bottom: 14px;">
                     <div class="pace-chart-legend">
                         <div><span class="pace-legend-dot" style="background:#FFF;"></span>Your Pace</div>
-                        <div><span class="pace-legend-dot" style="background:var(--fia-purple);"></span>Session Best</div>
+                        <div><span class="pace-legend-dot" style="background:var(--fia-purple);"></span>Session Best
+                        </div>
                         <div><span class="pace-legend-dot" style="background:var(--fia-yellow);"></span>Rival Pace</div>
                     </div>
                     <div class="pace-chart-container">
@@ -3686,13 +4016,23 @@
                         <div class="rival-vs-badge">VS</div>
                         <div class="rival-driver-col">
                             <div class="rival-driver-name" id="rival-t-name">RIVAL</div>
-                            <div class="rival-driver-val" id="rival-t-best" style="color:var(--fia-yellow);">--:--.---</div>
+                            <div class="rival-driver-val" id="rival-t-best" style="color:var(--fia-yellow);">--:--.---
+                            </div>
                         </div>
                     </div>
                     <div class="rival-recent-laps" id="rival-recent-chips">
-                        <div class="rival-lap-chip"><div style="color:var(--text-muted);font-size:0.58rem;">Gap to Rival</div><div id="rival-gap-val">--</div></div>
-                        <div class="rival-lap-chip"><div style="color:var(--text-muted);font-size:0.58rem;">Pace Delta</div><div id="rival-pace-delta">--</div></div>
-                        <div class="rival-lap-chip"><div style="color:var(--text-muted);font-size:0.58rem;">Rival Tyre</div><div id="rival-tyre-val">--</div></div>
+                        <div class="rival-lap-chip">
+                            <div style="color:var(--text-muted);font-size:0.58rem;">Gap to Rival</div>
+                            <div id="rival-gap-val">--</div>
+                        </div>
+                        <div class="rival-lap-chip">
+                            <div style="color:var(--text-muted);font-size:0.58rem;">Pace Delta</div>
+                            <div id="rival-pace-delta">--</div>
+                        </div>
+                        <div class="rival-lap-chip">
+                            <div style="color:var(--text-muted);font-size:0.58rem;">Rival Tyre</div>
+                            <div id="rival-tyre-val">--</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3724,78 +4064,132 @@
                     <div class="dmg-card">
                         <div class="panel-header">Aerodynamics &amp; Chassis</div>
                         <div class="dmg-row">
-                            <div class="dmg-row-header"><span class="label">Front Left Wing</span><span class="val" id="dmg-fl-wing-val">0%</span></div>
-                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-fl-wing-bar"></div></div>
+                            <div class="dmg-row-header"><span class="label">Front Left Wing</span><span class="val"
+                                    id="dmg-fl-wing-val">0%</span></div>
+                            <div class="dmg-bar-bg">
+                                <div class="dmg-bar-fill" id="dmg-fl-wing-bar"></div>
+                            </div>
                         </div>
                         <div class="dmg-row">
-                            <div class="dmg-row-header"><span class="label">Front Right Wing</span><span class="val" id="dmg-fr-wing-val">0%</span></div>
-                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-fr-wing-bar"></div></div>
+                            <div class="dmg-row-header"><span class="label">Front Right Wing</span><span class="val"
+                                    id="dmg-fr-wing-val">0%</span></div>
+                            <div class="dmg-bar-bg">
+                                <div class="dmg-bar-fill" id="dmg-fr-wing-bar"></div>
+                            </div>
                         </div>
                         <div class="dmg-row">
-                            <div class="dmg-row-header"><span class="label">Rear Wing &amp; DRS</span><span class="val" id="dmg-r-wing-val">0%</span></div>
-                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-r-wing-bar"></div></div>
+                            <div class="dmg-row-header"><span class="label">Rear Wing &amp; DRS</span><span class="val"
+                                    id="dmg-r-wing-val">0%</span></div>
+                            <div class="dmg-bar-bg">
+                                <div class="dmg-bar-fill" id="dmg-r-wing-bar"></div>
+                            </div>
                         </div>
                         <div class="dmg-row">
-                            <div class="dmg-row-header"><span class="label">Underbody Floor</span><span class="val" id="dmg-floor-val">0%</span></div>
-                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-floor-bar"></div></div>
+                            <div class="dmg-row-header"><span class="label">Underbody Floor</span><span class="val"
+                                    id="dmg-floor-val">0%</span></div>
+                            <div class="dmg-bar-bg">
+                                <div class="dmg-bar-fill" id="dmg-floor-bar"></div>
+                            </div>
                         </div>
                         <div class="dmg-row">
-                            <div class="dmg-row-header"><span class="label">Rear Diffuser</span><span class="val" id="dmg-diffuser-val">0%</span></div>
-                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-diffuser-bar"></div></div>
+                            <div class="dmg-row-header"><span class="label">Rear Diffuser</span><span class="val"
+                                    id="dmg-diffuser-val">0%</span></div>
+                            <div class="dmg-bar-bg">
+                                <div class="dmg-bar-fill" id="dmg-diffuser-bar"></div>
+                            </div>
                         </div>
                         <div class="dmg-row">
-                            <div class="dmg-row-header"><span class="label">Sidepods &amp; Cooling</span><span class="val" id="dmg-sidepod-val">0%</span></div>
-                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-sidepod-bar"></div></div>
+                            <div class="dmg-row-header"><span class="label">Sidepods &amp; Cooling</span><span
+                                    class="val" id="dmg-sidepod-val">0%</span></div>
+                            <div class="dmg-bar-bg">
+                                <div class="dmg-bar-fill" id="dmg-sidepod-bar"></div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="dmg-schematic-box">
-                        <div style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; margin-bottom:8px; text-transform:uppercase; font-weight:700;">Live Vehicle Schematic</div>
+                        <div
+                            style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; margin-bottom:8px; text-transform:uppercase; font-weight:700;">
+                            Live Vehicle Schematic</div>
                         <svg class="dmg-car-svg" viewBox="0 0 200 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="10" y="10" width="180" height="380" rx="12" stroke="rgba(255,255,255,0.05)" stroke-dasharray="4 4" fill="none" />
-                            <path id="svg-fl-wing" class="dmg-part" d="M20 50 L95 50 L90 70 L25 70 Z" fill="#1E293B" stroke="#00E676" stroke-width="2" />
-                            <path id="svg-fr-wing" class="dmg-part" d="M105 50 L180 50 L175 70 L110 70 Z" fill="#1E293B" stroke="#00E676" stroke-width="2" />
-                            <rect id="svg-tyres-fl" class="dmg-part" x="12" y="80" width="26" height="55" rx="5" fill="#1E293B" stroke="#00E676" stroke-width="2" />
-                            <rect id="svg-tyres-fr" class="dmg-part" x="162" y="80" width="26" height="55" rx="5" fill="#1E293B" stroke="#00E676" stroke-width="2" />
-                            <path id="svg-nose" class="dmg-part" d="M85 70 L115 70 L120 180 L80 180 Z" fill="#0F1E3A" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
-                            <path id="svg-floor" class="dmg-part" d="M45 150 L155 150 L160 280 L40 280 Z" fill="#1E293B" stroke="#00E676" stroke-width="2" />
-                            <path id="svg-sidepod" class="dmg-part" d="M45 160 L78 160 L78 260 L48 250 Z" fill="#1E293B" stroke="#00E676" stroke-width="1.5" />
-                            <path id="svg-sidepod-r" class="dmg-part" d="M122 160 L155 160 L152 250 L122 260 Z" fill="#1E293B" stroke="#00E676" stroke-width="1.5" />
-                            <path id="svg-engine-ice" class="dmg-part" d="M80 180 L120 180 L115 280 L85 280 Z" fill="#1E293B" stroke="#00E676" stroke-width="2" />
-                            <circle cx="100" cy="230" r="14" fill="#0A162C" stroke="var(--fia-yellow)" stroke-width="1.5" />
-                            <text x="100" y="234" text-anchor="middle" font-size="9" fill="var(--fia-yellow)" font-family="monospace" font-weight="bold">PU</text>
-                            <rect id="svg-tyres-rl" class="dmg-part" x="10" y="275" width="28" height="60" rx="5" fill="#1E293B" stroke="#00E676" stroke-width="2" />
-                            <rect id="svg-tyres-rr" class="dmg-part" x="162" y="275" width="28" height="60" rx="5" fill="#1E293B" stroke="#00E676" stroke-width="2" />
-                            <path id="svg-diffuser" class="dmg-part" d="M60 320 L140 320 L145 355 L55 355 Z" fill="#1E293B" stroke="#00E676" stroke-width="2" />
-                            <path id="svg-r-wing" class="dmg-part" d="M30 360 L170 360 L165 385 L35 385 Z" fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            <rect x="10" y="10" width="180" height="380" rx="12" stroke="rgba(255,255,255,0.05)"
+                                stroke-dasharray="4 4" fill="none" />
+                            <path id="svg-fl-wing" class="dmg-part" d="M20 50 L95 50 L90 70 L25 70 Z" fill="#1E293B"
+                                stroke="#00E676" stroke-width="2" />
+                            <path id="svg-fr-wing" class="dmg-part" d="M105 50 L180 50 L175 70 L110 70 Z" fill="#1E293B"
+                                stroke="#00E676" stroke-width="2" />
+                            <rect id="svg-tyres-fl" class="dmg-part" x="12" y="80" width="26" height="55" rx="5"
+                                fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            <rect id="svg-tyres-fr" class="dmg-part" x="162" y="80" width="26" height="55" rx="5"
+                                fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            <path id="svg-nose" class="dmg-part" d="M85 70 L115 70 L120 180 L80 180 Z" fill="#0F1E3A"
+                                stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
+                            <path id="svg-floor" class="dmg-part" d="M45 150 L155 150 L160 280 L40 280 Z" fill="#1E293B"
+                                stroke="#00E676" stroke-width="2" />
+                            <path id="svg-sidepod" class="dmg-part" d="M45 160 L78 160 L78 260 L48 250 Z" fill="#1E293B"
+                                stroke="#00E676" stroke-width="1.5" />
+                            <path id="svg-sidepod-r" class="dmg-part" d="M122 160 L155 160 L152 250 L122 260 Z"
+                                fill="#1E293B" stroke="#00E676" stroke-width="1.5" />
+                            <path id="svg-engine-ice" class="dmg-part" d="M80 180 L120 180 L115 280 L85 280 Z"
+                                fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            <circle cx="100" cy="230" r="14" fill="#0A162C" stroke="var(--fia-yellow)"
+                                stroke-width="1.5" />
+                            <text x="100" y="234" text-anchor="middle" font-size="9" fill="var(--fia-yellow)"
+                                font-family="monospace" font-weight="bold">PU</text>
+                            <rect id="svg-tyres-rl" class="dmg-part" x="10" y="275" width="28" height="60" rx="5"
+                                fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            <rect id="svg-tyres-rr" class="dmg-part" x="162" y="275" width="28" height="60" rx="5"
+                                fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            <path id="svg-diffuser" class="dmg-part" d="M60 320 L140 320 L145 355 L55 355 Z"
+                                fill="#1E293B" stroke="#00E676" stroke-width="2" />
+                            <path id="svg-r-wing" class="dmg-part" d="M30 360 L170 360 L165 385 L35 385 Z"
+                                fill="#1E293B" stroke="#00E676" stroke-width="2" />
                         </svg>
                     </div>
 
                     <div class="dmg-card">
                         <div class="panel-header">Powertrain &amp; Gearbox</div>
                         <div class="dmg-row">
-                            <div class="dmg-row-header"><span class="label">Engine (ICE Wear)</span><span class="val" id="dmg-engine-ice-val">0%</span></div>
-                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-engine-ice-bar"></div></div>
+                            <div class="dmg-row-header"><span class="label">Engine (ICE Wear)</span><span class="val"
+                                    id="dmg-engine-ice-val">0%</span></div>
+                            <div class="dmg-bar-bg">
+                                <div class="dmg-bar-fill" id="dmg-engine-ice-bar"></div>
+                            </div>
                         </div>
                         <div class="dmg-row">
-                            <div class="dmg-row-header"><span class="label">MGU-K (Kinetic)</span><span class="val" id="dmg-engine-mguk-val">0%</span></div>
-                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-engine-mguk-bar"></div></div>
+                            <div class="dmg-row-header"><span class="label">MGU-K (Kinetic)</span><span class="val"
+                                    id="dmg-engine-mguk-val">0%</span></div>
+                            <div class="dmg-bar-bg">
+                                <div class="dmg-bar-fill" id="dmg-engine-mguk-bar"></div>
+                            </div>
                         </div>
                         <div class="dmg-row">
-                            <div class="dmg-row-header"><span class="label">MGU-H (Heat)</span><span class="val" id="dmg-engine-mguh-val">0%</span></div>
-                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-engine-mguh-bar"></div></div>
+                            <div class="dmg-row-header"><span class="label">MGU-H (Heat)</span><span class="val"
+                                    id="dmg-engine-mguh-val">0%</span></div>
+                            <div class="dmg-bar-bg">
+                                <div class="dmg-bar-fill" id="dmg-engine-mguh-bar"></div>
+                            </div>
                         </div>
                         <div class="dmg-row">
-                            <div class="dmg-row-header"><span class="label">Turbocharger (TC)</span><span class="val" id="dmg-engine-tc-val">0%</span></div>
-                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-engine-tc-bar"></div></div>
+                            <div class="dmg-row-header"><span class="label">Turbocharger (TC)</span><span class="val"
+                                    id="dmg-engine-tc-val">0%</span></div>
+                            <div class="dmg-bar-bg">
+                                <div class="dmg-bar-fill" id="dmg-engine-tc-bar"></div>
+                            </div>
                         </div>
                         <div class="dmg-row">
-                            <div class="dmg-row-header"><span class="label">Energy Store (Battery)</span><span class="val" id="dmg-engine-es-val">0%</span></div>
-                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-engine-es-bar"></div></div>
+                            <div class="dmg-row-header"><span class="label">Energy Store (Battery)</span><span
+                                    class="val" id="dmg-engine-es-val">0%</span></div>
+                            <div class="dmg-bar-bg">
+                                <div class="dmg-bar-fill" id="dmg-engine-es-bar"></div>
+                            </div>
                         </div>
                         <div class="dmg-row">
-                            <div class="dmg-row-header"><span class="label">Gearbox Wear</span><span class="val" id="dmg-gearbox-val">0%</span></div>
-                            <div class="dmg-bar-bg"><div class="dmg-bar-fill" id="dmg-gearbox-bar"></div></div>
+                            <div class="dmg-row-header"><span class="label">Gearbox Wear</span><span class="val"
+                                    id="dmg-gearbox-val">0%</span></div>
+                            <div class="dmg-bar-bg">
+                                <div class="dmg-bar-fill" id="dmg-gearbox-bar"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3805,48 +4199,66 @@
         <!-- ── TAB 9: WEATHER FORECAST (FIRST 60 MIN HORIZON) ── -->
         <div id="tab-weather" class="tab-content">
             <div class="panel" style="gap: 14px;">
-                <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div class="panel-header"
+                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span>Session Weather Forecast</span>
-                        <span class="panel-header-badge" style="background: rgba(0, 102, 255, 0.25); color: #93C5FD; border: 1px solid rgba(0, 102, 255, 0.5); font-weight: 700;">FIRST 60 MIN HORIZON</span>
+                        <span class="panel-header-badge"
+                            style="background: rgba(0, 102, 255, 0.25); color: #93C5FD; border: 1px solid rgba(0, 102, 255, 0.5); font-weight: 700;">FIRST
+                            60 MIN HORIZON</span>
                     </div>
-                    <div id="weather-summary-tag" style="font-family: 'Roboto Mono', monospace; font-size: 0.75rem; font-weight: 700; color: var(--fia-green); background: rgba(0,230,118,0.12); border: 1px solid var(--fia-green); padding: 4px 10px; border-radius: 6px;">
+                    <div id="weather-summary-tag"
+                        style="font-family: 'Roboto Mono', monospace; font-size: 0.75rem; font-weight: 700; color: var(--fia-green); background: rgba(0,230,118,0.12); border: 1px solid var(--fia-green); padding: 4px 10px; border-radius: 6px;">
                         DRY CONDITIONS EXPECTED
                     </div>
                 </div>
 
                 <!-- 60-Min Live Weather KPIs -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px;">
-                    <div class="data-row" style="padding: 10px 12px; background: rgba(14,28,54,0.85); border: 1px solid var(--f1-border); border-radius: 8px; flex-direction: column; align-items: flex-start;">
+                    <div class="data-row"
+                        style="padding: 10px 12px; background: rgba(14,28,54,0.85); border: 1px solid var(--f1-border); border-radius: 8px; flex-direction: column; align-items: flex-start;">
                         <span class="label">CURRENT CONDITION</span>
-                        <span class="val" id="weather-tab-curr-cond" style="font-size: 1.05rem; font-weight: 700; color: #FFF; margin-top: 2px;">--</span>
+                        <span class="val" id="weather-tab-curr-cond"
+                            style="font-size: 1.05rem; font-weight: 700; color: #FFF; margin-top: 2px;">--</span>
                     </div>
-                    <div class="data-row" style="padding: 10px 12px; background: rgba(14,28,54,0.85); border: 1px solid var(--f1-border); border-radius: 8px; flex-direction: column; align-items: flex-start;">
+                    <div class="data-row"
+                        style="padding: 10px 12px; background: rgba(14,28,54,0.85); border: 1px solid var(--f1-border); border-radius: 8px; flex-direction: column; align-items: flex-start;">
                         <span class="label">AIR / TRACK TEMP</span>
-                        <span class="val" id="weather-tab-curr-temp" style="font-size: 1.05rem; font-weight: 700; color: var(--rbr-yellow); margin-top: 2px;">-- °C / -- °C</span>
+                        <span class="val" id="weather-tab-curr-temp"
+                            style="font-size: 1.05rem; font-weight: 700; color: var(--rbr-yellow); margin-top: 2px;">--
+                            °C / -- °C</span>
                     </div>
-                    <div class="data-row" style="padding: 10px 12px; background: rgba(14,28,54,0.85); border: 1px solid var(--f1-border); border-radius: 8px; flex-direction: column; align-items: flex-start;">
+                    <div class="data-row"
+                        style="padding: 10px 12px; background: rgba(14,28,54,0.85); border: 1px solid var(--f1-border); border-radius: 8px; flex-direction: column; align-items: flex-start;">
                         <span class="label">MAX 60-MIN RAIN RISK</span>
-                        <span class="val" id="weather-tab-max-rain" style="font-size: 1.05rem; font-weight: 700; color: var(--fia-green); margin-top: 2px;">0%</span>
+                        <span class="val" id="weather-tab-max-rain"
+                            style="font-size: 1.05rem; font-weight: 700; color: var(--fia-green); margin-top: 2px;">0%</span>
                     </div>
-                    <div class="data-row" style="padding: 10px 12px; background: rgba(14,28,54,0.85); border: 1px solid var(--f1-border); border-radius: 8px; flex-direction: column; align-items: flex-start;">
+                    <div class="data-row"
+                        style="padding: 10px 12px; background: rgba(14,28,54,0.85); border: 1px solid var(--f1-border); border-radius: 8px; flex-direction: column; align-items: flex-start;">
                         <span class="label">TRACK RADAR WINDOW</span>
-                        <span class="val" id="weather-tab-horizon-count" style="font-size: 1.05rem; font-weight: 700; color: #93C5FD; margin-top: 2px;">0 - 60 MIN</span>
+                        <span class="val" id="weather-tab-horizon-count"
+                            style="font-size: 1.05rem; font-weight: 700; color: #93C5FD; margin-top: 2px;">0 - 60
+                            MIN</span>
                     </div>
                 </div>
 
                 <!-- 60-Min Weather Forecast Horizon Cards -->
                 <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span
+                            style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px;">
                             60-MINUTE TIMELINE (0 → +60 MIN)
                         </span>
                         <span style="font-size: 0.7rem; color: var(--text-dim); font-family: 'Roboto Mono', monospace;">
                             UPDATED LIVE FROM FIA TELEMETRY
                         </span>
                     </div>
-                    <div id="weather-cards-container" style="display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px 14px 2px; -webkit-overflow-scrolling: touch;">
-                        <div style="width: 100%; text-align: center; color: var(--text-muted); padding: 30px; font-family: 'Roboto Mono', monospace;">
+                    <div id="weather-cards-container"
+                        style="display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px 14px 2px; -webkit-overflow-scrolling: touch;">
+                        <div
+                            style="width: 100%; text-align: center; color: var(--text-muted); padding: 30px; font-family: 'Roboto Mono', monospace;">
                             Waiting for session weather telemetry...
                         </div>
                     </div>
@@ -3860,12 +4272,15 @@
         <div class="gamepad-card">
             <div class="gamepad-header">
                 <div class="gamepad-title">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="var(--fia-green)">
-                        <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 1c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 8 18.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22"
+                        fill="var(--fia-green)">
+                        <path
+                            d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 1c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 8 18.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
                     </svg>
                     Gamepad &amp; Vibration Diagnostic
                 </div>
-                <button class="gamepad-close-btn" onclick="closeGamepadModal()" aria-label="Close modal">&times;</button>
+                <button class="gamepad-close-btn" onclick="closeGamepadModal()"
+                    aria-label="Close modal">&times;</button>
             </div>
 
             <div class="gamepad-body">
@@ -3884,29 +4299,40 @@
                 <div class="vibe-section">
                     <div class="panel-header" style="margin-bottom: 4px;">Vibration Actuator Test</div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                        <button class="vibe-btn-primary" onclick="testGamepadVibration(1000)" style="flex: 1; min-width: 180px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        <button class="vibe-btn-primary" onclick="testGamepadVibration(1000)"
+                            style="flex: 1; min-width: 180px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
+                                fill="currentColor">
+                                <path
+                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
                             </svg>
                             Vibrate 1 Second
                         </button>
-                        <button class="nav-btn" onclick="testGamepadVibration(300)" style="border: 1px solid var(--f1-border);">
+                        <button class="nav-btn" onclick="testGamepadVibration(300)"
+                            style="border: 1px solid var(--f1-border);">
                             0.3s Pulse
                         </button>
-                        <button class="nav-btn" onclick="testGamepadVibration(2000)" style="border: 1px solid var(--f1-border);">
+                        <button class="nav-btn" onclick="testGamepadVibration(2000)"
+                            style="border: 1px solid var(--f1-border);">
                             2.0s Long Test
                         </button>
                     </div>
-                    
+
                     <!-- Motor Magnitudes Control -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
                         <div>
-                            <div class="label" style="margin-bottom: 4px; font-size: 0.72rem;">Weak Motor (High Freq): <span id="weak-mag-val">100%</span></div>
-                            <input type="range" id="weak-mag" min="0" max="1" step="0.1" value="1" style="width: 100%; accent-color: var(--fia-green);" oninput="document.getElementById('weak-mag-val').innerText = Math.round(this.value*100)+'%'">
+                            <div class="label" style="margin-bottom: 4px; font-size: 0.72rem;">Weak Motor (High Freq):
+                                <span id="weak-mag-val">100%</span></div>
+                            <input type="range" id="weak-mag" min="0" max="1" step="0.1" value="1"
+                                style="width: 100%; accent-color: var(--fia-green);"
+                                oninput="document.getElementById('weak-mag-val').innerText = Math.round(this.value*100)+'%'">
                         </div>
                         <div>
-                            <div class="label" style="margin-bottom: 4px; font-size: 0.72rem;">Strong Motor (Low Freq): <span id="strong-mag-val">100%</span></div>
-                            <input type="range" id="strong-mag" min="0" max="1" step="0.1" value="1" style="width: 100%; accent-color: var(--f1-red);" oninput="document.getElementById('strong-mag-val').innerText = Math.round(this.value*100)+'%'">
+                            <div class="label" style="margin-bottom: 4px; font-size: 0.72rem;">Strong Motor (Low Freq):
+                                <span id="strong-mag-val">100%</span></div>
+                            <input type="range" id="strong-mag" min="0" max="1" step="0.1" value="1"
+                                style="width: 100%; accent-color: var(--f1-red);"
+                                oninput="document.getElementById('strong-mag-val').innerText = Math.round(this.value*100)+'%'">
                         </div>
                     </div>
 
@@ -3949,32 +4375,44 @@
                                 <div class="stick-pad">
                                     <div id="stick-left-dot" class="stick-dot"></div>
                                 </div>
-                                <div id="stick-left-val" class="val" style="font-size: 0.72rem; text-align: center; color: var(--text-muted);">X: 0.00 | Y: 0.00</div>
+                                <div id="stick-left-val" class="val"
+                                    style="font-size: 0.72rem; text-align: center; color: var(--text-muted);">X: 0.00 |
+                                    Y: 0.00</div>
                             </div>
                             <div style="text-align: center;">
                                 <div class="label" style="font-size: 0.68rem;">RIGHT STICK</div>
                                 <div class="stick-pad">
                                     <div id="stick-right-dot" class="stick-dot"></div>
                                 </div>
-                                <div id="stick-right-val" class="val" style="font-size: 0.72rem; text-align: center; color: var(--text-muted);">X: 0.00 | Y: 0.00</div>
+                                <div id="stick-right-val" class="val"
+                                    style="font-size: 0.72rem; text-align: center; color: var(--text-muted);">X: 0.00 |
+                                    Y: 0.00</div>
                             </div>
                         </div>
 
                         <!-- LT / RT Analog Triggers -->
                         <div style="margin-top: 8px;">
-                            <div class="label" style="font-size: 0.68rem; display: flex; justify-content: space-between; align-items: center;">
+                            <div class="label"
+                                style="font-size: 0.68rem; display: flex; justify-content: space-between; align-items: center;">
                                 <span>LT Trigger (Brake):</span>
-                                <span id="lt-val" style="color: var(--fia-green); font-family: 'Roboto Mono', monospace; font-weight: 700;">0.0% (0.00)</span>
+                                <span id="lt-val"
+                                    style="color: var(--fia-green); font-family: 'Roboto Mono', monospace; font-weight: 700;">0.0%
+                                    (0.00)</span>
                             </div>
                             <div class="bar-bg" style="height: 5px; margin: 2px 0 6px 0;">
-                                <div id="lt-bar" class="fill-bar" style="background: var(--fia-green); width: 0%; transition: none !important;"></div>
+                                <div id="lt-bar" class="fill-bar"
+                                    style="background: var(--fia-green); width: 0%; transition: none !important;"></div>
                             </div>
-                            <div class="label" style="font-size: 0.68rem; display: flex; justify-content: space-between; align-items: center;">
+                            <div class="label"
+                                style="font-size: 0.68rem; display: flex; justify-content: space-between; align-items: center;">
                                 <span>RT Trigger (Throttle):</span>
-                                <span id="rt-val" style="color: var(--f1-red); font-family: 'Roboto Mono', monospace; font-weight: 700;">0.0% (0.00)</span>
+                                <span id="rt-val"
+                                    style="color: var(--f1-red); font-family: 'Roboto Mono', monospace; font-weight: 700;">0.0%
+                                    (0.00)</span>
                             </div>
                             <div class="bar-bg" style="height: 5px; margin: 2px 0;">
-                                <div id="rt-bar" class="fill-bar" style="background: var(--f1-red); width: 0%; transition: none !important;"></div>
+                                <div id="rt-bar" class="fill-bar"
+                                    style="background: var(--f1-red); width: 0%; transition: none !important;"></div>
                             </div>
                         </div>
                     </div>
@@ -4689,7 +5127,7 @@
                             const diff = (driver.bestLapMs - poleTime) / 1000;
                             gapDisplay = `+${diff.toFixed(3)}`;
                         }
-                        intDisplay = (idx > 0) ? (driver.gapInt || `+${((driver.bestLapMs - (data.leaderboard[idx-1].bestLapMs || poleTime)) / 1000).toFixed(3)}`) : '--';
+                        intDisplay = (idx > 0) ? (driver.gapInt || `+${((driver.bestLapMs - (data.leaderboard[idx - 1].bestLapMs || poleTime)) / 1000).toFixed(3)}`) : '--';
                     } else {
                         gapDisplay = (idx === 0) ? 'LEAD' : (driver.gapLead || driver.gapText || '--');
                         intDisplay = (idx === 0) ? 'LEAD' : (driver.gapInt || driver.gapText || '--');
@@ -4788,7 +5226,7 @@
                 spinner.style.transform = (spinner.style.transform === 'rotate(360deg)') ? 'rotate(0deg)' : 'rotate(360deg)';
             }
             if (ws) {
-                try { ws.close(); } catch (e) {}
+                try { ws.close(); } catch (e) { }
             }
             connectWebSocket();
             showToast("🔄 Reconnecting Telemetry Uplink & Refreshing UI...");
@@ -5122,7 +5560,7 @@
 
             if (statusEl) {
                 statusEl.className = "vibe-status-msg vibrating";
-                statusEl.innerHTML = `⚡ Vibrating controller (${(durationMs/1000).toFixed(1)}s)...`;
+                statusEl.innerHTML = `⚡ Vibrating controller (${(durationMs / 1000).toFixed(1)}s)...`;
             }
 
             // Standard Web Gamepad Vibration Actuator API (Dual-Rumble)
@@ -5135,7 +5573,7 @@
                 }).then(() => {
                     if (statusEl) {
                         statusEl.className = "vibe-status-msg";
-                        statusEl.innerHTML = `✅ Vibration test completed successfully (${(durationMs/1000).toFixed(1)}s).`;
+                        statusEl.innerHTML = `✅ Vibration test completed successfully (${(durationMs / 1000).toFixed(1)}s).`;
                     }
                 }).catch((err) => {
                     if (statusEl) {
@@ -5255,21 +5693,21 @@
 
         const OFFICIAL_DRS_ZONES = {
             // Melbourne (Albert Park) - 3 zones
-            0:  [{ start: 0.96, end: 0.12, det: 0.91 }, { start: 0.22, end: 0.34, det: 0.18 }, { start: 0.53, end: 0.65, det: 0.49 }],
+            0: [{ start: 0.96, end: 0.12, det: 0.91 }, { start: 0.22, end: 0.34, det: 0.18 }, { start: 0.53, end: 0.65, det: 0.49 }],
             // Shanghai - 2 zones
-            2:  [{ start: 0.95, end: 0.12, det: 0.90 }, { start: 0.58, end: 0.78, det: 0.54 }],
+            2: [{ start: 0.95, end: 0.12, det: 0.90 }, { start: 0.58, end: 0.78, det: 0.54 }],
             // Bahrain (Sakhir) - 3 zones
-            3:  [{ start: 0.96, end: 0.13, det: 0.91 }, { start: 0.22, end: 0.34, det: 0.18 }, { start: 0.60, end: 0.72, det: 0.56 }],
+            3: [{ start: 0.96, end: 0.13, det: 0.91 }, { start: 0.22, end: 0.34, det: 0.18 }, { start: 0.60, end: 0.72, det: 0.56 }],
             // Catalunya (Barcelona) - 2 zones
-            4:  [{ start: 0.97, end: 0.13, det: 0.92 }, { start: 0.48, end: 0.64, det: 0.45 }],
+            4: [{ start: 0.97, end: 0.13, det: 0.92 }, { start: 0.48, end: 0.64, det: 0.45 }],
             // Monaco - 1 zone (pit straight)
-            5:  [{ start: 0.95, end: 0.08, det: 0.91 }],
+            5: [{ start: 0.95, end: 0.08, det: 0.91 }],
             // Montreal (Canada) - 2 zones: hairpin to T1 + back straight
-            6:  [{ start: 0.93, end: 0.09, det: 0.88 }, { start: 0.22, end: 0.40, det: 0.18 }],
+            6: [{ start: 0.93, end: 0.09, det: 0.88 }, { start: 0.22, end: 0.40, det: 0.18 }],
             // Silverstone - 2 zones
-            7:  [{ start: 0.28, end: 0.42, det: 0.24 }, { start: 0.68, end: 0.83, det: 0.64 }],
+            7: [{ start: 0.28, end: 0.42, det: 0.24 }, { start: 0.68, end: 0.83, det: 0.64 }],
             // Hungaroring - 2 zones
-            9:  [{ start: 0.96, end: 0.12, det: 0.91 }, { start: 0.16, end: 0.26, det: 0.13 }],
+            9: [{ start: 0.96, end: 0.12, det: 0.91 }, { start: 0.16, end: 0.26, det: 0.13 }],
             // Spa-Francorchamps - 2 zones: Raidillon + Kemmel
             10: [{ start: 0.18, end: 0.35, det: 0.14 }, { start: 0.94, end: 0.06, det: 0.90 }],
             // Monza - 2 zones
@@ -7470,20 +7908,20 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             }
 
             // --- Driver Offenses & Penalties Updates ---
-            const penTime = (data.penalties && typeof data.penalties.timePenalties === 'number') 
-                ? data.penalties.timePenalties 
+            const penTime = (data.penalties && typeof data.penalties.timePenalties === 'number')
+                ? data.penalties.timePenalties
                 : (data.lap?.penalties || 0);
-            const penWarn = (data.penalties && typeof data.penalties.warnings === 'number') 
-                ? data.penalties.warnings 
+            const penWarn = (data.penalties && typeof data.penalties.warnings === 'number')
+                ? data.penalties.warnings
                 : (data.lap?.warnings || 0);
-            const penCC = (data.penalties && typeof data.penalties.cornerCuts === 'number') 
-                ? data.penalties.cornerCuts 
+            const penCC = (data.penalties && typeof data.penalties.cornerCuts === 'number')
+                ? data.penalties.cornerCuts
                 : (data.lap?.cornerCutting || 0);
-            const penDT = (data.penalties && typeof data.penalties.driveThrough === 'number') 
-                ? data.penalties.driveThrough 
+            const penDT = (data.penalties && typeof data.penalties.driveThrough === 'number')
+                ? data.penalties.driveThrough
                 : (data.lap?.unservedDT || 0);
-            const penSG = (data.penalties && typeof data.penalties.stopGo === 'number') 
-                ? data.penalties.stopGo 
+            const penSG = (data.penalties && typeof data.penalties.stopGo === 'number')
+                ? data.penalties.stopGo
                 : (data.lap?.unservedSG || 0);
             const isInvalidLap = Boolean((data.penalties && data.penalties.invalidLap === 1) || data.lap?.invalid);
 
@@ -7784,7 +8222,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     setText('hero-target-tag', "P1 LEADER");
                     setText('hero-target-val', formatMs(playerBest));
                     const p2Car = data.leaderboard?.[1];
-                    const p2Diff = (p2Car && p2Car.bestLapMs > 0) ? `+${((p2Car.bestLapMs - playerBest)/1000).toFixed(3)}s gap to P2` : "Fastest Lap";
+                    const p2Diff = (p2Car && p2Car.bestLapMs > 0) ? `+${((p2Car.bestLapMs - playerBest) / 1000).toFixed(3)}s gap to P2` : "Fastest Lap";
                     setText('hero-target-sub', p2Diff);
                 } else {
                     setText('hero-target-title', "Δ TO POLE");
@@ -7799,7 +8237,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     const behindBest = carBehind.bestLapMs || 0;
                     setText('hero-behind-title', `Δ FROM P${playerIndexInLb + 2}`);
                     setText('hero-behind-tag', "GAP BEHIND");
-                    setText('hero-behind-val', (playerBest > 0 && behindBest > 0) ? `+${((behindBest - playerBest)/1000).toFixed(3)}s` : "--");
+                    setText('hero-behind-val', (playerBest > 0 && behindBest > 0) ? `+${((behindBest - playerBest) / 1000).toFixed(3)}s` : "--");
                     setText('hero-behind-sub', carBehindName);
                 } else {
                     setText('hero-behind-title', "CAR BEHIND");
@@ -8153,4 +8591,5 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         });
     </script>
 </body>
+
 </html>
