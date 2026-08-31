@@ -1204,28 +1204,32 @@
 
         .map-overlay {
             position: absolute;
-            bottom: 12px;
-            left: 12px;
+            top: 10px;
+            left: 10px;
             background: rgba(4, 10, 24, 0.88);
             backdrop-filter: blur(8px);
-            padding: 4px 10px;
+            padding: 4px 8px;
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 6px;
             font-family: "Roboto Mono", monospace;
-            font-size: 0.68rem;
+            font-size: 0.65rem;
+            font-weight: 700;
             z-index: 15;
             display: flex;
             align-items: center;
             gap: 4px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
             pointer-events: none;
+            user-select: none;
         }
 
         .map-floating-hud {
             position: absolute;
-            bottom: 12px;
-            right: 12px;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
             gap: 6px;
             z-index: 15;
@@ -1233,61 +1237,82 @@
         }
 
         .hud-chip {
-            background: rgba(4, 10, 24, 0.88);
+            flex: 1;
+            min-width: 0;
+            background: rgba(4, 10, 24, 0.9);
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 6px;
-            padding: 4px 8px;
+            padding: 4px 6px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             pointer-events: auto;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+            white-space: nowrap;
+            overflow: hidden;
         }
 
         .hud-lbl {
-            font-size: 0.55rem;
-            font-weight: 700;
+            font-size: 0.52rem;
+            font-weight: 800;
             color: var(--text-muted);
             font-family: "Roboto Mono", monospace;
             letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
         .hud-val {
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-weight: 800;
             color: #FFFFFF;
             font-family: "Roboto Mono", monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         @media (max-width: 768px) {
             .map-overlay {
-                bottom: 8px;
+                top: 8px;
                 left: 8px;
                 padding: 3px 6px;
-                font-size: 0.6rem;
+                font-size: 0.58rem;
                 z-index: 16;
             }
             .map-floating-hud {
-                bottom: 8px;
-                right: 8px;
+                bottom: 6px;
+                left: 6px;
+                right: 6px;
                 gap: 4px;
                 z-index: 16;
             }
             .hud-chip {
-                padding: 2px 5px;
+                padding: 3px 4px;
             }
             .hud-lbl {
-                font-size: 0.48rem;
+                font-size: 0.46rem;
             }
             .hud-val {
-                font-size: 0.65rem;
+                font-size: 0.68rem;
             }
         }
 
         @media (max-width: 480px) {
-            .map-floating-hud .hud-chip:nth-child(4) {
-                display: none;
+            .map-floating-hud {
+                bottom: 6px;
+                left: 4px;
+                right: 4px;
+                gap: 3px;
+            }
+            .hud-chip {
+                padding: 2px 3px;
+            }
+            .hud-lbl {
+                font-size: 0.44rem;
+            }
+            .hud-val {
+                font-size: 0.64rem;
             }
         }
 
@@ -8612,16 +8637,30 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             }
 
             // Telemetry Inputs & Powertrain
-            setText("speed", data.inputs.speed || 0);
-            if (data.inputs.topSpeed !== undefined && data.inputs.topSpeed !== null) {
-                window.playerTopSpeed = Math.max(window.playerTopSpeed || 0, data.inputs.topSpeed);
-            } else if (data.inputs.speed) {
-                window.playerTopSpeed = Math.max(window.playerTopSpeed || 0, data.inputs.speed);
+            const currentLiveSpeed = Math.round(data.inputs.speed || 0);
+            setText("speed", currentLiveSpeed);
+
+            if (!window.playerTopSpeed) {
+                window.playerTopSpeed = parseInt(localStorage.getItem('f1_session_top_speed') || '0', 10);
             }
-            if (window.playerTopSpeed) {
+            if (data.inputs.topSpeed !== undefined && data.inputs.topSpeed !== null && data.inputs.topSpeed > 0) {
+                window.playerTopSpeed = Math.max(window.playerTopSpeed || 0, Math.round(data.inputs.topSpeed));
+            } else if (currentLiveSpeed > 0) {
+                window.playerTopSpeed = Math.max(window.playerTopSpeed || 0, currentLiveSpeed);
+            }
+
+            if (window.playerTopSpeed > 0) {
+                try {
+                    localStorage.setItem('f1_session_top_speed', String(window.playerTopSpeed));
+                } catch (e) {}
+                if (data.session) {
+                    data.session.topSpeed = window.playerTopSpeed;
+                }
                 setText("top-speed", window.playerTopSpeed);
                 setText("panel-top-speed", `${window.playerTopSpeed} km/h`);
-                setText("hud-top-speed", `${window.playerTopSpeed} km/h`);
+                setText("hud-top-speed", `${window.playerTopSpeed} KM/H`);
+            } else {
+                setText("hud-top-speed", "--");
             }
             setText("gear", data.inputs.gear || 'N');
             setText("rpm", data.inputs.rpm || 0);
