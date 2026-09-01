@@ -3206,6 +3206,11 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 ws.send(JSON.stringify({ action: "getAvailableTracks" }));
                 ws.send(JSON.stringify({ action: "getTrackData" }));
             };
+            ws.onclose = () => {
+                setText("ws-status", "STANDBY (OFFLINE)");
+                setStyleById("ws-status", "color", "var(--fia-yellow)");
+                if (window.f1Analyzer) window.f1Analyzer.setStandby(true);
+            };
             ws.onerror = () => {
                 if (urlIndex + 1 < urls.length) {
                     connectWebSocket(urlIndex + 1);
@@ -3213,6 +3218,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 }
                 setText("ws-status", "OFFLINE");
                 setStyleById("ws-status", "color", "var(--f1-red)");
+                if (window.f1Analyzer) window.f1Analyzer.setStandby(true);
             };
             ws.onmessage = handleTelemetryMessage;
         }

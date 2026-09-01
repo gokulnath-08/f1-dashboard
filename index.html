@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
     <title>FIA F1 Official Telemetry Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <link rel="stylesheet" href="css/f1-next-ui.css" />
-    <link rel="stylesheet" href="css/dashboard.css" />
-    <script src="js/ddu-wheel.js"></script>
-    <script src="js/telemetry-analyzer.js"></script>
+    <link rel="stylesheet" href="css/f1-next-ui.css?v=2.0" />
+    <link rel="stylesheet" href="css/dashboard.css?v=2.0" />
+    <script src="js/ddu-wheel.js?v=2.0"></script>
+    <script src="js/telemetry-analyzer.js?v=2.0"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,400;0,600;0,700;0,900;1,700&family=Roboto+Mono:wght@400;500;700;900&display=swap"
         rel="stylesheet" />
@@ -884,11 +884,12 @@
                     <span class="val" id="drs">CLOSED</span>
                 </div>
 
-                <!-- Real-time 60fps Multi-Trace Telemetry Stream (Speed, Throttle, Brake, RPM, Gear) -->
+                <!-- Real-time 20Hz Multi-Trace Telemetry Stream (Speed, Throttle, Brake, RPM, Gear) -->
                 <div class="input-trace-container" style="margin-top: 10px;">
                     <div class="panel-header" style="font-size: 0.72rem; margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center;">
-                        <span>60Hz Multi-Trace Telemetry Comparator</span>
-                        <div style="display:flex; gap:10px; font-size:0.65rem; font-family:'Roboto Mono',monospace;">
+                        <span id="telemetry-comparator-title">20Hz Multi-Trace Telemetry Comparator</span>
+                        <div style="display:flex; gap:8px; font-size:0.65rem; font-family:'Roboto Mono',monospace; align-items:center;">
+                            <span id="telemetry-comparator-badge" style="color:var(--fia-yellow); font-size:0.6rem; font-weight:700; background:rgba(255,209,0,0.12); padding:1px 6px; border-radius:4px; border:1px solid rgba(255,209,0,0.3);">STANDBY</span>
                             <span style="color:#00F0FF; font-weight:700;">● Speed</span>
                             <span style="color:#00E676; font-weight:700;">● Throttle</span>
                             <span style="color:#FF1E00; font-weight:700;">● Brake</span>
@@ -2142,7 +2143,7 @@
     <div class="toast-container" id="toast-container"></div>
 
     <!-- ══════════ JAVASCRIPT LOGIC ══════════ -->
-    <script src="js/dashboard.js"></script>
+    <script src="js/dashboard.js?v=2.0"></script>
 </body>
 
 </html>
