@@ -1260,6 +1260,7 @@
         const startLineMesh = createSectorLine(0xffd700); // Yellow
         const sector1LineMesh = createSectorLine(0xff00ff); // Purple
         const sector2LineMesh = createSectorLine(0x00ffff); // Cyan
+        let pitLaneMesh = null;
         const customSectorMeshes = [];
         const drsZoneMeshes = [];
 
@@ -1431,7 +1432,7 @@
                 }
             }
 
-            if (pitLaneMesh) {
+            if (typeof pitLaneMesh !== 'undefined' && pitLaneMesh) {
                 if (pitLaneMesh.geometry) pitLaneMesh.geometry.dispose();
                 pitLaneMesh.geometry = new THREE.BufferGeometry();
                 pitLaneMesh.visible = false;
@@ -1480,7 +1481,7 @@
             for (let i = 0; i < 3; i++) {
                 if (trackLines[i]) trackLines[i].visible = false;
             }
-            if (pitLaneMesh) pitLaneMesh.visible = false;
+            if (typeof pitLaneMesh !== 'undefined' && pitLaneMesh) pitLaneMesh.visible = false;
             if (startLineMesh) startLineMesh.visible = false;
             if (sector1LineMesh) sector1LineMesh.visible = false;
             if (sector2LineMesh) sector2LineMesh.visible = false;

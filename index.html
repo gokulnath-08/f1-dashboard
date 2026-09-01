@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
     <title>FIA F1 Official Telemetry Dashboard</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/three.min.js?v=r128"></script>
     <link rel="stylesheet" href="css/f1-next-ui.css?v=2.0" />
     <link rel="stylesheet" href="css/dashboard.css?v=2.0" />
     <script src="js/ddu-wheel.js?v=2.0"></script>
@@ -2144,6 +2144,36 @@
 
     <!-- ══════════ JAVASCRIPT LOGIC ══════════ -->
     <script src="js/dashboard.js?v=2.0"></script>
+
+    <!-- ══════════ SCREEN WAKE LOCK (KEEP MOBILE AWAKE) ══════════ -->
+    <script>
+        let wakeLock = null;
+
+        async function keepAwake() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request("screen");
+                }
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        keepAwake();
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+                keepAwake();
+            }
+        });
+
+        // Re-acquire on first user interaction in case policy blocked cold startup request
+        ['click', 'touchstart'].forEach(evt => {
+            window.addEventListener(evt, () => {
+                if (!wakeLock || wakeLock.released) keepAwake();
+            }, { once: true });
+        });
+    </script>
 </body>
 
 </html>
