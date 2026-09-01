@@ -9,9 +9,20 @@ function handleCarTelemetry(data) {
     const pIdx = state.playerIndex;
 
     for (let i = 0; i < 22; i++) {
-        const speed = data.m_carTelemetryData[i].m_speed;
-        carPhysics[i].speed = speed;
-        if (speed > carDataTracker[i].maxSpeed) carDataTracker[i].maxSpeed = speed;
+        if (data.m_carTelemetryData[i]) {
+            const t_i = data.m_carTelemetryData[i];
+            const speed = t_i.m_speed;
+            carPhysics[i].speed = speed;
+            carPhysics[i].throttle = t_i.m_throttle !== undefined ? Math.round(t_i.m_throttle * 100) : 0;
+            carPhysics[i].brake = t_i.m_brake !== undefined ? Math.round(t_i.m_brake * 100) : 0;
+            carPhysics[i].steer = t_i.m_steer !== undefined ? Math.round(t_i.m_steer * 100) / 100 : 0;
+            carPhysics[i].gear = t_i.m_gear === 0 ? 'N' : (t_i.m_gear === -1 ? 'R' : t_i.m_gear);
+            carPhysics[i].drs = t_i.m_drs === 1 ? 'OPEN' : 'CLOSED';
+            carPhysics[i].drsInt = t_i.m_drs || 0;
+            carPhysics[i].rpm = t_i.m_engineRPM || 0;
+
+            if (speed > carDataTracker[i].maxSpeed) carDataTracker[i].maxSpeed = speed;
+        }
     }
 
     const t = data.m_carTelemetryData[pIdx];

@@ -146,6 +146,7 @@ function resetSessionData(broadcastFn) {
         carPhysics[i] = { speed: 0, lapDistance: 0, lapNum: 0, officialDelta: 0, officialLeaderDelta: 0, lastValidDelta: 0, lastValidLeaderDelta: 0, sector: 0 };
         currentLapTelemetry[i] = [];
         lastLapTelemetry[i] = [];
+        if (gameState.sessionDriverFastestLaps) gameState.sessionDriverFastestLaps[i] = null;
     }
 
     Object.keys(allLapHistories).forEach(k => delete allLapHistories[k]);
@@ -189,6 +190,7 @@ function resetSessionData(broadcastFn) {
     // Immediately push reset state to all WebSocket clients if broadcast function provided
     if (typeof broadcastFn === 'function') {
         broadcastFn(JSON.stringify(state));
+        broadcastFn(JSON.stringify({ type: 'sessionDriverFastestLapsResponse', data: [] }));
     }
 }
 

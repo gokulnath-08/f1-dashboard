@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { trackMapsDir, lapTimeDir, telemetryDir, setupsDir } = require('../config');
+const { trackMapsDir, lapTimeDir, telemetryDir, setupsDir, sessionTelemetryDir } = require('../config');
 
 // Ensure required directories exist for storing track data and ghost laps
 function initDirectories() {
@@ -22,6 +22,11 @@ function initDirectories() {
     if (!fs.existsSync(setupsDir)) {
         fs.mkdirSync(setupsDir, { recursive: true });
         console.log('📁 Created setups directory for car setups.');
+    }
+
+    if (!fs.existsSync(sessionTelemetryDir)) {
+        fs.mkdirSync(sessionTelemetryDir, { recursive: true });
+        console.log('📁 Created session_telemetry directory for session driver laps.');
     }
 }
 

@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { telemetryDir, lapTimeDir, setupsDir, fastestJsonPath } = require('../../config');
+const { telemetryDir, lapTimeDir, setupsDir, fastestJsonPath, sessionTelemetryDir } = require('../../config');
 const { visualTyreNames, fallbackTyreNames, pitMap } = require('../../config/constants');
 const gameState = require('../../state/gameState');
 const { touchUdpPacket, setPlayerIndex, getSectorTime, getLiveSectorTiming } = require('../../state/stateHelpers');
@@ -115,8 +115,11 @@ function handleLapData(data) {
         const lap = data.m_lapData ? data.m_lapData[i] : data.lapData[i];
 
         // Lap Transition Logic
-        if (lap.m_currentLapNum > carPhysics[i].lapNum) {
-            // Crossed the line - copy full rich telemetry trace
+        if (carPhysics[i].lapNum === 0) {
+            // Initial packet for this car - record lap number without triggering false lap completion
+            carPhysics[i].lapNum = lap.m_currentLapNum;
+        } else if (lap.m_currentLapNum > carPhysics[i].lapNum) {
+            // True lap transition across start/finish line - copy full rich telemetry trace
             lastLapTelemetry[i] = (currentLapTelemetry[i] || []).map(pt => ({
                 d: pt.d,
                 t: pt.t,
@@ -167,16 +170,21 @@ function handleLapData(data) {
             // Clean up telemetry: remove points with invalid coordinates
             let validTelemetry = (lastLapTelemetry[i] || [])
                 .filter(pt => Number.isFinite(pt.x) && Number.isFinite(pt.z) && (pt.x !== 0 || pt.z !== 0));
-            const hasMinPoints = validTelemetry.length >= 80;
-            const startsNearLine = validTelemetry.some(pt => (pt.d || 0) < 60);
+
+            const firstD = validTelemetry.length > 0 ? (validTelemetry[0].d || 0) : 9999;
+            const lastD = validTelemetry.length > 0 ? (validTelemetry[validTelemetry.length - 1].d || 0) : 0;
+            const spansDistance = (lastD - firstD) >= (tLen * 0.65);
+            const hasMinPoints = validTelemetry.length >= 40;
+            const startsNearLine = validTelemetry.some(pt => (pt.d || 0) < 150);
             const lastTelemetryPt = validTelemetry.length > 0 ? validTelemetry[validTelemetry.length - 1] : null;
-            const completesLap = lastTelemetryPt && (lastTelemetryPt.d || 0) >= (tLen * 0.85);
+            const completesLap = lastTelemetryPt && (lastTelemetryPt.d || 0) >= (tLen * 0.75);
             const isCleanLap = hasMinPoints && startsNearLine && completesLap;
 
-            if (lastTime > 50000 && currentTrackId !== -1 && isCleanLap) {
+            // --- FULL LAP GUARANTEE & SESSION FASTEST LAP STORAGE ---
+            if (validTelemetry.length >= 30 && (spansDistance || startsNearLine)) {
                 validTelemetry.sort((a, b) => (a.d !== undefined && b.d !== undefined) ? a.d - b.d : a.t - b.t);
 
-                // Ensure the starting point is at d = 0, t = 0
+                // Ensure the starting point is cleanly anchored at d = 0, t = 0
                 if (validTelemetry[0].d > 0) {
                     validTelemetry.unshift({
                         ...validTelemetry[0],
@@ -185,14 +193,79 @@ function handleLapData(data) {
                     });
                 }
 
-                // FORCE the final point of the telemetry array to perfectly match the official lap time and track distance
-                const lastPoint = validTelemetry[validTelemetry.length - 1];
-                if (lastPoint && lastPoint.t !== lastTime) {
-                    const trackLen = state.session.trackLength > 0 ? state.session.trackLength : (lastPoint.d + 20);
-                    validTelemetry.push({ ...lastPoint, d: trackLen, t: lastTime });
+                // Match final point to official lap time and track distance
+                if (lastTime > 0) {
+                    const lastPoint = validTelemetry[validTelemetry.length - 1];
+                    if (lastPoint) {
+                        const trackLen = state.session.trackLength > 0 ? state.session.trackLength : (lastPoint.d + 20);
+                        validTelemetry.push({ ...lastPoint, d: trackLen, t: lastTime });
+                    }
                 }
 
                 const isPlayer = (i === pIdx);
+                const dName = (state.participants && state.participants[i]) || carDataTracker[i].teamName || (isPlayer ? 'Player' : `Driver ${i}`);
+                const existingDriverBest = gameState.sessionDriverFastestLaps && gameState.sessionDriverFastestLaps[i];
+
+                const isFirstLap = !existingDriverBest;
+                const isFasterTime = lastTime > 0 && (!existingDriverBest || existingDriverBest.lapTimeMs === 0 || lastTime < existingDriverBest.lapTimeMs);
+                const isFullerLap = existingDriverBest && (validTelemetry.length > (existingDriverBest.telemetry?.length || 0) * 1.3);
+
+                if (isFirstLap || isFasterTime || isFullerLap) {
+                    if (!gameState.sessionDriverFastestLaps) gameState.sessionDriverFastestLaps = Array.from({ length: 22 }, () => null);
+
+                    const completedLapNum = (lap.m_currentLapNum > 1) ? (lap.m_currentLapNum - 1) : (carPhysics[i].lapNum || 1);
+                    const lapEntry = {
+                        carIndex: i,
+                        driverName: dName,
+                        teamName: carDataTracker[i].teamName || 'Unknown',
+                        teamColor: carDataTracker[i].teamColor || '#FFFFFF',
+                        lapTimeMs: lastTime || (validTelemetry[validTelemetry.length - 1]?.t || 0),
+                        lapNum: completedLapNum,
+                        s1: finishedS1,
+                        s2: finishedS2,
+                        s3: finishedS3,
+                        telemetry: validTelemetry,
+                        timestamp: Date.now()
+                    };
+
+                    gameState.sessionDriverFastestLaps[i] = lapEntry;
+
+                    // Persist driver lap to session_telemetry directory on disk
+                    if (currentTrackId !== -1) {
+                        try {
+                            const sessionFilePath = path.join(sessionTelemetryDir, `fastest_car_${i}_track_${currentTrackId}.json`);
+                            fs.writeFileSync(sessionFilePath, JSON.stringify(lapEntry, null, 2), 'utf8');
+                        } catch (e) { }
+                    }
+
+                    // Broadcast live update to all connected WebSocket clients
+                    try {
+                        wsServer.broadcast(JSON.stringify({
+                            type: 'driverFastestLapUpdate',
+                            carIndex: i,
+                            data: {
+                                carIndex: i,
+                                driverName: dName,
+                                teamName: carDataTracker[i].teamName || 'Unknown',
+                                teamColor: carDataTracker[i].teamColor || '#FFFFFF',
+                                lapTimeMs: lapEntry.lapTimeMs,
+                                lapNum: completedLapNum,
+                                s1: finishedS1,
+                                s2: finishedS2,
+                                s3: finishedS3,
+                                telemetryLength: validTelemetry.length,
+                                timestamp: Date.now()
+                            }
+                        }));
+                    } catch (e) { }
+
+                    console.log(`⏱️ [Driver Full Lap Stored] Car ${i} (${dName}) - Lap ${lapEntry.lapTimeMs}ms (${validTelemetry.length} pts, from d=0 to d=${validTelemetry[validTelemetry.length - 1]?.d}m)`);
+                }
+            }
+
+            if (lastTime > 50000 && currentTrackId !== -1 && isCleanLap) {
+                const isPlayer = (i === pIdx);
+                const dName = (state.participants && state.participants[i]) || carDataTracker[i].teamName || (isPlayer ? 'Player' : `Driver ${i}`);
                 let record = allTimeFastest[currentTrackId];
                 const trackTelemetryPath = path.join(telemetryDir, `telemetry_${currentTrackId}.json`);
                 const trackFastestPath = path.join(lapTimeDir, `fastest_${currentTrackId}.json`);
@@ -201,7 +274,7 @@ function handleLapData(data) {
                 const shouldSaveTelemetry = isPlayer || telMissing || (!record || lastTime < record.time);
 
                 if (shouldSaveTelemetry) {
-                    const driverName = (state.participants && state.participants[i]) || carDataTracker[i].teamName || (isPlayer ? 'Player' : 'Unknown');
+                    const driverName = dName;
 
                     allTimeFastest[currentTrackId] = {
                         time: (!record || lastTime < record.time) ? lastTime : record.time,
@@ -329,7 +402,8 @@ function handleLapData(data) {
                 const distDiff = lastPt ? Math.abs(lap.m_lapDistance - lastPt.d) : 999;
                 const timeDiff = lastPt ? Math.abs(curMs - lastPt.t) : 999;
 
-                if (!lastPt || distDiff >= 1.5 || timeDiff >= 100) {
+                if (!lastPt || distDiff >= 2.0 || timeDiff >= 100) {
+                    const carPhys = carPhysics[i] || {};
                     let pt = {
                         d: Math.round(lap.m_lapDistance * 10) / 10,
                         t: curMs,
@@ -339,8 +413,15 @@ function handleLapData(data) {
                         yaw: Math.round((carObj.yaw || 0) * 1000) / 1000,
                         pitch: Math.round((carObj.pitch || 0) * 1000) / 1000,
                         roll: Math.round((carObj.roll || 0) * 1000) / 1000,
-                        throttle: 0, brake: 0, speed: Math.round(carObj.speed || 0), steer: 0, gear: 0,
-                        drs: 0, drsOpen: 0, drsAvailable: 0, drsActivationDistance: null
+                        throttle: carPhys.throttle !== undefined ? carPhys.throttle : 0,
+                        brake: carPhys.brake !== undefined ? carPhys.brake : 0,
+                        speed: Math.round(carPhys.speed || carObj.speed || 0),
+                        steer: carPhys.steer !== undefined ? carPhys.steer : 0,
+                        gear: carPhys.gear !== undefined ? carPhys.gear : 0,
+                        drs: carPhys.drsInt === 1 || carPhys.drs === 'OPEN' ? 1 : 0,
+                        drsOpen: carPhys.drsInt === 1 || carPhys.drs === 'OPEN' ? 1 : 0,
+                        drsAvailable: 0,
+                        drsActivationDistance: null
                     };
                     if (i === state.playerIndex) {
                         pt.throttle = Math.round(state.inputs.throttle);
@@ -354,7 +435,7 @@ function handleLapData(data) {
                         pt.drsActivationDistance = Number.isFinite(state.inputs.drsActivationDistance) ? state.inputs.drsActivationDistance : null;
                     }
                     arr.push(pt);
-                    if (arr.length > 3000) {
+                    if (arr.length > 10000) {
                         arr.shift();
                     }
                 }

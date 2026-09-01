@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <title>FIA F1 Ghost Lap Telemetry Comparison & Real-Time Ghost Replay</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Roboto+Mono:wght@400;500;700;900&family=Titillium+Web:ital,wght@0,400;0,600;0,700;0,900;1,700&display=swap" rel="stylesheet">
+    
+    <!-- CSS Design System -->
+    <link rel="stylesheet" href="css/ghost-comparison.css?v=1.0">
+</head>
+
+<body>
+    <!-- Top Glowing F1 Apex Line -->
+    <div class="f1-apex-line"></div>
+
+    <!-- ══════════ TOP BRANDING & CIRCUIT HEADER ══════════ -->
+    <header class="ghost-header-bar">
+        <div class="ghost-brand-left">
+            <a href="/index.html" class="ghost-nav-back" title="Return to Main Telemetry Dashboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>DASHBOARD</span>
+            </a>
+            <div class="ghost-brand-title">
+                <span class="ghost-logo-badge">F1 2026</span>
+                <span>GHOST LAP COMPARISON</span>
+            </div>
+        </div>
+
+        <div class="ghost-header-center">
+            <div class="circuit-selector-wrap">
+                <label for="circuitSelect">CIRCUIT:</label>
+                <select id="circuitSelect" class="circuit-select-dropdown" title="Select Circuit Map"></select>
+            </div>
+        </div>
+
+        <div class="ghost-header-actions">
+            <button id="btnDetectLive" class="btn-header-tool" style="border-color:rgba(0,240,255,0.4); background:rgba(0,240,255,0.08);" title="Detect & Switch to Live Game Circuit">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                <span style="color:#00f0ff;">DETECT LIVE</span>
+            </button>
+            <button id="btnDemo" class="btn-header-tool btn-header-demo" title="Load Benchmark Demo Comparison Dataset">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                <span>DEMO DATA</span>
+            </button>
+            <button id="btnRefresh" class="btn-header-tool" title="Refresh Session Fastest Laps">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>SYNC LAPS</span>
+            </button>
+            <div class="live-status-pill" id="liveStatusBadge">
+                <span class="live-pulse-dot"></span>
+                <span id="liveStatusText">CONNECTING</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ══════════ MAIN WORKSPACE CONTAINER ══════════ -->
+    <main class="ghost-main-layout">
+
+        <!-- ── HEAD-TO-HEAD DRIVER SELECTION DECK ── -->
+        <section class="h2h-selection-deck">
+            <!-- Driver A (Reference) Card -->
+            <div class="driver-selection-card driver-a">
+                <div class="driver-card-header">
+                    <span class="driver-role-tag">DRIVER A &bull; REFERENCE</span>
+                </div>
+                <select id="driverASelect" class="driver-picker-control" title="Select Driver A"></select>
+                <div class="driver-lap-summary">
+                    <div class="driver-lap-time-box">
+                        <span class="driver-lap-time-lbl">FASTEST LAP TIME</span>
+                        <span class="driver-lap-time-val" id="driverATime">--:--.---</span>
+                    </div>
+                    <div class="driver-sector-splits">
+                        <div class="sector-split-pill">
+                            <span class="sec-lbl">S1</span>
+                            <span class="sec-val" id="driverAS1">--.---</span>
+                        </div>
+                        <div class="sector-split-pill">
+                            <span class="sec-lbl">S2</span>
+                            <span class="sec-val" id="driverAS2">--.---</span>
+                        </div>
+                        <div class="sector-split-pill">
+                            <span class="sec-lbl">S3</span>
+                            <span class="sec-val" id="driverAS3">--.---</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VS Middle Gap Banner -->
+            <div class="h2h-vs-center">
+                <span class="vs-badge-text">VS</span>
+                <span class="overall-gap-tag" id="overallGapTag">&plusmn;0.000s</span>
+                <span class="gap-advantage-lbl" id="gapAdvantageLbl">EVALUATING GAP</span>
+            </div>
+
+            <!-- Driver B (Comparison) Card -->
+            <div class="driver-selection-card driver-b">
+                <div class="driver-card-header">
+                    <span class="driver-role-tag">DRIVER B &bull; CHALLENGER</span>
+                </div>
+                <select id="driverBSelect" class="driver-picker-control" title="Select Driver B"></select>
+                <div class="driver-lap-summary">
+                    <div class="driver-lap-time-box">
+                        <span class="driver-lap-time-lbl">FASTEST LAP TIME</span>
+                        <span class="driver-lap-time-val" id="driverBTime">--:--.---</span>
+                    </div>
+                    <div class="driver-sector-splits">
+                        <div class="sector-split-pill">
+                            <span class="sec-lbl">S1</span>
+                            <span class="sec-val" id="driverBS1">--.---</span>
+                        </div>
+                        <div class="sector-split-pill">
+                            <span class="sec-lbl">S2</span>
+                            <span class="sec-val" id="driverBS2">--.---</span>
+                        </div>
+                        <div class="sector-split-pill">
+                            <span class="sec-lbl">S3</span>
+                            <span class="sec-val" id="driverBS3">--.---</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── DUAL STAGE: CIRCUIT GHOST CANVAS + LIVE TELEMETRY GAUGES ── -->
+        <section class="ghost-stage-grid">
+            
+            <!-- Circuit Map Viewport with Animated Dual Ghost Cars -->
+            <div class="circuit-viewport-card">
+                <div class="viewport-top-hud">
+                    <div class="hud-left-chips">
+                        <div class="hud-chip">
+                            <span>TRACK DIST:</span>
+                            <code id="hudTrackDist">0m / 5000m</code>
+                        </div>
+                    </div>
+                    <div class="hud-right-chips">
+                        <div class="hud-chip">
+                            <span>LIVE DELTA:</span>
+                            <code id="hudLiveDelta">&plusmn;0.000s</code>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="circuit-canvas-container" title="Click anywhere along circuit to jump scrubber">
+                    <canvas id="circuitMapCanvas"></canvas>
+                </div>
+
+                <div class="circuit-legend-bar">
+                    <div class="legend-item">
+                        <span class="legend-dot dot-a"></span>
+                        <span>Ghost Car A</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot dot-b"></span>
+                        <span>Ghost Car B</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot dot-s1"></span>
+                        <span>Sectors 1 &amp; 2</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot dot-drs"></span>
+                        <span>DRS Activation Zones</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Telemetry Gauges HUD (Speed, Pedals, Gears, Dynamic Delta) -->
+            <div class="live-telemetry-hud-card">
+                <div class="hud-panel-title">
+                    <span>LIVE HEAD-TO-HEAD TELEMETRY</span>
+                </div>
+
+                <!-- Dual Speedometers -->
+                <div class="dual-gauges-row">
+                    <div class="driver-gauge-box box-a">
+                        <span class="gauge-driver-name" id="gaugeDriverAName">DRIVER A</span>
+                        <div class="gauge-speed-val" id="gaugeSpeedA">0</div>
+                        <span class="gauge-speed-unit">KM/H</span>
+                        <div class="gauge-gear-box" id="gaugeGearA">N</div>
+                    </div>
+                    <div class="driver-gauge-box box-b">
+                        <span class="gauge-driver-name" id="gaugeDriverBName">DRIVER B</span>
+                        <div class="gauge-speed-val" id="gaugeSpeedB">0</div>
+                        <span class="gauge-speed-unit">KM/H</span>
+                        <div class="gauge-gear-box" id="gaugeGearB">N</div>
+                    </div>
+                </div>
+
+                <!-- Pedal Input Bars (Throttle & Brake) -->
+                <div class="pedals-bars-group">
+                    <div class="pedal-meter-container">
+                        <div class="pedal-meter-header">
+                            <span>THROTTLE</span>
+                            <span id="gaugeThrValA" style="color:#22c55e;">0%</span>
+                            <span id="gaugeThrValB" style="color:#eab308;">0%</span>
+                        </div>
+                        <div class="dual-bar-track">
+                            <div class="pedal-fill-a throttle-bar-a" id="gaugeThrBarA" style="width:0%;"></div>
+                            <div class="pedal-fill-b throttle-bar-b" id="gaugeThrBarB" style="width:0%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="pedal-meter-container">
+                        <div class="pedal-meter-header">
+                            <span>BRAKE</span>
+                            <span id="gaugeBrkValA" style="color:#ef4444;">0%</span>
+                            <span id="gaugeBrkValB" style="color:#f43f5e;">0%</span>
+                        </div>
+                        <div class="dual-bar-track">
+                            <div class="pedal-fill-a brake-bar-a" id="gaugeBrkBarA" style="width:0%;"></div>
+                            <div class="pedal-fill-b brake-bar-b" id="gaugeBrkBarB" style="width:0%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-Time Distance & Time Gap Meter -->
+                <div class="live-instant-gap-card">
+                    <span class="instant-gap-title">INSTANT TRACK GAP</span>
+                    <div class="instant-gap-val" id="instantGapVal">&plusmn;0.000s</div>
+                    <div class="instant-dist-val" id="instantDistVal">0.0 meters gap</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── TIMELINE SCRUBBER & PLAYBACK CONTROLS ── -->
+        <section class="ghost-timeline-deck">
+            <div class="timeline-scrubber-bar">
+                <span class="timeline-time-display" id="timelineTime">0:00.000</span>
+                <div class="timeline-slider-wrap">
+                    <input type="range" id="timelineSlider" class="ghost-range-slider" min="0" max="5000" value="0" step="1">
+                </div>
+            </div>
+
+            <!-- Micro-Sector Segment Strip -->
+            <div class="micro-sector-strip" id="microSectorStrip" title="Color-coded 50 micro-sectors (Driver A advantage vs Driver B advantage)"></div>
+
+            <!-- Control Buttons Deck -->
+            <div class="timeline-controls-row">
+                <div class="playback-btns-left">
+                    <button id="btnPlayPause" class="ctrl-btn play-btn" title="Play / Pause (Spacebar)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        <span>PLAY</span>
+                    </button>
+                    <button id="btnRestart" class="ctrl-btn" title="Restart Lap from Start Line">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                        <span>RESTART</span>
+                    </button>
+                    <button id="btnLoop" class="ctrl-btn active" title="Toggle Continuous Playback Loop">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+                        <span>LOOP</span>
+                    </button>
+                    <button id="btnLiveSync" class="ctrl-btn" title="Sync Scrubber to Live Car Driving On Track">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                        <span>LIVE SYNC</span>
+                    </button>
+                </div>
+
+                <div class="speed-select-group">
+                    <button class="speed-btn" data-speed="0.25">0.25x</button>
+                    <button class="speed-btn" data-speed="0.5">0.5x</button>
+                    <button class="speed-btn active" data-speed="1.0">1.0x</button>
+                    <button class="speed-btn" data-speed="2.0">2.0x</button>
+                    <button class="speed-btn" data-speed="4.0">4.0x</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── SYNCHRONIZED TELEMETRY COMPARISON CHARTS ── -->
+        <section class="telemetry-charts-card">
+            <div class="charts-header">
+                <div class="charts-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18M7 16l4-8 4 6 5-10"/></svg>
+                    <span>TELEMETRY &amp; GAP DELTA CURVES</span>
+                </div>
+            </div>
+
+            <!-- 1. Delta Time Curve ($\Delta t$ vs Lap Distance) -->
+            <div class="chart-block">
+                <div class="chart-label-row">
+                    <span>TIME DELTA GAP (&Delta;t SECONDS &bull; GREEN = DRIVER A FASTER / RED = DRIVER B FASTER)</span>
+                </div>
+                <div class="chart-canvas-wrap delta-height">
+                    <canvas id="deltaGraphCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- 2. Speed Comparison (km/h) -->
+            <div class="chart-block">
+                <div class="chart-label-row">
+                    <span>SPEED TRACE (KM/H)</span>
+                </div>
+                <div class="chart-canvas-wrap">
+                    <canvas id="speedGraphCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- 3. Pedal Inputs Overlay (Throttle & Brake %) -->
+            <div class="chart-block">
+                <div class="chart-label-row">
+                    <span>PEDAL INPUTS (TOP: THROTTLE 0-100% &bull; BOTTOM: BRAKE 0-100%)</span>
+                </div>
+                <div class="chart-canvas-wrap">
+                    <canvas id="pedalsGraphCanvas"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── CORNER BREAKDOWN & KEY METRICS TABLE ── -->
+        <section class="stats-table-card">
+            <div class="hud-panel-title">
+                <span>KEY PERFORMANCE METRICS &amp; SECTOR BREAKDOWN</span>
+            </div>
+            <div class="stats-table-wrap">
+                <table class="f1-ghost-table">
+                    <thead>
+                        <tr>
+                            <th>PERFORMANCE METRIC</th>
+                            <th>DRIVER A</th>
+                            <th>DRIVER B</th>
+                            <th>DELTA GAP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Floating Toast Feedback -->
+    <div id="ghostToast" class="ghost-toast"></div>
+
+    <!-- Telemetry Engine Core Logic -->
+    <script src="js/ghost-comparison.js?v=1.0"></script>
+</body>
+
+</html>

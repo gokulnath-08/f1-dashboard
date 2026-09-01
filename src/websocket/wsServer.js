@@ -6,7 +6,7 @@ const { OFFICIAL_TRACK_SECTOR_DISTANCES } = require('../config/catalogs');
 const gameState = require('../state/gameState');
 const { safeSaveTrackMap } = require('../utils/fileSystem');
 const { getTelemetryDrsZonesForTrack, isTrackFinalized, syncTrackLinesForTrack } = require('../services/trackService');
-const { generateSessionExportJson } = require('../services/storageService');
+const { generateSessionExportJson, getTrackDriverFastestLaps } = require('../services/storageService');
 const { resetSessionData } = require('../state/stateHelpers');
 
 let clients = [];
@@ -193,6 +193,82 @@ function handleWsConnection(ws) {
 
             if (data.action === 'exportSession' || data.action === 'getSessionExport' || data.action === 'downloadSession') {
                 ws.send(JSON.stringify({ type: 'sessionExportResponse', data: generateSessionExportJson() }));
+                return;
+            }
+
+            if (data.action === 'getSessionDriverFastestLaps') {
+                const tId = data.trackId !== undefined ? parseInt(data.trackId, 10) : gameState.currentTrackId;
+                let rawLaps = [];
+                if (!isNaN(tId) && tId !== -1) {
+                    rawLaps = getTrackDriverFastestLaps(tId);
+                } else {
+                    rawLaps = (gameState.sessionDriverFastestLaps || []).filter(Boolean);
+                }
+
+                const laps = (rawLaps || []).map(l => ({
+                    carIndex: l.carIndex,
+                    driverName: l.driverName,
+                    teamName: l.teamName,
+                    teamColor: l.teamColor,
+                    lapTimeMs: l.lapTimeMs,
+                    lapNum: l.lapNum,
+                    s1: l.s1,
+                    s2: l.s2,
+                    s3: l.s3,
+                    telemetryPoints: (l.telemetry || []).length,
+                    timestamp: l.timestamp
+                }));
+                ws.send(JSON.stringify({ type: 'sessionDriverFastestLapsResponse', trackId: tId, data: laps }));
+                return;
+            }
+
+            if (data.action === 'getDriverLapTelemetry') {
+                const cIdx = parseInt(data.carIndex, 10);
+                const tId = data.trackId !== undefined ? parseInt(data.trackId, 10) : gameState.currentTrackId;
+                let lapData = null;
+
+                if (gameState.currentTrackId === tId && gameState.sessionDriverFastestLaps && gameState.sessionDriverFastestLaps[cIdx]) {
+                    lapData = gameState.sessionDriverFastestLaps[cIdx];
+                } else if (!isNaN(tId) && tId !== -1) {
+                    const allLaps = getTrackDriverFastestLaps(tId);
+                    lapData = allLaps.find(l => l.carIndex === cIdx) || (cIdx === 0 ? allLaps[0] : null) || null;
+                } else if (!isNaN(cIdx) && gameState.sessionDriverFastestLaps) {
+                    lapData = gameState.sessionDriverFastestLaps[cIdx];
+                }
+
+                ws.send(JSON.stringify({
+                    type: 'driverLapTelemetryResponse',
+                    carIndex: cIdx,
+                    trackId: tId,
+                    data: lapData || null
+                }));
+                return;
+            }
+
+            if (data.action === 'getGhostComparisonData') {
+                const idxA = parseInt(data.driverA, 10);
+                const idxB = parseInt(data.driverB, 10);
+                const tId = data.trackId !== undefined ? parseInt(data.trackId, 10) : gameState.currentTrackId;
+
+                let lapA = null;
+                let lapB = null;
+
+                if (gameState.currentTrackId === tId && gameState.sessionDriverFastestLaps) {
+                    lapA = gameState.sessionDriverFastestLaps[idxA] || null;
+                    lapB = gameState.sessionDriverFastestLaps[idxB] || null;
+                } else if (!isNaN(tId) && tId !== -1) {
+                    const allLaps = getTrackDriverFastestLaps(tId);
+                    lapA = allLaps.find(l => l.carIndex === idxA) || allLaps[0] || null;
+                    lapB = allLaps.find(l => l.carIndex === idxB) || allLaps[1] || null;
+                }
+
+                ws.send(JSON.stringify({
+                    type: 'ghostComparisonDataResponse',
+                    driverA: lapA || null,
+                    driverB: lapB || null,
+                    trackId: tId,
+                    trackPoints: gameState.state.trackPoints || []
+                }));
                 return;
             }
 

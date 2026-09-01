@@ -21,9 +21,10 @@ const trackMapsDir = path.join(rootDir, 'track_maps');
 const lapTimeDir = path.join(rootDir, 'laptime');
 const telemetryDir = path.join(rootDir, 'telemetry');
 const setupsDir = path.join(rootDir, 'setups');
+const sessionTelemetryDir = path.join(rootDir, 'session_telemetry');
 const fastestJsonPath = path.join(lapTimeDir, 'fastest.json');
 
-const IGNORED_SCAN_DIRS = new Set(['node_modules', '.git', '.agents', 'telemetry', 'track_maps', 'laptime', 'setups', 'backup', 'scratch', 'css', 'js', 'src']);
+const IGNORED_SCAN_DIRS = new Set(['node_modules', '.git', '.agents', 'telemetry', 'track_maps', 'laptime', 'setups', 'session_telemetry', 'backup', 'scratch', 'css', 'js', 'src']);
 
 module.exports = {
     PORT,
@@ -37,6 +38,7 @@ module.exports = {
     lapTimeDir,
     telemetryDir,
     setupsDir,
+    sessionTelemetryDir,
     fastestJsonPath,
     IGNORED_SCAN_DIRS
 };

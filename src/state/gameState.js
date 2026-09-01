@@ -42,6 +42,7 @@ let allTyreStints = {};
 let currentLapTelemetry = Array.from({ length: 22 }, () => []);
 let lastLapTelemetry = Array.from({ length: 22 }, () => []);
 let fastestLapGhostData = [];
+let sessionDriverFastestLaps = Array.from({ length: 22 }, () => null);
 
 let state = {
     type: 'telemetry',
@@ -141,6 +142,7 @@ module.exports = {
     currentLapTelemetry,
     lastLapTelemetry,
     fastestLapGhostData,
+    sessionDriverFastestLaps,
     get currentSessionUID() { return currentSessionUID; },
     set currentSessionUID(v) { currentSessionUID = v; },
     get currentSessionType() { return currentSessionType; },

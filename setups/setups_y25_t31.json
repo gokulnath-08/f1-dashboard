@@ -1,7 +1,7 @@
 [
   {
     "lapNum": 0,
-    "time": 94922,
+    "time": 0,
     "setup": {
       "wingF": 20,
       "wingR": 13,
@@ -25,14 +25,16 @@
       "pressRLeft": 22,
       "pressRRight": 22,
       "ballast": 6,
-      "fuel": 5,
-      "fuelLaps": 0
+      "fuel": 10,
+      "fuelLaps": 4.949999809265137,
+      "fuelCapacity": 110,
+      "fuelMix": "Lean"
     },
-    "timestamp": 1788188858172
+    "timestamp": 1788296663386
   },
   {
     "lapNum": 1,
-    "time": 96700,
+    "time": 98517,
     "setup": {
       "wingF": 20,
       "wingR": 13,
@@ -56,16 +58,16 @@
       "pressRLeft": 22,
       "pressRRight": 22,
       "ballast": 6,
-      "fuel": 1.0955002307891846,
-      "fuelLaps": 0.5149138569831848,
+      "fuel": 10.000458717346191,
+      "fuelLaps": 4.950229167938232,
       "fuelCapacity": 110,
       "fuelMix": "Standard"
     },
-    "timestamp": 1788185499176
+    "timestamp": 1788296813565
   },
   {
     "lapNum": 2,
-    "time": 97760,
+    "time": 93923,
     "setup": {
       "wingF": 20,
       "wingR": 13,
@@ -89,16 +91,16 @@
       "pressRLeft": 22,
       "pressRRight": 22,
       "ballast": 6,
-      "fuel": 12.034950256347656,
-      "fuelLaps": 6.1732497215271,
+      "fuel": 1.1956298351287842,
+      "fuelLaps": 0.566705048084259,
       "fuelCapacity": 110,
       "fuelMix": "Standard"
     },
-    "timestamp": 1788185848291
+    "timestamp": 1788297936064
   },
   {
     "lapNum": 3,
-    "time": 96670,
+    "time": 95859,
     "setup": {
       "wingF": 20,
       "wingR": 13,
@@ -122,16 +124,16 @@
       "pressRLeft": 22,
       "pressRRight": 22,
       "ballast": 6,
-      "fuel": 5,
-      "fuelLaps": 5.1446051597595215,
+      "fuel": 10,
+      "fuelLaps": 4.950229167938232,
       "fuelCapacity": 110,
       "fuelMix": "Standard"
     },
-    "timestamp": 1788186125343
+    "timestamp": 1788297043112
   },
   {
     "lapNum": 4,
-    "time": 98437,
+    "time": 96328,
     "setup": {
       "wingF": 20,
       "wingR": 13,
@@ -155,12 +157,12 @@
       "pressRLeft": 22,
       "pressRRight": 22,
       "ballast": 6,
-      "fuel": 8.074657440185547,
-      "fuelLaps": 4.124822616577148,
+      "fuel": 10.000458717346191,
+      "fuelLaps": 4.950229167938232,
       "fuelCapacity": 110,
       "fuelMix": "Standard"
     },
-    "timestamp": 1788186442318
+    "timestamp": 1788297274609
   },
   {
     "lapNum": 5,

@@ -4,7 +4,7 @@ const path = require('path');
 const os = require('os');
 const { telemetryDir, lapTimeDir, fastestJsonPath } = require('../config');
 const gameState = require('../state/gameState');
-const { generateSessionExportJson, getAvailableTelemetryTracks } = require('../services/storageService');
+const { generateSessionExportJson, getAvailableTelemetryTracks, getTrackDriverFastestLaps } = require('../services/storageService');
 const { getAllHtmlFiles, renderHtmlDirectoryPage, resolveRequestedFile, MIME_TYPES } = require('../services/staticHandler');
 const { syncTrackLinesForTrack } = require('../services/trackService');
 const { broadcast } = require('../websocket/wsServer');
@@ -69,6 +69,103 @@ function createHttpServer() {
                 "Access-Control-Allow-Origin": "*"
             });
             res.end(JSON.stringify({ count: Object.keys(fastestRecords).length, records: fastestRecords }, null, 2));
+            return;
+        }
+
+        // API endpoint: Get all drivers who recorded fastest laps in the active session or for a selected track
+        if (reqUrl.startsWith("/api/session/driver-fastest-laps") || reqUrl.startsWith("/api/session/fastest-laps") || reqUrl.startsWith("/api/driver-laps")) {
+            const urlParams = new URL(rawUrl, `http://${req.headers.host || 'localhost'}`).searchParams;
+            const trackIdParam = urlParams.get('trackId') || urlParams.get('id');
+            const tId = trackIdParam !== null ? parseInt(trackIdParam, 10) : gameState.currentTrackId;
+
+            let rawLaps = [];
+            if (tId !== -1 && tId !== undefined && !isNaN(tId)) {
+                rawLaps = getTrackDriverFastestLaps(tId);
+            } else {
+                rawLaps = (gameState.sessionDriverFastestLaps || []).filter(Boolean);
+            }
+
+            const laps = (rawLaps || []).map(l => ({
+                carIndex: l.carIndex,
+                driverName: l.driverName,
+                teamName: l.teamName,
+                teamColor: l.teamColor,
+                lapTimeMs: l.lapTimeMs,
+                lapNum: l.lapNum,
+                s1: l.s1,
+                s2: l.s2,
+                s3: l.s3,
+                telemetryPoints: (l.telemetry || []).length,
+                timestamp: l.timestamp
+            }));
+
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify({
+                count: laps.length,
+                trackId: tId,
+                trackName: state.session.trackName || 'Unknown',
+                trackLength: state.session.trackLength || 0,
+                laps: laps
+            }, null, 2));
+            return;
+        }
+
+        // API endpoint: Get full telemetry for a specific driver
+        if (reqUrl.startsWith("/api/session/driver-telemetry") || reqUrl.startsWith("/api/driver-telemetry")) {
+            const urlParams = new URL(rawUrl, `http://${req.headers.host || 'localhost'}`).searchParams;
+            const carIdxParam = urlParams.get('carIndex') || urlParams.get('car') || urlParams.get('idx');
+            const trackIdParam = urlParams.get('trackId') || urlParams.get('id');
+            const cIdx = carIdxParam !== null ? parseInt(carIdxParam, 10) : 0;
+            const tId = trackIdParam !== null ? parseInt(trackIdParam, 10) : gameState.currentTrackId;
+
+            let lapData = null;
+            if (gameState.currentTrackId === tId && gameState.sessionDriverFastestLaps && gameState.sessionDriverFastestLaps[cIdx]) {
+                lapData = gameState.sessionDriverFastestLaps[cIdx];
+            } else if (tId !== -1 && !isNaN(tId)) {
+                const allLaps = getTrackDriverFastestLaps(tId);
+                lapData = allLaps.find(l => l.carIndex === cIdx) || (cIdx === 0 ? allLaps[0] : null) || null;
+            } else if (!isNaN(cIdx) && gameState.sessionDriverFastestLaps) {
+                lapData = gameState.sessionDriverFastestLaps[cIdx];
+            }
+
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify({
+                success: !!lapData,
+                carIndex: cIdx,
+                trackId: tId,
+                data: lapData || null
+            }, null, 2));
+            return;
+        }
+
+        // API endpoint: Get ghost comparison payload for two drivers
+        if (reqUrl.startsWith("/api/session/ghost-comparison") || reqUrl.startsWith("/api/ghost-comparison")) {
+            const urlParams = new URL(rawUrl, `http://${req.headers.host || 'localhost'}`).searchParams;
+            const idxA = parseInt(urlParams.get('driverA') || urlParams.get('a') || '0', 10);
+            const idxB = parseInt(urlParams.get('driverB') || urlParams.get('b') || '1', 10);
+
+            const lapA = (!isNaN(idxA) && gameState.sessionDriverFastestLaps) ? gameState.sessionDriverFastestLaps[idxA] : null;
+            const lapB = (!isNaN(idxB) && gameState.sessionDriverFastestLaps) ? gameState.sessionDriverFastestLaps[idxB] : null;
+
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify({
+                success: !!(lapA || lapB),
+                driverA: lapA || null,
+                driverB: lapB || null,
+                trackId: gameState.currentTrackId,
+                trackName: state.session.trackName || 'Unknown',
+                trackLength: state.session.trackLength || 0,
+                trackPoints: state.trackPoints || []
+            }, null, 2));
             return;
         }
 

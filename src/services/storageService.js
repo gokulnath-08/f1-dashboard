@@ -1,12 +1,12 @@
 const fs = require('fs');
 const path = require('path');
-const { trackMapsDir, lapTimeDir, telemetryDir } = require('../config');
+const { trackMapsDir, lapTimeDir, telemetryDir, sessionTelemetryDir } = require('../config');
 const { trackMap } = require('../config/constants');
 const gameState = require('../state/gameState');
 const { formatMsExport, formatSectorMs } = require('../utils/formatters');
 
 /**
- * Scans telemetry, laptime records, and track maps to return a complete list of all available circuits.
+ * Scans telemetry, laptime records, track maps, and session telemetry to return a complete list of all available circuits.
  */
 function getAvailableTelemetryTracks() {
     const { allTimeFastest } = gameState;
@@ -29,7 +29,8 @@ function getAvailableTelemetryTracks() {
                 driver: record ? record.driver : 'Unknown',
                 hasTelemetry: false,
                 hasLaptime: false,
-                hasTrackMap: false
+                hasTrackMap: false,
+                hasSessionDriverLaps: false
             });
         }
         return trackMapList.get(id);
@@ -105,7 +106,23 @@ function getAvailableTelemetryTracks() {
         }
     } catch (e) { }
 
-    // 4. Incorporate all records from allTimeFastest
+    // 4. Scan session_telemetry directory for stored driver laps
+    try {
+        if (fs.existsSync(sessionTelemetryDir)) {
+            const files = fs.readdirSync(sessionTelemetryDir);
+            for (const file of files) {
+                const match = file.match(/fastest_car_(\d+)_track_(\d+)\.json$/i);
+                if (match) {
+                    const trackId = parseInt(match[2], 10);
+                    const item = getOrCreate(trackId);
+                    item.hasTelemetry = true;
+                    item.hasSessionDriverLaps = true;
+                }
+            }
+        }
+    } catch (e) { }
+
+    // 5. Incorporate all records from allTimeFastest
     for (const [tIdStr, rec] of Object.entries(allTimeFastest)) {
         const item = getOrCreate(tIdStr);
         if (rec) {
@@ -121,6 +138,74 @@ function getAvailableTelemetryTracks() {
 }
 
 /**
+ * Retrieves all saved JSON driver fastest lap files for a specific track.
+ */
+function getTrackDriverFastestLaps(trackId) {
+    const tId = parseInt(trackId, 10);
+    const laps = [];
+
+    // 1. If active game session is currently on this track, use in-memory session laps
+    if (gameState.currentTrackId === tId && Array.isArray(gameState.sessionDriverFastestLaps)) {
+        const liveLaps = gameState.sessionDriverFastestLaps.filter(Boolean);
+        if (liveLaps.length > 0) {
+            return liveLaps;
+        }
+    }
+
+    // 2. Scan session_telemetry directory on disk for fastest_car_*_track_${tId}.json
+    try {
+        if (fs.existsSync(sessionTelemetryDir)) {
+            const files = fs.readdirSync(sessionTelemetryDir);
+            for (const file of files) {
+                const match = file.match(new RegExp(`^fastest_car_(\\d+)_track_${tId}\\.json$`, 'i'));
+                if (match) {
+                    try {
+                        const content = JSON.parse(fs.readFileSync(path.join(sessionTelemetryDir, file), 'utf8'));
+                        if (content && content.lapTimeMs > 0 && Array.isArray(content.telemetry)) {
+                            laps.push(content);
+                        }
+                    } catch (e) { }
+                }
+            }
+        }
+    } catch (e) { }
+
+    if (laps.length > 0) {
+        laps.sort((a, b) => a.lapTimeMs - b.lapTimeMs);
+        return laps;
+    }
+
+    // 3. Fallback: Check if telemetry/telemetry_${tId}.json exists and return benchmark lap
+    try {
+        const telPath = path.join(telemetryDir, `telemetry_${tId}.json`);
+        if (fs.existsSync(telPath)) {
+            const raw = JSON.parse(fs.readFileSync(telPath, 'utf8'));
+            if (Array.isArray(raw) && raw.length > 20) {
+                const lapTime = raw[raw.length - 1].t || 80000;
+                const rec = gameState.allTimeFastest[tId];
+                const dName = (rec && rec.driver) ? rec.driver : 'Record Holder';
+
+                laps.push({
+                    carIndex: 0,
+                    driverName: dName,
+                    teamName: 'Track Record',
+                    teamColor: '#00F0FF',
+                    lapTimeMs: lapTime,
+                    lapNum: 1,
+                    s1: rec ? rec.s1 : Math.round(lapTime * 0.3),
+                    s2: rec ? rec.s2 : Math.round(lapTime * 0.38),
+                    s3: rec ? rec.s3 : Math.round(lapTime * 0.32),
+                    telemetry: raw,
+                    timestamp: Date.now()
+                });
+            }
+        }
+    } catch (e) { }
+
+    return laps;
+}
+
+/**
  * Builds a structured, complete, exhaustive JSON snapshot of all session data:
  * - Every lap with sector 1, sector 2, sector 3 times and validation flags for all 22 cars
  * - Flat lap-by-lap table for easy data science / CSV export
@@ -132,7 +217,8 @@ function generateSessionExportJson() {
     const {
         state, carDataTracker, allLapHistories, allTyreStints,
         currentSessionUID, currentGameYear, currentTrackId,
-        carPhysics, fastestLapGhostData, lastLapTelemetry, currentLapTelemetry
+        carPhysics, fastestLapGhostData, lastLapTelemetry, currentLapTelemetry,
+        sessionDriverFastestLaps
     } = gameState;
 
     const pIdx = state.playerIndex || 0;
@@ -330,6 +416,7 @@ function generateSessionExportJson() {
         },
         weatherForecast: state.weatherForecast || [],
         ghostLapTelemetry: fastestLapGhostData || [],
+        sessionDriverFastestLaps: sessionDriverFastestLaps || [],
         playerLastLapTelemetry: lastLapTelemetry[pIdx] || [],
         playerCurrentLapTelemetry: currentLapTelemetry[pIdx] || [],
         allCarsCurrentLapTelemetry: currentLapTelemetry,
@@ -339,5 +426,6 @@ function generateSessionExportJson() {
 
 module.exports = {
     getAvailableTelemetryTracks,
+    getTrackDriverFastestLaps,
     generateSessionExportJson
 };
