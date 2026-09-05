@@ -11,8 +11,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Roboto+Mono:wght@400;500;700;900&family=Titillium+Web:ital,wght@0,400;0,600;0,700;0,900;1,700&display=swap" rel="stylesheet">
     
+    <!-- Three.js 3D Engine -->
+    <script src="js/three.min.js?v=r128"></script>
+
     <!-- CSS Design System -->
-    <link rel="stylesheet" href="css/ghost-comparison.css?v=1.0">
+    <link rel="stylesheet" href="css/ghost-comparison.css?v=1.1">
 </head>
 
 <body>
@@ -28,7 +31,7 @@
             </a>
             <div class="ghost-brand-title">
                 <span class="ghost-logo-badge">F1 2026</span>
-                <span>GHOST LAP COMPARISON</span>
+                <span>GHOST LAP COMPARISON 3D</span>
             </div>
         </div>
 
@@ -40,6 +43,12 @@
         </div>
 
         <div class="ghost-header-actions">
+            <!-- Session Telemetry Recording Button -->
+            <button id="btnRecordingToggle" class="btn-header-tool btn-rec-tool" title="Start/Stop Session Telemetry Recording (Save all driver laps at all costs)">
+                <span class="rec-dot"></span>
+                <span id="recBtnLabel">START REC</span>
+                <span id="recTimer" class="rec-timer" style="display:none;">00:00</span>
+            </button>
             <button id="btnDetectLive" class="btn-header-tool" style="border-color:rgba(0,240,255,0.4); background:rgba(0,240,255,0.08);" title="Detect & Switch to Live Game Circuit">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
                 <span style="color:#00f0ff;">DETECT LIVE</span>
@@ -128,46 +137,125 @@
             </div>
         </section>
 
-        <!-- ── DUAL STAGE: CIRCUIT GHOST CANVAS + LIVE TELEMETRY GAUGES ── -->
+        <!-- ── DUAL STAGE: 3D CIRCUIT GHOST VIEWPORT + LIVE TELEMETRY GAUGES ── -->
         <section class="ghost-stage-grid">
             
-            <!-- Circuit Map Viewport with Animated Dual Ghost Cars -->
-            <div class="circuit-viewport-card">
+            <!-- 3D Circuit Viewport with Animated 3D Dual Ghost Cars & Live Delta HUD -->
+            <div class="circuit-viewport-card" id="circuitViewportCard">
+                <!-- Top 3D Control Bar & Live Delta HUD Banner -->
                 <div class="viewport-top-hud">
                     <div class="hud-left-chips">
                         <div class="hud-chip">
                             <span>TRACK DIST:</span>
                             <code id="hudTrackDist">0m / 5000m</code>
                         </div>
+                        <div class="hud-chip">
+                            <span>3D CAM:</span>
+                            <code id="hudCamLabel">CHASE CAM (A)</code>
+                        </div>
                     </div>
+
+                    <!-- 3D Viewport Live Delta Banner -->
+                    <div class="viewport-live-delta-hud" id="viewportLiveDeltaHud" title="Live Instant Delta between Ghost Car A and Ghost Car B">
+                        <div class="v-delta-top-row">
+                            <span class="v-delta-label">LIVE DELTA</span>
+                            <span class="v-delta-badge" id="vDeltaBadge">±0.000s</span>
+                            <span class="v-delta-dist" id="vDeltaDist">0.0m GAP</span>
+                        </div>
+                        <!-- Graphic Delta Balance Bar (Left = Driver A Advantage / Right = Driver B Advantage) -->
+                        <div class="v-delta-meter-bar">
+                            <div class="v-meter-driver-label label-a" id="vDeltaNameA">A</div>
+                            <div class="v-meter-track">
+                                <div class="v-meter-center-mark"></div>
+                                <div class="v-meter-fill-a" id="vMeterFillA" style="width:0%;"></div>
+                                <div class="v-meter-fill-b" id="vMeterFillB" style="width:0%;"></div>
+                            </div>
+                            <div class="v-meter-driver-label label-b" id="vDeltaNameB">B</div>
+                        </div>
+                    </div>
+
                     <div class="hud-right-chips">
                         <div class="hud-chip">
-                            <span>LIVE DELTA:</span>
-                            <code id="hudLiveDelta">&plusmn;0.000s</code>
+                            <span>SPEED &Delta;:</span>
+                            <code id="hudSpeedDelta">±0 KM/H</code>
                         </div>
+                        <button id="btnFullscreen3D" class="hud-chip btn-hud-icon" title="Toggle Fullscreen 3D Viewport">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                        </button>
                     </div>
                 </div>
 
-                <div class="circuit-canvas-container" title="Click anywhere along circuit to jump scrubber">
-                    <canvas id="circuitMapCanvas"></canvas>
+                <!-- 3D Interactive WebGL Container -->
+                <div class="circuit-canvas-container" id="circuit3dContainer" title="Drag to Orbit / Right-Click to Pan / Wheel to Zoom / Click track to jump scrubber">
+                    <!-- Three.js Canvas injected dynamically -->
+                </div>
+
+                <!-- 3D Floating Camera Toolbar -->
+                <div class="camera-floating-toolbar">
+                    <div class="cam-btn-group">
+                        <button class="cam-mode-btn active" data-cam="chaseA" title="Chase Cam - Follow Car A">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/></svg>
+                            <span>CHASE A</span>
+                        </button>
+                        <button class="cam-mode-btn" data-cam="chaseB" title="Chase Cam - Follow Car B">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/></svg>
+                            <span>CHASE B</span>
+                        </button>
+                        <button class="cam-mode-btn" data-cam="battle" title="Battle Cam - Dynamic Wheel-to-Wheel Dual Focus">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m13 2-2 2.5V8l2 2.5V20l-2 2"/><path d="M7 6v6m10-6v6"/></svg>
+                            <span>BATTLE CAM</span>
+                        </button>
+                        <button class="cam-mode-btn" data-cam="cockpitA" title="Cockpit Cam - Onboard Driver A POV">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2a10 10 0 0 0-10 10c0 4.4 2.9 8.2 7 9.5V17a3 3 0 0 1 6 0v4.5c4.1-1.3 7-5.1 7-9.5A10 10 0 0 0 12 2Z"/></svg>
+                            <span>COCKPIT</span>
+                        </button>
+                        <button class="cam-mode-btn" data-cam="orbit" title="Orbit 3D - Free 360° Track Camera (Rotate/Pan/Zoom)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                            <span>ORBIT 3D</span>
+                        </button>
+                        <button class="cam-mode-btn" data-cam="topDown" title="Top-Down 3D - Overhead Bird's Eye Track View">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4"/></svg>
+                            <span>TOP DOWN</span>
+                        </button>
+                    </div>
+
+                    <!-- 3D Visual Filters & Toggles -->
+                    <div class="cam-options-group">
+                        <button id="btnToggleGhostStyle" class="cam-opt-btn active" title="Toggle Ghost Translucency / Solid Carbon Livery">
+                            <span>GHOST GLOW</span>
+                        </button>
+                        <button id="btnToggleDeltaBeam" class="cam-opt-btn active" title="Toggle 3D Live Delta Laser Beam on Track">
+                            <span>&Delta; BEAM</span>
+                        </button>
+                        <button id="btnToggleApexTrail" class="cam-opt-btn active" title="Toggle Apex Racing Line Trails">
+                            <span>TRAILS</span>
+                        </button>
+                        <button id="btnResetCam" class="cam-opt-btn" title="Reset Camera View to Focus on Leading Car">
+                            <span>RESET CAM</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="circuit-legend-bar">
                     <div class="legend-item">
                         <span class="legend-dot dot-a"></span>
-                        <span>Ghost Car A</span>
+                        <span id="legendCarAName">Ghost Car A</span>
                     </div>
                     <div class="legend-item">
                         <span class="legend-dot dot-b"></span>
-                        <span>Ghost Car B</span>
+                        <span id="legendCarBName">Ghost Car B</span>
                     </div>
                     <div class="legend-item">
-                        <span class="legend-dot dot-s1"></span>
-                        <span>Sectors 1 &amp; 2</span>
+                        <span class="legend-dot dot-beam"></span>
+                        <span>3D Live &Delta; Distance Beam</span>
                     </div>
                     <div class="legend-item">
                         <span class="legend-dot dot-drs"></span>
                         <span>DRS Activation Zones</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot dot-s1"></span>
+                        <span>Sectors 1 &amp; 2</span>
                     </div>
                 </div>
             </div>

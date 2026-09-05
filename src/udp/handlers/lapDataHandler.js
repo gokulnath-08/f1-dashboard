@@ -180,8 +180,9 @@ function handleLapData(data) {
             const completesLap = lastTelemetryPt && (lastTelemetryPt.d || 0) >= (tLen * 0.75);
             const isCleanLap = hasMinPoints && startsNearLine && completesLap;
 
-            // --- FULL LAP GUARANTEE & SESSION FASTEST LAP STORAGE ---
-            if (validTelemetry.length >= 30 && (spansDistance || startsNearLine)) {
+            // --- MANUAL RECORDING CONTROL & SESSION FASTEST LAP STORAGE ---
+            const isRecording = gameState.isRecordingSessionTelemetry === true;
+            if (isRecording && validTelemetry.length >= 10) {
                 validTelemetry.sort((a, b) => (a.d !== undefined && b.d !== undefined) ? a.d - b.d : a.t - b.t);
 
                 // Ensure the starting point is cleanly anchored at d = 0, t = 0
@@ -206,9 +207,11 @@ function handleLapData(data) {
                 const dName = (state.participants && state.participants[i]) || carDataTracker[i].teamName || (isPlayer ? 'Player' : `Driver ${i}`);
                 const existingDriverBest = gameState.sessionDriverFastestLaps && gameState.sessionDriverFastestLaps[i];
 
+                // Rule: If first lap since recording started -> STORE AT ALL COSTS!
+                // Rule: If subsequent lap from same driver -> COMPARE and REPLACE if faster!
                 const isFirstLap = !existingDriverBest;
                 const isFasterTime = lastTime > 0 && (!existingDriverBest || existingDriverBest.lapTimeMs === 0 || lastTime < existingDriverBest.lapTimeMs);
-                const isFullerLap = existingDriverBest && (validTelemetry.length > (existingDriverBest.telemetry?.length || 0) * 1.3);
+                const isFullerLap = existingDriverBest && (existingDriverBest.lapTimeMs === 0) && (validTelemetry.length > (existingDriverBest.telemetry?.length || 0) * 1.3);
 
                 if (isFirstLap || isFasterTime || isFullerLap) {
                     if (!gameState.sessionDriverFastestLaps) gameState.sessionDriverFastestLaps = Array.from({ length: 22 }, () => null);
@@ -230,12 +233,17 @@ function handleLapData(data) {
 
                     gameState.sessionDriverFastestLaps[i] = lapEntry;
 
-                    // Persist driver lap to session_telemetry directory on disk
+                    // Persist driver lap to session_telemetry directory on disk at all costs
                     if (currentTrackId !== -1) {
                         try {
+                            if (!fs.existsSync(sessionTelemetryDir)) {
+                                fs.mkdirSync(sessionTelemetryDir, { recursive: true });
+                            }
                             const sessionFilePath = path.join(sessionTelemetryDir, `fastest_car_${i}_track_${currentTrackId}.json`);
                             fs.writeFileSync(sessionFilePath, JSON.stringify(lapEntry, null, 2), 'utf8');
-                        } catch (e) { }
+                        } catch (e) {
+                            console.error(`⚠️ [Telemetry Disk Save Error] Car ${i}:`, e.message);
+                        }
                     }
 
                     // Broadcast live update to all connected WebSocket clients
@@ -259,7 +267,7 @@ function handleLapData(data) {
                         }));
                     } catch (e) { }
 
-                    console.log(`⏱️ [Driver Full Lap Stored] Car ${i} (${dName}) - Lap ${lapEntry.lapTimeMs}ms (${validTelemetry.length} pts, from d=0 to d=${validTelemetry[validTelemetry.length - 1]?.d}m)`);
+                    console.log(`🔴⏱️ [Session Recording] Car ${i} (${dName}) - Lap ${lapEntry.lapTimeMs}ms (${validTelemetry.length} pts, ${isFirstLap ? 'FIRST LAP STORED AT ALL COSTS' : 'NEW FASTEST LAP REPLACED'})`);
                 }
             }
 

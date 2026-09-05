@@ -169,6 +169,90 @@ function createHttpServer() {
             return;
         }
 
+        // API endpoint: Start session telemetry recording
+        if (reqUrl === "/api/recording/start" || reqUrl === "/api/session/recording/start") {
+            const urlParams = new URL(rawUrl, `http://${req.headers.host || 'localhost'}`).searchParams;
+            const resetOld = urlParams.get('reset') !== 'false';
+            const trackIdParam = urlParams.get('trackId');
+            if (trackIdParam !== null) {
+                const tId = parseInt(trackIdParam, 10);
+                if (!isNaN(tId) && tId !== -1) gameState.currentTrackId = tId;
+            }
+
+            gameState.isRecordingSessionTelemetry = true;
+            gameState.sessionRecordingStartTime = Date.now();
+
+            if (resetOld) {
+                gameState.sessionDriverFastestLaps = Array.from({ length: 22 }, () => null);
+                gameState.currentLapTelemetry = Array.from({ length: 22 }, () => []);
+                gameState.lastLapTelemetry = Array.from({ length: 22 }, () => []);
+            }
+
+            broadcast(JSON.stringify({
+                type: 'sessionRecordingState',
+                isRecording: true,
+                startTime: gameState.sessionRecordingStartTime,
+                trackId: gameState.currentTrackId
+            }));
+
+            console.log(`🔴 [HTTP API] Session recording started for Track ${gameState.currentTrackId}`);
+
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify({
+                success: true,
+                isRecording: true,
+                startTime: gameState.sessionRecordingStartTime,
+                trackId: gameState.currentTrackId,
+                message: "Session telemetry recording started. All driver laps will be saved."
+            }, null, 2));
+            return;
+        }
+
+        // API endpoint: Stop session telemetry recording
+        if (reqUrl === "/api/recording/stop" || reqUrl === "/api/session/recording/stop") {
+            gameState.isRecordingSessionTelemetry = false;
+
+            broadcast(JSON.stringify({
+                type: 'sessionRecordingState',
+                isRecording: false,
+                startTime: 0,
+                trackId: gameState.currentTrackId
+            }));
+
+            console.log(`⏹️ [HTTP API] Session recording stopped`);
+
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify({
+                success: true,
+                isRecording: false,
+                trackId: gameState.currentTrackId,
+                message: "Session telemetry recording stopped."
+            }, null, 2));
+            return;
+        }
+
+        // API endpoint: Get session recording status
+        if (reqUrl === "/api/recording/status" || reqUrl === "/api/session/recording/status") {
+            const recordedCount = (gameState.sessionDriverFastestLaps || []).filter(Boolean).length;
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            });
+            res.end(JSON.stringify({
+                isRecording: gameState.isRecordingSessionTelemetry,
+                startTime: gameState.sessionRecordingStartTime,
+                trackId: gameState.currentTrackId,
+                recordedDriversCount: recordedCount
+            }, null, 2));
+            return;
+        }
+
         // API endpoint to trigger sector line sync from telemetry for a track
         if (reqUrl.startsWith("/api/sync-track-lines") || reqUrl.startsWith("/api/sync-sectors")) {
             const urlParams = new URL(rawUrl, `http://${req.headers.host || 'localhost'}`).searchParams;

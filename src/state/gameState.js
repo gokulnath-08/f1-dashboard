@@ -43,6 +43,8 @@ let currentLapTelemetry = Array.from({ length: 22 }, () => []);
 let lastLapTelemetry = Array.from({ length: 22 }, () => []);
 let fastestLapGhostData = [];
 let sessionDriverFastestLaps = Array.from({ length: 22 }, () => null);
+let isRecordingSessionTelemetry = false;
+let sessionRecordingStartTime = 0;
 
 let state = {
     type: 'telemetry',
@@ -143,6 +145,10 @@ module.exports = {
     lastLapTelemetry,
     fastestLapGhostData,
     sessionDriverFastestLaps,
+    get isRecordingSessionTelemetry() { return isRecordingSessionTelemetry; },
+    set isRecordingSessionTelemetry(v) { isRecordingSessionTelemetry = v; },
+    get sessionRecordingStartTime() { return sessionRecordingStartTime; },
+    set sessionRecordingStartTime(v) { sessionRecordingStartTime = v; },
     get currentSessionUID() { return currentSessionUID; },
     set currentSessionUID(v) { currentSessionUID = v; },
     get currentSessionType() { return currentSessionType; },

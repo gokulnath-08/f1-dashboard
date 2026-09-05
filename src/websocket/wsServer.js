@@ -293,6 +293,53 @@ function handleWsConnection(ws) {
                 return;
             }
 
+            if (data.action === 'startSessionRecording') {
+                const trackId = data.trackId !== undefined && data.trackId !== -1 ? parseInt(data.trackId, 10) : gameState.currentTrackId;
+                if (!isNaN(trackId) && trackId !== -1) {
+                    gameState.currentTrackId = trackId;
+                }
+
+                gameState.isRecordingSessionTelemetry = true;
+                gameState.sessionRecordingStartTime = Date.now();
+
+                if (data.reset !== false) {
+                    gameState.sessionDriverFastestLaps = Array.from({ length: 22 }, () => null);
+                    gameState.currentLapTelemetry = Array.from({ length: 22 }, () => []);
+                    gameState.lastLapTelemetry = Array.from({ length: 22 }, () => []);
+                }
+
+                console.log(`🔴 [WS] Session recording active for Track ${gameState.currentTrackId}`);
+                broadcast(JSON.stringify({
+                    type: 'sessionRecordingState',
+                    isRecording: true,
+                    startTime: gameState.sessionRecordingStartTime,
+                    trackId: gameState.currentTrackId
+                }));
+                return;
+            }
+
+            if (data.action === 'stopSessionRecording') {
+                gameState.isRecordingSessionTelemetry = false;
+                console.log(`⏹️ [WS] Session recording stopped`);
+                broadcast(JSON.stringify({
+                    type: 'sessionRecordingState',
+                    isRecording: false,
+                    startTime: 0,
+                    trackId: gameState.currentTrackId
+                }));
+                return;
+            }
+
+            if (data.action === 'getSessionRecordingStatus') {
+                ws.send(JSON.stringify({
+                    type: 'sessionRecordingState',
+                    isRecording: gameState.isRecordingSessionTelemetry,
+                    startTime: gameState.sessionRecordingStartTime,
+                    trackId: gameState.currentTrackId
+                }));
+                return;
+            }
+
             if (data.action === 'clearSession' || data.action === 'resetSession') {
                 resetSessionData(broadcast);
                 return;
