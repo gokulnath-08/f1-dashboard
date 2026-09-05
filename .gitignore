@@ -136,5 +136,18 @@ dist
 .pnp.*
 
 
+# -------------------
+# Project Specific Files
+# -------------------
+
+# Telemetry Data
 telemetry/
+
+# Lap Data
 laptime/
+
+# Car Setups
+setups/
+
+# Session Telemetry
+session_telemetry/
