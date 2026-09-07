@@ -1350,9 +1350,55 @@
             startLine: null,
             sector1: null,
             sector2: null,
+            drsZones: null,
+            straightModeZones: null,
+            gameYear: 26,
             isOfflineOverride: false,
             requestedTrackId: null
         };
+
+        let activeRegYear = 26; // 25 for F1 25 (DRS), 26 for F1 26 (Straight Mode)
+        let regYearUserSelected = false;
+
+        function updateRegModeUI() {
+            const btn = document.getElementById("reg-mode-btn");
+            const dot = document.getElementById("reg-mode-dot");
+            const text = document.getElementById("reg-mode-text");
+            if (!btn || !text) return;
+            if (activeRegYear === 26) {
+                btn.style.background = "rgba(0, 240, 255, 0.12)";
+                btn.style.borderColor = "rgba(0, 240, 255, 0.35)";
+                btn.style.color = "#00f0ff";
+                if (dot) {
+                    dot.style.background = "#00f0ff";
+                    dot.style.boxShadow = "0 0 8px #00f0ff";
+                }
+                text.textContent = "F1 26 STR";
+                btn.title = "Current: F1 26 Straight Mode (Active Aero). Click to switch to F1 25 DRS.";
+            } else {
+                btn.style.background = "rgba(0, 255, 102, 0.12)";
+                btn.style.borderColor = "rgba(0, 255, 102, 0.35)";
+                btn.style.color = "#00ff66";
+                if (dot) {
+                    dot.style.background = "#00ff66";
+                    dot.style.boxShadow = "0 0 8px #00ff66";
+                }
+                text.textContent = "F1 25 DRS";
+                btn.title = "Current: F1 25 DRS Zones (with detection circles). Click to switch to F1 26 Straight Mode.";
+            }
+        }
+
+        function toggleRegulationMode() {
+            regYearUserSelected = true;
+            activeRegYear = activeRegYear === 26 ? 25 : 26;
+            updateRegModeUI();
+            showToast(activeRegYear === 26 ? "⚡ Switched to F1 26 Regulations (Straight Mode Aero)" : "🟢 Switched to F1 25 Regulations (DRS Activation Zones)");
+            if (currentTrackMap.trackPoints && currentTrackMap.trackPoints.length >= 20) {
+                renderTrackGeometry(currentTrackMap, true);
+            }
+        }
+        window.toggleRegulationMode = toggleRegulationMode;
+        window.activeRegYear = activeRegYear;
 
         let radarCameraMode = 'orbit';
 
@@ -1562,7 +1608,9 @@
             currentTrackMap.startLine = mapData.startLine || null;
             currentTrackMap.sector1 = mapData.sector1 || null;
             currentTrackMap.sector2 = mapData.sector2 || null;
-            currentTrackMap.drsZones = Array.isArray(mapData.drsZones) ? mapData.drsZones : null;
+            currentTrackMap.drsZones = Array.isArray(mapData.drsZones) ? mapData.drsZones : currentTrackMap.drsZones;
+            currentTrackMap.straightModeZones = Array.isArray(mapData.straightModeZones) ? mapData.straightModeZones : currentTrackMap.straightModeZones;
+            currentTrackMap.gameYear = mapData.gameYear || activeRegYear;
 
             // Update Start Line Mesh
             if (mapData.startLine && mapData.startLine.yaw !== undefined && (mapData.startLine.x !== 0 || mapData.startLine.z !== 0)) {
@@ -1658,7 +1706,7 @@
                 }
             }
 
-            // ── RENDER DRS ACTIVATION ZONES & DETECTION CIRCLES ──
+            // ── RENDER DRS (F1 25) OR STRAIGHT MODE (F1 26) ACTIVATION ZONES ──
             if (Array.isArray(drsZoneMeshes)) {
                 drsZoneMeshes.forEach(mesh => {
                     scene.remove(mesh);
@@ -1671,10 +1719,28 @@
                 drsZoneMeshes.length = 0;
             }
 
-            // Only render DRS zones for tracks with known official data — no fallback to prevent wrong zones
-            const currentDrsZones = Array.isArray(mapData.drsZones) && mapData.drsZones.length > 0 ? mapData.drsZones : null;
+            const isF126 = (activeRegYear === 26);
+            let activeZones = null;
 
-            if (orderedPts.length >= 10 && currentDrsZones && currentDrsZones.length > 0) {
+            if (isF126) {
+                // F1 26: Prioritize Straight Mode zones, fallback to DRS straight definitions
+                if (Array.isArray(mapData.straightModeZones) && mapData.straightModeZones.length > 0) {
+                    activeZones = mapData.straightModeZones;
+                } else if (Array.isArray(currentTrackMap.straightModeZones) && currentTrackMap.straightModeZones.length > 0) {
+                    activeZones = currentTrackMap.straightModeZones;
+                } else if (Array.isArray(mapData.drsZones) && mapData.drsZones.length > 0) {
+                    activeZones = mapData.drsZones;
+                }
+            } else {
+                // F1 25: DRS zones with detection points
+                if (Array.isArray(mapData.drsZones) && mapData.drsZones.length > 0) {
+                    activeZones = mapData.drsZones;
+                } else if (Array.isArray(currentTrackMap.drsZones) && currentTrackMap.drsZones.length > 0) {
+                    activeZones = currentTrackMap.drsZones;
+                }
+            }
+
+            if (orderedPts.length >= 10 && activeZones && activeZones.length > 0) {
                 // Calculate cumulative distances along circuit loop
                 const cumDist = [0];
                 for (let i = 1; i < orderedPts.length; i++) {
@@ -1727,20 +1793,22 @@
                     );
                 };
 
-                const drsLineMat = new THREE.MeshBasicMaterial({
-                    color: 0x00ff66,
+                // Materials: Cyan for 2026 Straight Mode, Green for 2025 DRS
+                const ribbonColor = isF126 ? 0x00f0ff : 0x00ff66;
+                const zoneLineMat = new THREE.MeshBasicMaterial({
+                    color: ribbonColor,
                     transparent: true,
                     opacity: 0.95
                 });
-                const drsDetRingMat = new THREE.MeshBasicMaterial({
-                    color: 0x00ff66,
+                const gateOrRingMat = new THREE.MeshBasicMaterial({
+                    color: ribbonColor,
                     side: THREE.DoubleSide,
                     transparent: true,
-                    opacity: 0.95,
+                    opacity: 0.92,
                     blending: THREE.AdditiveBlending
                 });
 
-                currentDrsZones.forEach((z) => {
+                activeZones.forEach((z) => {
                     const startDistance = distanceFromZoneValue(z, 'startDistance', 'start');
                     const endDistance = distanceFromZoneValue(z, 'endDistance', 'end');
                     let zoneSpan = endDistance - startDistance;
@@ -1754,7 +1822,7 @@
 
                     if (rawZonePts.length >= 2) {
                         const offsetZonePts = [];
-                        const offsetDist = 20;
+                        const offsetDist = isF126 ? 22 : 20;
                         for (let i = 0; i < rawZonePts.length; i++) {
                             const prev = rawZonePts[Math.max(0, i - 1)];
                             const next = rawZonePts[Math.min(rawZonePts.length - 1, i + 1)];
@@ -1771,44 +1839,69 @@
                         }
 
                         const zoneCurve = new THREE.CatmullRomCurve3(offsetZonePts, false, 'catmullrom', 0.5);
-                        const zoneGeo = new THREE.TubeGeometry(zoneCurve, offsetZonePts.length * 2, 4.5, 8, false);
-                        const zoneMesh = new THREE.Mesh(zoneGeo, drsLineMat);
+                        const tubeRadius = isF126 ? 5.2 : 4.5;
+                        const zoneGeo = new THREE.TubeGeometry(zoneCurve, offsetZonePts.length * 2, tubeRadius, 8, false);
+                        const zoneMesh = new THREE.Mesh(zoneGeo, zoneLineMat);
                         zoneMesh.renderOrder = 0;
                         scene.add(zoneMesh);
                         drsZoneMeshes.push(zoneMesh);
                     }
 
-                    // DRS Detection Point Circle
-                    const hasDet = (z.det !== undefined || z.detDistance !== undefined || z.detection !== undefined);
-                    if (hasDet) {
-                        let detPos = null;
-                        if (typeof z.detection === 'object' && z.detection !== null && Number.isFinite(z.detection.x) && Number.isFinite(z.detection.z)) {
-                            detPos = new THREE.Vector3(z.detection.x, 0.45, z.detection.z);
-                        } else if (typeof z.det === 'object' && z.det !== null && Number.isFinite(z.det.x) && Number.isFinite(z.det.z)) {
-                            detPos = new THREE.Vector3(z.det.x, 0.45, z.det.z);
-                        } else {
-                            detPos = getPointAtDistance(distanceFromZoneValue(z, 'detDistance', 'det'));
-                        }
+                    if (isF126) {
+                        // 2026 Straight Mode: Render Holographic Start & Exit Laser Gates (No detection circles needed)
+                        const createLaserGate = (dist) => {
+                            const pt = getPointAtDistance(dist);
+                            const ptNext = getPointAtDistance(dist + 2);
+                            const dx = ptNext.x - pt.x;
+                            const dz = ptNext.z - pt.z;
+                            const len = Math.hypot(dx, dz) || 1;
+                            const nx = -(dz / len);
+                            const nz = (dx / len);
+                            const gateGeo = new THREE.PlaneGeometry(36, 2.5);
+                            const gateMesh = new THREE.Mesh(gateGeo, gateOrRingMat);
+                            gateMesh.position.set(pt.x, 0.45, pt.z);
+                            gateMesh.rotation.order = "YXZ";
+                            gateMesh.rotation.x = -Math.PI / 2;
+                            gateMesh.rotation.z = Math.atan2(nz, nx);
+                            gateMesh.renderOrder = 2;
+                            scene.add(gateMesh);
+                            drsZoneMeshes.push(gateMesh);
+                        };
+                        createLaserGate(startDistance);
+                        createLaserGate(endDistance);
+                    } else {
+                        // 2025 DRS: DRS Detection Point Circle
+                        const hasDet = (z.det !== undefined || z.detDistance !== undefined || z.detection !== undefined);
+                        if (hasDet) {
+                            let detPos = null;
+                            if (typeof z.detection === 'object' && z.detection !== null && Number.isFinite(z.detection.x) && Number.isFinite(z.detection.z)) {
+                                detPos = new THREE.Vector3(z.detection.x, 0.45, z.detection.z);
+                            } else if (typeof z.det === 'object' && z.det !== null && Number.isFinite(z.det.x) && Number.isFinite(z.det.z)) {
+                                detPos = new THREE.Vector3(z.det.x, 0.45, z.det.z);
+                            } else {
+                                detPos = getPointAtDistance(distanceFromZoneValue(z, 'detDistance', 'det'));
+                            }
 
-                        if (detPos) {
-                            const ringGeo = new THREE.RingGeometry(6, 12, 24);
-                            const ringMesh = new THREE.Mesh(ringGeo, drsDetRingMat);
-                            ringMesh.rotation.order = "YXZ";
-                            ringMesh.rotation.x = -Math.PI / 2;
-                            ringMesh.position.set(detPos.x, 0.45, detPos.z);
-                            ringMesh.renderOrder = 1;
-                            scene.add(ringMesh);
-                            drsZoneMeshes.push(ringMesh);
+                            if (detPos) {
+                                const ringGeo = new THREE.RingGeometry(6, 12, 24);
+                                const ringMesh = new THREE.Mesh(ringGeo, gateOrRingMat);
+                                ringMesh.rotation.order = "YXZ";
+                                ringMesh.rotation.x = -Math.PI / 2;
+                                ringMesh.position.set(detPos.x, 0.45, detPos.z);
+                                ringMesh.renderOrder = 1;
+                                scene.add(ringMesh);
+                                drsZoneMeshes.push(ringMesh);
 
-                            // Inner solid dot for crisp FIA radar look
-                            const innerDotGeo = new THREE.CircleGeometry(4, 16);
-                            const innerDotMesh = new THREE.Mesh(innerDotGeo, drsDetRingMat);
-                            innerDotMesh.rotation.order = "YXZ";
-                            innerDotMesh.rotation.x = -Math.PI / 2;
-                            innerDotMesh.position.set(detPos.x, 0.46, detPos.z);
-                            innerDotMesh.renderOrder = 2;
-                            scene.add(innerDotMesh);
-                            drsZoneMeshes.push(innerDotMesh);
+                                // Inner solid dot for crisp FIA radar look
+                                const innerDotGeo = new THREE.CircleGeometry(4, 16);
+                                const innerDotMesh = new THREE.Mesh(innerDotGeo, gateOrRingMat);
+                                innerDotMesh.rotation.order = "YXZ";
+                                innerDotMesh.rotation.x = -Math.PI / 2;
+                                innerDotMesh.position.set(detPos.x, 0.46, detPos.z);
+                                innerDotMesh.renderOrder = 2;
+                                scene.add(innerDotMesh);
+                                drsZoneMeshes.push(innerDotMesh);
+                            }
                         }
                     }
                 });
@@ -3285,8 +3378,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             if (resolvedTrackId !== null && resolvedTrackId !== -1) {
                 const trackName = F1_TRACK_MAP[resolvedTrackId] || window.lastTelemetryData?.session?.trackName || `TRACK ${resolvedTrackId}`;
-                showToast(`🏎️ Auto-detecting & syncing ${trackName.toUpperCase()} with game...`);
-                ws.send(JSON.stringify({ action: "syncTrackLines", trackId: resolvedTrackId }));
+                showToast(`🏎️ Syncing ${trackName.toUpperCase()} lines (${activeRegYear === 26 ? 'F1 26 Straight Mode' : 'F1 25 DRS'})...`);
+                ws.send(JSON.stringify({ action: "syncTrackLines", trackId: resolvedTrackId, gameYear: activeRegYear, force: true }));
                 ws.send(JSON.stringify({ action: "getTrackData", trackId: resolvedTrackId }));
                 const trackSel = document.getElementById("track-selector");
                 if (trackSel && trackSel.value != resolvedTrackId) {
@@ -3294,8 +3387,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 }
             } else {
                 // Let server auto-detect the track from UDP session
-                showToast("🔍 Auto-detecting active track from game UDP stream...");
-                ws.send(JSON.stringify({ action: "syncTrackLines" }));
+                showToast(`🔍 Auto-syncing track lines from telemetry (${activeRegYear === 26 ? 'F1 26 Straight Mode' : 'F1 25 DRS'})...`);
+                ws.send(JSON.stringify({ action: "syncTrackLines", gameYear: activeRegYear, force: true }));
                 ws.send(JSON.stringify({ action: "getTrackData" }));
             }
         }
@@ -3440,13 +3533,20 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     return;
                 }
 
+                if (trackData.gameYear && !regYearUserSelected) {
+                    activeRegYear = trackData.gameYear === 25 ? 25 : 26;
+                    updateRegModeUI();
+                }
+
                 renderTrackGeometry({
                     trackId: trackId,
                     trackPoints: trackData.trackPoints,
                     startLine: trackData.startLine,
                     sector1: trackData.sector1,
                     sector2: trackData.sector2,
-                    drsZones: trackData.drsZones
+                    drsZones: trackData.drsZones,
+                    straightModeZones: trackData.straightModeZones,
+                    gameYear: trackData.gameYear || activeRegYear
                 }, true);
 
                 if (trackData.finalized !== undefined) {
@@ -3486,13 +3586,19 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     updateFinalizeButtonState(!!data.finalized);
                 }
                 if (currentTrackMap.trackPoints && (trackId === null || currentTrackMap.trackId === trackId)) {
+                    if (data.gameYear && !regYearUserSelected) {
+                        activeRegYear = data.gameYear === 25 ? 25 : 26;
+                        updateRegModeUI();
+                    }
                     renderTrackGeometry({
                         trackId: currentTrackMap.trackId,
                         trackPoints: currentTrackMap.trackPoints,
                         startLine: data.startLine || currentTrackMap.startLine,
                         sector1: data.sector1 || currentTrackMap.sector1,
                         sector2: data.sector2 || currentTrackMap.sector2,
-                        drsZones: Array.isArray(data.drsZones) ? data.drsZones : currentTrackMap.drsZones
+                        drsZones: Array.isArray(data.drsZones) ? data.drsZones : currentTrackMap.drsZones,
+                        straightModeZones: Array.isArray(data.straightModeZones) ? data.straightModeZones : currentTrackMap.straightModeZones,
+                        gameYear: data.gameYear || activeRegYear
                     }, true);
                 }
                 return;
@@ -3948,8 +4054,14 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             setStyleById("brake", "width", `${clampPercent(data.inputs.brake)}%`);
             setText("clu-val", `${data.inputs.clutch || 0}%`);
             setStyleById("clutch", "width", `${clampPercent(data.inputs.clutch)}%`);
-            setText("drs", data.inputs.drs || "CLOSED");
-            setStyleById("drs", "color", data.inputs.drs === "OPEN" ? "var(--fia-green)" : "var(--text-main)");
+            if (activeRegYear === 26) {
+                const isStraightActive = data.inputs.straightMode === 1 || data.inputs.activeAeroMode === 1 || data.inputs.drs === "OPEN";
+                setText("drs", isStraightActive ? "STR ACTIVE" : (data.inputs.straightModeAvailable ? "STR AVAIL" : "CORNER"));
+                setStyleById("drs", "color", isStraightActive ? "#00f0ff" : (data.inputs.straightModeAvailable ? "#38bdf8" : "var(--text-main)"));
+            } else {
+                setText("drs", data.inputs.drs || "CLOSED");
+                setStyleById("drs", "color", data.inputs.drs === "OPEN" ? "var(--fia-green)" : "var(--text-main)");
+            }
 
             const steerVal = data.inputs.steer || 0;
             setText("steer-val", steerVal.toFixed(2));
@@ -4168,7 +4280,9 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     startLine: data.startLine,
                     sector1: data.sector1,
                     sector2: data.sector2,
-                    drsZones: data.drsZones
+                    drsZones: data.drsZones,
+                    straightModeZones: data.straightModeZones,
+                    gameYear: data.gameYear || activeRegYear
                 });
             }
 

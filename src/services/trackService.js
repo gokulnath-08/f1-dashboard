@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { trackMapsDir, telemetryDir, lapTimeDir } = require('../config');
-const { OFFICIAL_TRACK_SECTOR_DISTANCES, OFFICIAL_TRACK_DRS_ZONES } = require('../config/catalogs');
+const { OFFICIAL_TRACK_SECTOR_DISTANCES, OFFICIAL_TRACK_DRS_ZONES, OFFICIAL_TRACK_STRAIGHT_MODE_ZONES } = require('../config/catalogs');
 const { safeSaveTrackMap } = require('../utils/fileSystem');
 const gameState = require('../state/gameState');
 
@@ -150,6 +150,102 @@ function getTelemetryDrsZonesForTrack(tId, totalDist, telData = null, fallbackZo
 }
 
 /**
+ * Detects and synchronizes 2026 Straight Mode (Active Aerodynamics / X-Mode) zones using:
+ * 1. Live/Recorded telemetry points where Straight Mode / active aero was active (activeAeroMode === 1, straightMode === 1, or high-speed straightaways)
+ * 2. Exact track distance interpolation from the official FIA 2026 catalog
+ * Unlike DRS, 2026 Straight Mode does not require a 1-second detection interval.
+ */
+function getTelemetryStraightModeZonesForTrack(tId, totalDist, telData = null, fallbackZones = null) {
+    const { state } = gameState;
+    if (!Number.isFinite(totalDist) || totalDist <= 0) {
+        totalDist = OFFICIAL_TRACK_SECTOR_DISTANCES[tId]?.len || (state.session?.trackLength > 0 ? state.session.trackLength : 5000);
+    }
+
+    // 1. Check if telData has explicit Straight Mode / active aero telemetry events
+    if (Array.isArray(telData) && telData.length > 50) {
+        const straightIntervals = [];
+        let curInterval = null;
+        for (let i = 0; i < telData.length; i++) {
+            const pt = telData[i];
+            const isStraightMode = Boolean(
+                pt.straightMode === 1 ||
+                pt.activeAeroMode === 1 ||
+                pt.activeAeroAvailable === 1 ||
+                (pt.gameYear === 26 && (pt.drs === 1 || pt.drsOpen === 1)) ||
+                (pt.speed > 240 && pt.throttle > 95 && Math.abs(pt.steer || 0) < 0.08)
+            );
+
+            if (isStraightMode && Number.isFinite(pt.d)) {
+                if (!curInterval) curInterval = { startD: pt.d, endD: pt.d, pts: [pt] };
+                else { curInterval.endD = pt.d; curInterval.pts.push(pt); }
+            } else {
+                if (curInterval) {
+                    if (curInterval.endD - curInterval.startD > 120) {
+                        straightIntervals.push(curInterval);
+                    }
+                    curInterval = null;
+                }
+            }
+        }
+        if (curInterval && (curInterval.endD - curInterval.startD > 120)) {
+            straightIntervals.push(curInterval);
+        }
+
+        if (straightIntervals.length > 0) {
+            return straightIntervals.map((inter, idx) => {
+                const sCoord = extractCoordinateFromTelemetryByDistance(telData, inter.startD);
+                const eCoord = extractCoordinateFromTelemetryByDistance(telData, inter.endD);
+                return {
+                    start: sCoord || { x: 0, z: 0, yaw: 0, d: Math.round(inter.startD) },
+                    end: eCoord || { x: 0, z: 0, yaw: 0, d: Math.round(inter.endD) },
+                    startDistance: Math.round(inter.startD),
+                    endDistance: Math.round(inter.endD),
+                    startFrac: inter.startD / totalDist,
+                    endFrac: inter.endD / totalDist,
+                    type: 'straightMode',
+                    label: `Straight Mode ${idx + 1}`
+                };
+            });
+        }
+    }
+
+    // 2. Official 2026 Straight Mode catalog by distance & fraction
+    const catalog = (Array.isArray(fallbackZones) && fallbackZones.length > 0)
+        ? fallbackZones
+        : OFFICIAL_TRACK_STRAIGHT_MODE_ZONES[tId];
+
+    if (Array.isArray(catalog) && catalog.length > 0) {
+        return catalog.map((z, idx) => {
+            const sD = (z.startDistance !== undefined && Number.isFinite(z.startDistance))
+                ? z.startDistance
+                : (typeof z.start === 'object' && Number.isFinite(z.start?.d) ? z.start.d : (Number.isFinite(z.start) ? (z.start * totalDist) : 0));
+            const eD = (z.endDistance !== undefined && Number.isFinite(z.endDistance))
+                ? z.endDistance
+                : (typeof z.end === 'object' && Number.isFinite(z.end?.d) ? z.end.d : (Number.isFinite(z.end) ? (z.end * totalDist) : 0));
+
+            let sCoord = null, eCoord = null;
+            if (Array.isArray(telData) && telData.length > 10) {
+                sCoord = extractCoordinateFromTelemetryByDistance(telData, sD);
+                eCoord = extractCoordinateFromTelemetryByDistance(telData, eD);
+            }
+
+            return {
+                start: sCoord || (typeof z.start === 'object' ? z.start : { x: 0, z: 0, yaw: 0, d: Math.round(sD) }),
+                end: eCoord || (typeof z.end === 'object' ? z.end : { x: 0, z: 0, yaw: 0, d: Math.round(eD) }),
+                startDistance: Math.round(sD),
+                endDistance: Math.round(eD),
+                startFrac: z.startFrac !== undefined ? z.startFrac : (Number.isFinite(z.start) ? z.start : (sD / totalDist)),
+                endFrac: z.endFrac !== undefined ? z.endFrac : (Number.isFinite(z.end) ? z.end : (eD / totalDist)),
+                type: 'straightMode',
+                label: z.label || `Straight Mode ${idx + 1}`
+            };
+        });
+    }
+
+    return [];
+}
+
+/**
  * Checks if a track map has been finalized
  */
 function isTrackFinalized(tId) {
@@ -168,16 +264,17 @@ function isTrackFinalized(tId) {
 }
 
 /**
- * Re-synchronizes start line, sector 1, sector 2, and DRS lines for a circuit using EXACT TRACK DISTANCES.
- * Uses official session sector markers from the game engine, recorded telemetry, or the official FIA catalog.
+ * Re-synchronizes start line, sector 1, sector 2, DRS lines (F1 25), and Straight Mode lines (F1 26) for a circuit using EXACT TRACK DISTANCES.
+ * Uses official session sector markers from the game engine, recorded telemetry, or the official FIA catalogs.
  * @param {number} tId Track ID
  * @param {boolean} force Force sync even if finalized
  * @param {Function} [broadcastFn] Optional broadcast callback for connected clients
+ * @param {number} [gameYear] Optional game year (25 or 26)
  */
-function syncTrackLinesForTrack(tId, force = false, broadcastFn = null) {
+function syncTrackLinesForTrack(tId, force = false, broadcastFn = null, gameYear = null) {
     if (tId === undefined || tId === null || tId === -1) return null;
     if (!force && isTrackFinalized(tId)) {
-        console.log(`🔒 Track ${tId} is finalized. Auto-sync skipped.`);
+        console.log(`🔒 Track ${tId} is finalized. Auto-sync skipped (use force=true to override).`);
         return null;
     }
     const telPath = path.join(telemetryDir, `telemetry_${tId}.json`);
@@ -300,14 +397,19 @@ function syncTrackLinesForTrack(tId, force = false, broadcastFn = null) {
         const newS1 = coordS1 ? { x: coordS1.x, z: coordS1.z, yaw: coordS1.yaw || 0, d: coordS1.d || targetS1Distance } : null;
         const newS2 = coordS2 ? { x: coordS2.x, z: coordS2.z, yaw: coordS2.yaw || 0, d: coordS2.d || targetS2Distance } : null;
 
-        // Synchronize DRS zones using exact telemetry interpolation
+        const effectiveYear = (gameYear !== null && gameYear !== undefined) ? parseInt(gameYear, 10) : (gameState.currentGameYear || 25);
+
+        // Synchronize DRS zones (for F1 25) and Straight Mode zones (for F1 26) using exact telemetry interpolation
         const syncedDrsZones = getTelemetryDrsZonesForTrack(tId, totalDist, telData);
+        const syncedStraightModeZones = getTelemetryStraightModeZonesForTrack(tId, totalDist, telData);
 
         if (tId === gameState.currentTrackId) {
             if (newStart) state.startLine = newStart;
             if (newS1) state.sector1 = newS1;
             if (newS2) state.sector2 = newS2;
             state.drsZones = syncedDrsZones;
+            state.straightModeZones = syncedStraightModeZones;
+            state.gameYear = effectiveYear;
             gameState.trackPointsDirty = true;
         }
 
@@ -327,10 +429,12 @@ function syncTrackLinesForTrack(tId, force = false, broadcastFn = null) {
             sector1: newS1,
             sector2: newS2,
             drsZones: syncedDrsZones,
+            straightModeZones: syncedStraightModeZones,
+            gameYear: effectiveYear,
             finalized: isTrackFinalized(tId)
         };
         safeSaveTrackMap(mapPath, updatedData);
-        console.log(`✅ Synced track lines for Map ${tId} using exact distance (S1: d=${Math.round(newS1?.d || 0)}m, S2: d=${Math.round(newS2?.d || 0)}m of ${Math.round(totalDist)}m, DRS zones: ${syncedDrsZones.length})`);
+        console.log(`✅ Synced track lines for Map ${tId} using exact distance (S1: d=${Math.round(newS1?.d || 0)}m, S2: d=${Math.round(newS2?.d || 0)}m of ${Math.round(totalDist)}m | F1 25 DRS: ${syncedDrsZones.length} zones, F1 26 Straight Mode: ${syncedStraightModeZones.length} zones | Year: ${effectiveYear})`);
 
         // Broadcast to clients if callback provided
         if (typeof broadcastFn === 'function') {
@@ -341,6 +445,8 @@ function syncTrackLinesForTrack(tId, force = false, broadcastFn = null) {
                 sector1: newS1,
                 sector2: newS2,
                 drsZones: updatedData.drsZones,
+                straightModeZones: updatedData.straightModeZones,
+                gameYear: effectiveYear,
                 finalized: updatedData.finalized
             });
             const tMsg = JSON.stringify({
@@ -603,6 +709,7 @@ module.exports = {
     buildSyncedDrsZones,
     extractCoordinateFromTelemetryByDistance,
     getTelemetryDrsZonesForTrack,
+    getTelemetryStraightModeZonesForTrack,
     isTrackFinalized,
     syncTrackLinesForTrack,
     buildApproxPitLane,

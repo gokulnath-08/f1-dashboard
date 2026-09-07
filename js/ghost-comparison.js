@@ -17,6 +17,8 @@
         trackLength: 5000,
         trackPoints: [],
         drsZones: [],
+        straightModeZones: [],
+        gameYear: 26,
         sector1: null,
         sector2: null,
         startLine: null,
@@ -345,6 +347,8 @@
                 GhostState.sector1 = msg.data.sector1 || null;
                 GhostState.sector2 = msg.data.sector2 || null;
                 GhostState.drsZones = msg.data.drsZones || [];
+                GhostState.straightModeZones = msg.data.straightModeZones || [];
+                GhostState.gameYear = msg.data.gameYear || 26;
                 renderCircuitMap();
             }
             return;
@@ -1796,9 +1800,13 @@
         if (GhostState.sector1) buildSectorGate(group, GhostState.sector1, 0xeab308, 'SECTOR 1');
         if (GhostState.sector2) buildSectorGate(group, GhostState.sector2, 0xc084fc, 'SECTOR 2');
 
-        // 7. DRS Zones Glowing Green Ribbons
-        if (GhostState.drsZones && GhostState.drsZones.length > 0) {
-            buildDRSZoneRibbons(group, GhostState.drsZones, curve);
+        // 7. DRS (F1 25) / Straight Mode (F1 26) Glowing Ribbons
+        const is26 = GhostState.gameYear >= 26;
+        const zonesToRender = is26 
+            ? ((GhostState.straightModeZones && GhostState.straightModeZones.length > 0) ? GhostState.straightModeZones : GhostState.drsZones)
+            : GhostState.drsZones;
+        if (zonesToRender && zonesToRender.length > 0) {
+            buildDRSZoneRibbons(group, zonesToRender, curve, is26);
         }
     }
 
@@ -1934,14 +1942,15 @@
         group.add(gate);
     }
 
-    function buildDRSZoneRibbons(group, drsZones, curve) {
+    function buildDRSZoneRibbons(group, drsZones, curve, is26 = false) {
+        const ribbonColor = is26 ? 0x00f0ff : 0x22c55e;
+        const drsLineMat = new THREE.LineBasicMaterial({ color: ribbonColor, linewidth: is26 ? 5 : 4, transparent: true, opacity: 0.95 });
         drsZones.forEach(z => {
             if (z.start && z.end) {
                 const sPt = z.start;
                 const ePt = z.end;
                 const pts = [new THREE.Vector3(sPt.x, 0.08, sPt.z), new THREE.Vector3(ePt.x, 0.08, ePt.z)];
                 const drsLineGeo = new THREE.BufferGeometry().setFromPoints(pts);
-                const drsLineMat = new THREE.LineBasicMaterial({ color: 0x22c55e, linewidth: 4, transparent: true, opacity: 0.9 });
                 const drsLine = new THREE.Line(drsLineGeo, drsLineMat);
                 group.add(drsLine);
             }
@@ -1989,13 +1998,14 @@
         ctx.font = '900 28px Roboto Mono, monospace';
         ctx.fillText(`${gear || 'N'}`, 175, 88);
 
-        // DRS Active Badge
+        // DRS / Straight Mode Active Badge
         if (drsActive) {
-            ctx.fillStyle = '#22c55e';
+            const is26 = GhostState.gameYear >= 26;
+            ctx.fillStyle = is26 ? '#00f0ff' : '#22c55e';
             roundRect(ctx, 165, 16, 75, 26, 6, true, false);
             ctx.fillStyle = '#000000';
             ctx.font = '900 14px Orbitron, sans-serif';
-            ctx.fillText('DRS', 184, 34);
+            ctx.fillText(is26 ? 'STR' : 'DRS', 184, 34);
         }
 
         tex.needsUpdate = true;
@@ -2541,6 +2551,8 @@
                 GhostState.sector1 = tData.sector1 || null;
                 GhostState.sector2 = tData.sector2 || null;
                 GhostState.drsZones = tData.drsZones || [];
+                GhostState.straightModeZones = tData.straightModeZones || [];
+                GhostState.gameYear = tData.gameYear || 26;
                 
                 // Rebuild 3D Circuit Geometry
                 build3DTrackMesh();

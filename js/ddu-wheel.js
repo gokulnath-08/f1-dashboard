@@ -268,22 +268,42 @@ class F1DduEngine {
         if (dduSpeed) dduSpeed.textContent = speed;
         if (dduGear) dduGear.textContent = gear;
 
-        // 3. DRS Indicator
+        // 3. DRS / Straight Mode Indicator
+        const is26 = (window.activeRegYear === 26 || data.gameYear === 26 || data.session?.gameYear === 26);
         const drsStatus = (data.inputs?.drs || 'CLOSED').toUpperCase();
         const drsAllowed = Boolean(data.inputs?.drsAvailable);
+        const strActive = Boolean(data.inputs?.straightMode === 1 || data.inputs?.activeAeroMode === 1 || drsStatus === 'OPEN');
+        const strAllowed = Boolean(data.inputs?.straightModeAvailable || drsAllowed);
+
         const drsPill = document.getElementById('ddu-drs-status');
         if (drsPill) {
-            drsPill.classList.toggle('drs-open', drsStatus === 'OPEN');
-            drsPill.classList.toggle('drs-available', drsAllowed && drsStatus !== 'OPEN');
-            drsPill.textContent = drsStatus === 'OPEN' ? 'DRS ACTIVE' : (drsAllowed ? 'DRS READY' : 'DRS OFF');
+            if (is26) {
+                drsPill.classList.toggle('drs-open', strActive);
+                drsPill.classList.toggle('drs-available', strAllowed && !strActive);
+                drsPill.textContent = strActive ? 'STR ACTIVE' : (strAllowed ? 'STR READY' : 'CORNER');
+                drsPill.style.color = strActive ? '#00f0ff' : '';
+            } else {
+                drsPill.classList.toggle('drs-open', drsStatus === 'OPEN');
+                drsPill.classList.toggle('drs-available', drsAllowed && drsStatus !== 'OPEN');
+                drsPill.textContent = drsStatus === 'OPEN' ? 'DRS ACTIVE' : (drsAllowed ? 'DRS READY' : 'DRS OFF');
+                drsPill.style.color = '';
+            }
         }
 
         // Also update header shift bar DRS pill
         const hdrDrsPill = document.getElementById('hdr-drs-pill');
         if (hdrDrsPill) {
-            hdrDrsPill.classList.toggle('drs-open', drsStatus === 'OPEN');
-            hdrDrsPill.classList.toggle('drs-available', drsAllowed && drsStatus !== 'OPEN');
-            hdrDrsPill.textContent = drsStatus === 'OPEN' ? 'DRS ACTIVE' : (drsAllowed ? 'DRS AVAIL' : 'DRS');
+            if (is26) {
+                hdrDrsPill.classList.toggle('drs-open', strActive);
+                hdrDrsPill.classList.toggle('drs-available', strAllowed && !strActive);
+                hdrDrsPill.textContent = strActive ? 'STR ACTIVE' : (strAllowed ? 'STR AVAIL' : 'STR');
+                hdrDrsPill.style.color = strActive ? '#00f0ff' : '';
+            } else {
+                hdrDrsPill.classList.toggle('drs-open', drsStatus === 'OPEN');
+                hdrDrsPill.classList.toggle('drs-available', drsAllowed && drsStatus !== 'OPEN');
+                hdrDrsPill.textContent = drsStatus === 'OPEN' ? 'DRS ACTIVE' : (drsAllowed ? 'DRS AVAIL' : 'DRS');
+                hdrDrsPill.style.color = '';
+            }
         }
 
         // 4. Live Delta (Ghost or Fastest Lap)

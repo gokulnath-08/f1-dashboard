@@ -36,6 +36,9 @@ function handleCarTelemetry(data) {
     const gear = t.m_gear;
     state.inputs.gear = gear === 0 ? 'N' : (gear === -1 ? 'R' : gear);
     state.inputs.drs = t.m_drs === 1 ? 'OPEN' : 'CLOSED';
+    const aeroMode = t.m_activeAeroMode !== undefined ? t.m_activeAeroMode : (t.m_drs === 1 ? 1 : 0);
+    state.inputs.activeAeroMode = aeroMode;
+    state.inputs.straightMode = aeroMode === 1 ? 1 : 0;
 
     state.car.brakeTemp.rl = t.m_brakesTemperature[0];
     state.car.brakeTemp.rr = t.m_brakesTemperature[1];

@@ -5,7 +5,7 @@ const { trackMapsDir, setupsDir, LEGACY_WS_PORT } = require('../config');
 const { OFFICIAL_TRACK_SECTOR_DISTANCES } = require('../config/catalogs');
 const gameState = require('../state/gameState');
 const { safeSaveTrackMap } = require('../utils/fileSystem');
-const { getTelemetryDrsZonesForTrack, isTrackFinalized, syncTrackLinesForTrack } = require('../services/trackService');
+const { getTelemetryDrsZonesForTrack, getTelemetryStraightModeZonesForTrack, isTrackFinalized, syncTrackLinesForTrack } = require('../services/trackService');
 const { generateSessionExportJson, getTrackDriverFastestLaps } = require('../services/storageService');
 const { resetSessionData } = require('../state/stateHelpers');
 const { getCustomTargetsData, saveCustomTargetsData } = require('../services/targetService');
@@ -41,6 +41,7 @@ function handleWsConnection(ws) {
     // Send full 3D track map immediately on connection so the dashboard renders right away
     if (state.trackPoints && state.trackPoints.length >= 20) {
         try {
+            const trkLen = state.session.trackLength || OFFICIAL_TRACK_SECTOR_DISTANCES[gameState.currentTrackId]?.len || 0;
             ws.send(JSON.stringify({
                 type: 'trackDataResponse',
                 trackId: gameState.currentTrackId,
@@ -50,7 +51,9 @@ function handleWsConnection(ws) {
                     startLine: state.startLine,
                     sector1: state.sector1,
                     sector2: state.sector2,
-                    drsZones: (Array.isArray(state.drsZones) && state.drsZones.length > 0) ? state.drsZones : getTelemetryDrsZonesForTrack(gameState.currentTrackId, state.session.trackLength || OFFICIAL_TRACK_SECTOR_DISTANCES[gameState.currentTrackId]?.len || 0, null, state.drsZones),
+                    drsZones: (Array.isArray(state.drsZones) && state.drsZones.length > 0) ? state.drsZones : getTelemetryDrsZonesForTrack(gameState.currentTrackId, trkLen, null, state.drsZones),
+                    straightModeZones: (Array.isArray(state.straightModeZones) && state.straightModeZones.length > 0) ? state.straightModeZones : getTelemetryStraightModeZonesForTrack(gameState.currentTrackId, trkLen, null, state.straightModeZones),
+                    gameYear: gameState.currentGameYear || 26,
                     finalized: isTrackFinalized(gameState.currentTrackId)
                 }
             }));
@@ -68,6 +71,8 @@ function handleWsConnection(ws) {
                     sector1: null,
                     sector2: null,
                     drsZones: [],
+                    straightModeZones: [],
+                    gameYear: gameState.currentGameYear || 26,
                     finalized: isTrackFinalized(gameState.currentTrackId)
                 }
             }));
@@ -175,9 +180,14 @@ function handleWsConnection(ws) {
                                 if (pts.length >= 20) {
                                     if (tData && typeof tData === 'object' && !Array.isArray(tData)) {
                                         tData.finalized = isTrackFinalized(trackId);
+                                        const trkLen = tData.trackLength || OFFICIAL_TRACK_SECTOR_DISTANCES[trackId]?.len || gameState.state.session.trackLength || 0;
                                         if (!Array.isArray(tData.drsZones) || tData.drsZones.length === 0) {
-                                            tData.drsZones = getTelemetryDrsZonesForTrack(trackId, tData.trackLength || OFFICIAL_TRACK_SECTOR_DISTANCES[trackId]?.len || gameState.state.session.trackLength || 0, null, tData.drsZones);
+                                            tData.drsZones = getTelemetryDrsZonesForTrack(trackId, trkLen, null, tData.drsZones);
                                         }
+                                        if (!Array.isArray(tData.straightModeZones) || tData.straightModeZones.length === 0) {
+                                            tData.straightModeZones = getTelemetryStraightModeZonesForTrack(trackId, trkLen, null, tData.straightModeZones);
+                                        }
+                                        tData.gameYear = tData.gameYear || gameState.currentGameYear || 26;
                                     }
                                     ws.send(JSON.stringify({ type: 'trackDataResponse', trackId, data: tData }));
                                     return;
@@ -188,6 +198,7 @@ function handleWsConnection(ws) {
 
                     // If requesting the current active game track and live points exist for it
                     if (trackId === gameState.currentTrackId && gameState.state.trackPoints && gameState.state.trackPoints.length >= 20) {
+                        const trkLen = gameState.state.session.trackLength || OFFICIAL_TRACK_SECTOR_DISTANCES[gameState.currentTrackId]?.len || 0;
                         ws.send(JSON.stringify({
                             type: 'trackDataResponse',
                             trackId: gameState.currentTrackId,
@@ -197,7 +208,9 @@ function handleWsConnection(ws) {
                                 startLine: gameState.state.startLine,
                                 sector1: gameState.state.sector1,
                                 sector2: gameState.state.sector2,
-                                drsZones: (Array.isArray(gameState.state.drsZones) && gameState.state.drsZones.length > 0) ? gameState.state.drsZones : getTelemetryDrsZonesForTrack(gameState.currentTrackId, gameState.state.session.trackLength || OFFICIAL_TRACK_SECTOR_DISTANCES[gameState.currentTrackId]?.len || 0, null, gameState.state.drsZones),
+                                drsZones: (Array.isArray(gameState.state.drsZones) && gameState.state.drsZones.length > 0) ? gameState.state.drsZones : getTelemetryDrsZonesForTrack(gameState.currentTrackId, trkLen, null, gameState.state.drsZones),
+                                straightModeZones: (Array.isArray(gameState.state.straightModeZones) && gameState.state.straightModeZones.length > 0) ? gameState.state.straightModeZones : getTelemetryStraightModeZonesForTrack(gameState.currentTrackId, trkLen, null, gameState.state.straightModeZones),
+                                gameYear: gameState.currentGameYear || 26,
                                 finalized: isTrackFinalized(gameState.currentTrackId)
                             }
                         }));
@@ -208,7 +221,7 @@ function handleWsConnection(ws) {
                     ws.send(JSON.stringify({
                         type: 'trackDataResponse',
                         trackId: trackId,
-                        data: { trackPoints: [], pitLanePoints: [], startLine: null, sector1: null, sector2: null, drsZones: [], finalized: false }
+                        data: { trackPoints: [], pitLanePoints: [], startLine: null, sector1: null, sector2: null, drsZones: [], straightModeZones: [], gameYear: gameState.currentGameYear || 26, finalized: false }
                     }));
                     return;
                 }
@@ -217,7 +230,7 @@ function handleWsConnection(ws) {
                 ws.send(JSON.stringify({
                     type: 'trackDataResponse',
                     trackId: -1,
-                    data: { trackPoints: [], pitLanePoints: [], startLine: null, sector1: null, sector2: null, drsZones: [], finalized: false }
+                    data: { trackPoints: [], pitLanePoints: [], startLine: null, sector1: null, sector2: null, drsZones: [], straightModeZones: [], gameYear: gameState.currentGameYear || 26, finalized: false }
                 }));
                 return;
             }
@@ -378,7 +391,7 @@ function handleWsConnection(ws) {
 
             if (data.action === 'syncTrackLines') {
                 const tId = data.trackId !== undefined ? data.trackId : gameState.currentTrackId;
-                syncTrackLinesForTrack(tId, data.force === true, broadcast);
+                syncTrackLinesForTrack(tId, data.force !== undefined ? data.force === true : true, broadcast, data.gameYear || gameState.currentGameYear);
                 return;
             }
 

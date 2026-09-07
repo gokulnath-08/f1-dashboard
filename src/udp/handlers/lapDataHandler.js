@@ -137,7 +137,10 @@ function handleLapData(data) {
                 drs: pt.drs !== undefined ? pt.drs : 0,
                 drsOpen: pt.drsOpen !== undefined ? pt.drsOpen : 0,
                 drsAvailable: pt.drsAvailable !== undefined ? pt.drsAvailable : 0,
-                drsActivationDistance: pt.drsActivationDistance !== undefined ? pt.drsActivationDistance : null
+                drsActivationDistance: pt.drsActivationDistance !== undefined ? pt.drsActivationDistance : null,
+                straightMode: pt.straightMode !== undefined ? pt.straightMode : (currentGameYear === 26 && pt.drs === 1 ? 1 : 0),
+                activeAeroMode: pt.activeAeroMode !== undefined ? pt.activeAeroMode : (currentGameYear === 26 && pt.drs === 1 ? 1 : 0),
+                gameYear: pt.gameYear || currentGameYear
             }));
             currentLapTelemetry[i] = [];
 
@@ -310,7 +313,7 @@ function handleLapData(data) {
                     }
 
                     // Update sector lines in track map using the official sector times
-                    syncTrackLinesForTrack(currentTrackId, false, wsServer.broadcast);
+                    syncTrackLinesForTrack(currentTrackId, false, wsServer.broadcast, currentGameYear);
                 } else {
                     lockOfficialSectorLinesFromTelemetry(i, finishedS1, finishedS2, validTelemetry, wsServer.broadcast);
                 }
@@ -429,9 +432,13 @@ function handleLapData(data) {
                         drs: carPhys.drsInt === 1 || carPhys.drs === 'OPEN' ? 1 : 0,
                         drsOpen: carPhys.drsInt === 1 || carPhys.drs === 'OPEN' ? 1 : 0,
                         drsAvailable: 0,
-                        drsActivationDistance: null
+                        drsActivationDistance: null,
+                        straightMode: (currentGameYear === 26 && (carPhys.drsInt === 1 || carPhys.drs === 'OPEN')) ? 1 : 0,
+                        activeAeroMode: (currentGameYear === 26 && (carPhys.drsInt === 1 || carPhys.drs === 'OPEN')) ? 1 : 0,
+                        gameYear: currentGameYear
                     };
                     if (i === state.playerIndex) {
+                        const is26 = currentGameYear === 26;
                         pt.throttle = Math.round(state.inputs.throttle);
                         pt.brake = Math.round(state.inputs.brake);
                         pt.speed = Math.round(state.inputs.speed);
@@ -441,6 +448,9 @@ function handleLapData(data) {
                         pt.drsOpen = pt.drs;
                         pt.drsAvailable = state.inputs.drsAvailable ? 1 : 0;
                         pt.drsActivationDistance = Number.isFinite(state.inputs.drsActivationDistance) ? state.inputs.drsActivationDistance : null;
+                        pt.straightMode = (is26 && (state.inputs.drs === 'OPEN' || state.inputs.straightMode === 1)) ? 1 : (state.inputs.straightMode || 0);
+                        pt.activeAeroMode = pt.straightMode;
+                        pt.gameYear = currentGameYear;
                     }
                     arr.push(pt);
                     if (arr.length > 10000) {

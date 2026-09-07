@@ -35,6 +35,8 @@ function handleSession(data) {
         resetSessionData(wsServer.broadcast);
     }
 
+    setPlayerIndex(data.m_header);
+
     if (tId !== undefined && tId !== -1) {
         if (tId !== gameState.currentTrackId || !state.trackPoints || state.trackPoints.length < 20) {
             gameState.currentTrackId = tId;
@@ -52,12 +54,16 @@ function handleSession(data) {
                             state.startLine = null;
                             state.sector1 = null;
                             state.sector2 = null;
+                            state.drsZones = [];
+                            state.straightModeZones = [];
                             gameState.isTrackMapped = true;
                         } else {
                             state.trackPoints = parsedData.trackPoints || [];
                             state.startLine = parsedData.startLine || null;
                             state.sector1 = (parsedData.sector1 && typeof parsedData.sector1 === 'object') ? parsedData.sector1 : ((parsedData.sector1Line && typeof parsedData.sector1Line === 'object') ? parsedData.sector1Line : null);
                             state.sector2 = (parsedData.sector2 && typeof parsedData.sector2 === 'object') ? parsedData.sector2 : ((parsedData.sector2Line && typeof parsedData.sector2Line === 'object') ? parsedData.sector2Line : null);
+                            state.drsZones = parsedData.drsZones || [];
+                            state.straightModeZones = parsedData.straightModeZones || [];
                             if (state.trackPoints.length > 0) gameState.isTrackMapped = true;
                         }
                         state.pitLanePoints = buildApproxPitLane(state.trackPoints);
@@ -71,7 +77,10 @@ function handleSession(data) {
                                 pitLanePoints: state.pitLanePoints || [],
                                 startLine: state.startLine,
                                 sector1: state.sector1,
-                                sector2: state.sector2
+                                sector2: state.sector2,
+                                drsZones: state.drsZones || [],
+                                straightModeZones: state.straightModeZones || [],
+                                gameYear: gameState.currentGameYear || 26
                             }
                         });
                         wsServer.broadcast(tMsg);
@@ -86,6 +95,8 @@ function handleSession(data) {
                 state.startLine = null;
                 state.sector1 = null;
                 state.sector2 = null;
+                state.drsZones = [];
+                state.straightModeZones = [];
                 gameState.isTrackMapped = false;
                 gameState.trackPointsDirty = true;
 
@@ -98,7 +109,10 @@ function handleSession(data) {
                         pitLanePoints: [],
                         startLine: null,
                         sector1: null,
-                        sector2: null
+                        sector2: null,
+                        drsZones: [],
+                        straightModeZones: [],
+                        gameYear: gameState.currentGameYear || 26
                     }
                 });
                 wsServer.broadcast(clearMsg);
@@ -107,8 +121,6 @@ function handleSession(data) {
             if (gameState.currentTrackId !== -1) loadTrackDeltaReference(gameState.currentTrackId);
         }
     }
-
-    setPlayerIndex(data.m_header);
 
     const trackTemp = data.m_trackTemperature !== undefined ? data.m_trackTemperature : (data.trackTemperature || 0);
     const airTemp = data.m_airTemperature !== undefined ? data.m_airTemperature : (data.airTemperature || 0);

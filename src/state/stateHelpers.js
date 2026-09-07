@@ -6,11 +6,16 @@ function touchUdpPacket() {
     gameState.lastUdpPacketTime = Date.now();
 }
 
+const warnedUnknownTeamIds = new Set();
+
 function getParticipantTeamId(participant) {
     if (!participant) return undefined;
     const tid = participant.m_teamId !== undefined ? participant.m_teamId : participant.teamId;
     if (tid !== undefined && !teamMap[tid]) {
-        console.log(`UNKNOWN TEAM ID DETECTED: ${tid} for driver ${participant.m_name || 'unknown'}`);
+        if (!warnedUnknownTeamIds.has(tid)) {
+            warnedUnknownTeamIds.add(tid);
+            console.log(`UNKNOWN TEAM ID DETECTED: ${tid} for driver ${participant.m_name || 'unknown'}`);
+        }
     }
     return tid;
 }

@@ -88,7 +88,9 @@ let state = {
         gHistory: gForceData.history,
         maxGSeen: gForceData.maxGSeen
     },
-    inputs: { speed: 0, gear: 'N', rpm: 0, throttle: 0, brake: 0, clutch: 0, steer: 0, drs: 'CLOSED', drsAvailable: false, drsActivationDistance: null },
+    drsZones: [],
+    straightModeZones: [],
+    inputs: { speed: 0, gear: 'N', rpm: 0, throttle: 0, brake: 0, clutch: 0, steer: 0, drs: 'CLOSED', drsAvailable: false, drsActivationDistance: null, straightMode: 0, activeAeroMode: 0, straightModeAvailable: false },
     ers: {
         mode: 'Medium',
         battery: 100,

@@ -55,6 +55,7 @@ function handleCarStatus(data) {
         state.car.flag = flagMap[pStat.m_vehicleFiaFlags] || 'GREEN';
         state.inputs.drsAvailable = pStat.m_drsAllowed === 1;
         state.inputs.drsActivationDistance = (pStat.m_drsActivationDistance !== undefined && Number.isFinite(pStat.m_drsActivationDistance)) ? pStat.m_drsActivationDistance : null;
+        state.inputs.straightModeAvailable = (pStat.m_activeAeroAllowed !== undefined ? pStat.m_activeAeroAllowed === 1 : pStat.m_drsAllowed === 1);
 
         // ERS Deep Telemetry & Strategy
         const ersStore = pStat.m_ersStoreEnergy !== undefined ? pStat.m_ersStoreEnergy : 0;

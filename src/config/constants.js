@@ -189,7 +189,8 @@ const teamMap = {
     143: '#004595', 144: '#FA5400', 145: '#002C66', 146: '#00B894', 147: '#0080FF', 148: '#CCCCCC',
     149: '#FF5722', 150: '#EE1212', 151: '#004C97', 152: '#F58220', 153: '#FFE600',
     220: '#27F4D2', 221: '#E8002D', 222: '#3671C6', 223: '#64C4FF', 224: '#229971', 225: '#0093CC',
-    226: '#6692FF', 227: '#B6BABD', 228: '#FF8000', 229: '#52E252', 230: '#FFFFFF', 255: '#FFFFFF'
+    226: '#6692FF', 227: '#B6BABD', 228: '#FF8000', 229: '#52E252', 230: '#FFFFFF',
+    231: '#C5A059', 232: '#FFFFFF', 233: '#00F0FF', 255: '#FFFFFF'
 };
 
 const teamNameMap = {
@@ -275,7 +276,8 @@ const teamNameMap = {
     143: 'ART Grand Prix', 144: 'Campos Racing', 145: 'Carlin', 146: 'PHM Racing by Charouz', 147: 'DAMS', 148: 'Hitech Pulse-Eight',
     149: 'MP Motorsport', 150: 'PREMA Racing', 151: 'Trident', 152: 'Van Amersfoort Racing', 153: 'Virtuosi Racing',
     220: 'Mercedes', 221: 'Ferrari', 222: 'Red Bull Racing', 223: 'Williams', 224: 'Aston Martin', 225: 'Alpine',
-    226: 'RB', 227: 'Haas', 228: 'McLaren', 229: 'Kick Sauber', 230: 'F1 Generic', 255: 'Network/Spectator'
+    226: 'RB', 227: 'Haas', 228: 'McLaren', 229: 'Kick Sauber', 230: 'F1 Generic',
+    231: 'Custom Team', 232: 'Custom Team', 233: 'Custom Team', 255: 'Network/Spectator'
 };
 
 module.exports = {
