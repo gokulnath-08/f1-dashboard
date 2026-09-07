@@ -8,6 +8,7 @@ const { generateSessionExportJson, getAvailableTelemetryTracks, getTrackDriverFa
 const { getAllHtmlFiles, renderHtmlDirectoryPage, resolveRequestedFile, MIME_TYPES } = require('../services/staticHandler');
 const { syncTrackLinesForTrack } = require('../services/trackService');
 const { broadcast } = require('../websocket/wsServer');
+const { getCustomTargetsData, saveCustomTargetsData } = require('../services/targetService');
 
 function createHttpServer() {
     const server = http.createServer((req, res) => {
@@ -70,6 +71,42 @@ function createHttpServer() {
             });
             res.end(JSON.stringify({ count: Object.keys(fastestRecords).length, records: fastestRecords }, null, 2));
             return;
+        }
+
+        // API endpoint: Get or set custom targets shared permanently across all links and users
+        if (reqUrl === "/api/custom-targets" || reqUrl === "/api/targets") {
+            if (req.method === "POST") {
+                let body = "";
+                req.on("data", chunk => { body += chunk; });
+                req.on("end", () => {
+                    try {
+                        const data = JSON.parse(body || "{}");
+                        const saved = saveCustomTargetsData(data.targets, data.permanentTarget);
+                        broadcast(JSON.stringify({
+                            type: "customTargetsUpdated",
+                            targets: saved.targets,
+                            permanentTarget: saved.permanentTarget
+                        }));
+                        res.writeHead(200, {
+                            "Content-Type": "application/json",
+                            "Access-Control-Allow-Origin": "*"
+                        });
+                        res.end(JSON.stringify({ success: true, ...saved }));
+                    } catch (err) {
+                        res.writeHead(400, { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({ error: err.message }));
+                    }
+                });
+                return;
+            } else {
+                const ctData = getCustomTargetsData();
+                res.writeHead(200, {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*"
+                });
+                res.end(JSON.stringify(ctData, null, 2));
+                return;
+            }
         }
 
         // API endpoint: Get all drivers who recorded fastest laps in the active session or for a selected track

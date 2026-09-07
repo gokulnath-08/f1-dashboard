@@ -65,6 +65,12 @@
                 </svg>
                 <span>EXPORT JSON</span>
             </button>
+            <button id="btn-target-pace" class="btn-target-pace" onclick="openTargetModal()"
+                title="Configure Custom Target Lap & Sector Pace">
+                <span class="target-active-dot" id="hdr-target-dot"></span>
+                <span>TARGET PACE</span>
+                <span id="hdr-target-val" style="font-family:'Roboto Mono',monospace; font-size:0.62rem; color:#FFF; margin-left:2px; background:rgba(0,0,0,0.3); padding:1px 5px; border-radius:3px;">--:--.---</span>
+            </button>
             <a href="/ghost-comparison.html" class="rbr-tool-btn" style="text-decoration:none; color:inherit; background:linear-gradient(135deg, rgba(0,240,255,0.15), rgba(192,132,252,0.15)); border-color:rgba(0,240,255,0.4);" title="Open Ghost Lap Telemetry Comparison">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
@@ -93,6 +99,15 @@
 
     <!-- PB Badge Overlay -->
     <div id="pb-badge">🏆 NEW PERSONAL BEST!</div>
+
+    <!-- Target Beaten Celebration Banner -->
+    <div id="target-beaten-banner" class="target-celebration-banner">
+        <span style="font-size:1.4rem;">🎯</span>
+        <div>
+            <div style="text-transform:uppercase; letter-spacing:1px; font-size:0.7rem; font-weight:800;">Target Pace Beaten!</div>
+            <div id="target-beaten-details" style="font-size:0.95rem; font-weight:900;">1:24.120 (-0.230s)</div>
+        </div>
+    </div>
 
     <!-- ══════════ DYNAMIC SESSION-AWARE HERO KPI BAR ══════════ -->
     <div class="hero-kpi-bar" id="hero-kpi-bar">
@@ -316,6 +331,9 @@
                             <div class="sector-delta">
                                 <span>Best</span><span id="lap-last-best">--</span>
                             </div>
+                            <div class="sector-delta">
+                                <span style="color:#00F0FF;">Target</span><span id="lap-last-target" style="font-weight:700; color:#00F0FF;">--</span>
+                            </div>
                         </div>
                     </div>
                     <div class="data-row">
@@ -344,15 +362,15 @@
                         <div style="text-align: right">
                             <div class="sector-delta">
                                 <span style="padding-left: 4px; color: var(--fia-purple);">S1 </span><span id="sb-s1"
-                                    class="purple" style="font-weight:700;">--:--.---</span>
+                                     class="purple" style="font-weight:700;">--:--.---</span>
                             </div>
                             <div class="sector-delta">
                                 <span style="padding-left: 4px; color: var(--fia-purple);">S2 </span><span id="sb-s2"
-                                    class="purple" style="font-weight:700;">--:--.---</span>
+                                     class="purple" style="font-weight:700;">--:--.---</span>
                             </div>
                             <div class="sector-delta">
                                 <span style="padding-left: 4px; color: var(--fia-purple);">S3 </span><span id="sb-s3"
-                                    class="purple" style="font-weight:700;">--:--.---</span>
+                                     class="purple" style="font-weight:700;">--:--.---</span>
                             </div>
                         </div>
                     </div>
@@ -376,6 +394,9 @@
                             <div class="sector-delta">
                                 <span>Best</span><span id="lap-s1-best">--</span>
                             </div>
+                            <div class="sector-delta">
+                                <span style="color:#00F0FF;">Target</span><span id="lap-s1-target">--</span>
+                            </div>
                         </div>
                         <div class="sector-card" id="sector-row-s2">
                             <div class="sector-card-head">
@@ -388,6 +409,9 @@
                             </div>
                             <div class="sector-delta">
                                 <span>Best</span><span id="lap-s2-best">--</span>
+                            </div>
+                            <div class="sector-delta">
+                                <span style="color:#00F0FF;">Target</span><span id="lap-s2-target">--</span>
                             </div>
                         </div>
                         <div class="sector-card" id="sector-row-s3">
@@ -402,6 +426,62 @@
                             <div class="sector-delta">
                                 <span>Best</span><span id="lap-s3-best">--</span>
                             </div>
+                            <div class="sector-delta">
+                                <span style="color:#00F0FF;">Target</span><span id="lap-s3-target">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── CUSTOM TARGET PACE TRACKER CARD ── -->
+                    <div class="target-pace-card" id="radar-target-pace-card">
+                        <div class="target-card-header">
+                            <div class="target-card-title">
+                                <span style="color:#00F0FF; font-size:1.05rem;">🎯</span>
+                                <span>Target Pace Tracker</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span class="target-badge-pill standby" id="target-card-badge" onclick="toggleTargetActive()" style="cursor:pointer;" title="Click to Toggle On / Off">STANDBY</span>
+                                <button type="button" class="rbr-tool-btn" id="btn-target-toggle-quick" onclick="toggleTargetActive()" style="font-size:0.62rem; padding:2px 8px;" title="Turn Target On or Off">
+                                    <span id="target-quick-toggle-text">⏸️ PAUSE</span>
+                                </button>
+                                <button type="button" class="rbr-tool-btn" onclick="openTargetModal()" style="font-size:0.62rem; padding:2px 8px;" title="Configure Custom Targets">
+                                    <span>⚙️ SET</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="target-kpi-grid">
+                            <div class="target-kpi-subcard">
+                                <div class="target-kpi-lbl">TARGET LAP</div>
+                                <div class="target-kpi-val" id="tgt-card-lap-time" style="color:#00F0FF;">--:--.---</div>
+                            </div>
+                            <div class="target-kpi-subcard">
+                                <div class="target-kpi-lbl">LAST LAP Δ</div>
+                                <div class="target-kpi-val" id="tgt-card-lap-delta">--</div>
+                            </div>
+                        </div>
+
+                        <div class="target-sectors-strip">
+                            <div class="target-sec-col">
+                                <span class="target-sec-tag">SEC 1 TARGET</span>
+                                <span class="target-sec-time" id="tgt-card-s1-time">--.---</span>
+                                <span class="target-sec-delta" id="tgt-card-s1-delta">Δ ±0.000</span>
+                            </div>
+                            <div class="target-sec-col">
+                                <span class="target-sec-tag">SEC 2 TARGET</span>
+                                <span class="target-sec-time" id="tgt-card-s2-time">--.---</span>
+                                <span class="target-sec-delta" id="tgt-card-s2-delta">Δ ±0.000</span>
+                            </div>
+                            <div class="target-sec-col">
+                                <span class="target-sec-tag">SEC 3 TARGET</span>
+                                <span class="target-sec-time" id="tgt-card-s3-time">--.---</span>
+                                <span class="target-sec-delta" id="tgt-card-s3-delta">Δ ±0.000</span>
+                            </div>
+                        </div>
+
+                        <div class="target-pace-status-bar">
+                            <span style="color:var(--text-muted);">Pace Evaluation:</span>
+                            <span id="tgt-card-status-text" style="color:var(--rbr-yellow); font-weight:700;">TARGET NOT CONFIGURED</span>
                         </div>
                     </div>
                     <div class="data-row" style="margin-top: 8px">
@@ -2151,11 +2231,147 @@
         </div>
     </div>
 
+    <!-- ══════════ TARGET LAP & SECTOR PACE CONFIGURATION MODAL ══════════ -->
+    <div id="target-modal" class="modal-overlay" onclick="if(event.target === this) closeTargetModal()">
+        <div class="target-modal-card">
+            <div class="target-modal-header">
+                <div class="target-modal-title">
+                    <span style="color:#00F0FF; font-size:1.2rem;">🎯</span>
+                    <span>Target Lap &amp; Sector Configuration</span>
+                </div>
+                <button class="target-modal-close-btn" onclick="closeTargetModal()" aria-label="Close modal">&times;</button>
+            </div>
+
+            <div class="target-modal-body">
+                <!-- Circuit Context & Active Switch -->
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); border:1px solid var(--f1-border); border-radius:6px; padding:10px 14px;">
+                    <div>
+                        <div style="font-size:0.62rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Circuit Profile</div>
+                        <div id="target-modal-track" style="font-family:'Roboto Mono',monospace; font-size:0.9rem; font-weight:800; color:#00F0FF;">Loading Circuit...</div>
+                        <div style="font-size:0.65rem; color:#00E676; margin-top:3px; display:flex; align-items:center; gap:4px;">
+                            <span>🔒 Permanent Target</span> &bull; <span>Stays active until changed or turned off</span>
+                        </div>
+                    </div>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.75rem; font-weight:700;">
+                        <input type="checkbox" id="target-enable-switch" checked style="accent-color:#00E676; width:17px; height:17px; cursor:pointer;">
+                        <span>Target Active</span>
+                    </label>
+                </div>
+
+                <!-- SECTION 1: Target Lap Time -->
+                <div class="target-input-row">
+                    <div class="target-input-lbl">
+                        <span>Target Lap Time</span>
+                        <span id="target-lap-ms-preview" style="color:#00F0FF; font-family:'Roboto Mono',monospace; font-weight:800;">--:--.---</span>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <div class="target-segmented-wrap" style="flex:1;">
+                            <input type="number" id="tgt-lap-min" class="target-seg-input" placeholder="01" min="0" max="10" oninput="onTargetLapInputChange()">
+                            <span class="target-seg-sep">:</span>
+                            <input type="number" id="tgt-lap-sec" class="target-seg-input" placeholder="24" min="0" max="59" oninput="onTargetLapInputChange()">
+                            <span class="target-seg-sep">.</span>
+                            <input type="number" id="tgt-lap-ms" class="target-seg-input" placeholder="500" min="0" max="999" style="width:65px;" oninput="onTargetLapInputChange()">
+                        </div>
+                        <div style="font-size:0.7rem; color:var(--text-muted); white-space:nowrap;">(MM : SS . MSS)</div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: Target Sectors S1, S2, S3 -->
+                <div class="target-input-row">
+                    <div class="target-input-lbl">
+                        <span>Target Sector Splits</span>
+                        <span style="font-size:0.65rem; color:var(--text-muted);">Format: Seconds.Milliseconds (e.g. 26.500)</span>
+                    </div>
+                    <div class="target-sectors-grid-input">
+                        <div class="target-sec-input-box">
+                            <label for="tgt-sec-1" style="font-size:0.62rem; color:var(--text-muted); font-weight:700;">SECTOR 1 (s)</label>
+                            <input type="number" step="0.001" id="tgt-sec-1" class="target-input-text" placeholder="26.500" oninput="onTargetSectorInputChange()">
+                        </div>
+                        <div class="target-sec-input-box">
+                            <label for="tgt-sec-2" style="font-size:0.62rem; color:var(--text-muted); font-weight:700;">SECTOR 2 (s)</label>
+                            <input type="number" step="0.001" id="tgt-sec-2" class="target-input-text" placeholder="31.200" oninput="onTargetSectorInputChange()">
+                        </div>
+                        <div class="target-sec-input-box">
+                            <label for="tgt-sec-3" style="font-size:0.62rem; color:var(--text-muted); font-weight:700;">SECTOR 3 (s)</label>
+                            <input type="number" step="0.001" id="tgt-sec-3" class="target-input-text" placeholder="26.650" oninput="onTargetSectorInputChange()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Sector Sum Validator & Auto-Sync -->
+                <div class="target-sum-box" id="target-sum-box">
+                    <div class="target-sum-row">
+                        <span>Sectors Sum (S1 + S2 + S3):</span>
+                        <strong id="target-sectors-sum-val" style="color:#FFF;">--:--.---</strong>
+                    </div>
+                    <div class="target-sum-row">
+                        <span>Target vs Sum Alignment:</span>
+                        <span id="target-alignment-badge" class="target-sum-badge match">✓ Perfect Match</span>
+                    </div>
+                    <div style="display:flex; gap:8px; margin-top:4px; flex-wrap:wrap;">
+                        <button type="button" class="target-tool-btn" onclick="syncSectorsSumToLapTime()" title="Set Target Lap Time equal to the sum of S1+S2+S3">
+                            <span>⚡ Sum Sectors &rarr; Set Lap Time</span>
+                        </button>
+                        <button type="button" class="target-tool-btn" onclick="autoSplitLapTimeToSectors()" title="Split Target Lap Time proportionally across S1, S2, S3">
+                            <span>⚖️ Split Lap Time &rarr; Sectors</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SECTION 4: Quick Fill Presets -->
+                <div class="target-input-row">
+                    <div class="target-input-lbl">
+                        <span>Quick Presets &amp; Target Offsets</span>
+                    </div>
+                    <div class="target-btn-tools-row">
+                        <button type="button" class="target-tool-btn" onclick="fillTargetFromPersonalBest()" title="Load Personal Best lap and sector times">
+                            <span>📋 Copy My PB</span>
+                        </button>
+                        <button type="button" class="target-tool-btn" onclick="fillTargetFromSessionBest()" title="Load fastest session lap & sectors">
+                            <span>⚡ Copy Session Best</span>
+                        </button>
+                        <button type="button" class="target-tool-btn" onclick="applyTargetOffset(-100)" title="Set Target to PB - 0.100s">
+                            <span>🎯 PB - 0.100s</span>
+                        </button>
+                        <button type="button" class="target-tool-btn" onclick="applyTargetOffset(-250)" title="Set Target to PB - 0.250s">
+                            <span>🎯 PB - 0.250s</span>
+                        </button>
+                        <button type="button" class="target-tool-btn" onclick="applyTargetOffset(-500)" title="Set Target to PB - 0.500s">
+                            <span>🎯 PB - 0.500s</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Options -->
+                <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.7rem; color:var(--text-muted);">
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                        <input type="checkbox" id="tgt-opt-ddu" checked style="accent-color:#00F0FF;">
+                        <span>Show Target on Cockpit DDU</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                        <input type="checkbox" id="tgt-opt-celebrate" checked style="accent-color:#00E676;">
+                        <span>Celebrate when Target Beaten</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="target-modal-footer">
+                <button type="button" class="target-btn-clear" onclick="clearTargetForCurrentTrack()">Turn Off / Clear Target</button>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" class="target-tool-btn" onclick="closeTargetModal()">Cancel</button>
+                    <button type="button" class="target-btn-save" onclick="saveTargetSettings()">
+                        <span>💾 Save Target (Permanent)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notifications -->
     <div class="toast-container" id="toast-container"></div>
 
     <!-- ══════════ JAVASCRIPT LOGIC ══════════ -->
-    <script src="js/dashboard.js?v=2.0"></script>
+    <script src="js/dashboard.js?v=2.1"></script>
 
     <!-- ══════════ SCREEN WAKE LOCK (KEEP MOBILE AWAKE) ══════════ -->
     <script>

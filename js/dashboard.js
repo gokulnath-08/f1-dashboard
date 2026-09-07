@@ -249,6 +249,7 @@
                 if (state !== "complete") {
                     setDeltaText(`lap-${key}-prev`, NaN);
                     setDeltaText(`lap-${key}-best`, NaN);
+                    setDeltaText(`lap-${key}-target`, NaN);
                     return;
                 }
 
@@ -278,6 +279,15 @@
                     }
                 }
                 setDeltaText(`lap-${key}-best`, bestDiff, bestColor);
+
+                // Custom Target Delta
+                if (window.targetPaceManager && window.targetPaceManager.isEnabled()) {
+                    const tgtSec = window.targetPaceManager.getTargetSectorMs(key);
+                    const tgtDiff = currentMs > 0 && tgtSec > 0 ? currentMs - tgtSec : NaN;
+                    setDeltaText(`lap-${key}-target`, tgtDiff, tgtDiff <= 0 ? "var(--fia-green)" : "var(--fia-yellow)");
+                } else {
+                    setDeltaText(`lap-${key}-target`, NaN);
+                }
             });
         }
 
@@ -930,7 +940,10 @@
         }
 
         window.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") closeGamepadModal();
+            if (e.key === "Escape") {
+                closeGamepadModal();
+                if (typeof window.closeTargetModal === "function") window.closeTargetModal();
+            }
         });
 
         function refreshGamepadList(force = false) {
@@ -3189,39 +3202,50 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         /* ── WebSocket Connection & Telemetry Handling ── */
         let ws;
         function getWebSocketUrls() {
-            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-            const urls = [`${protocol}//${window.location.host}`];
-            const nodeUrl = `${protocol}//${window.location.hostname}:3000`;
-            const legacyUrl = `${protocol}//${window.location.hostname}:8085`;
+            const isHttps = window.location.protocol === "https:";
+            const protocol = isHttps ? "wss:" : "ws:";
+            const host = window.location.host || "localhost:3000";
+            const hostname = window.location.hostname || "localhost";
+            const urls = [`${protocol}//${host}`];
+            const nodeUrl = `${protocol}//${hostname}:3000`;
+            const legacyUrl = `${protocol}//${hostname}:8085`;
             if (!urls.includes(nodeUrl)) urls.push(nodeUrl);
             if (!urls.includes(legacyUrl)) urls.push(legacyUrl);
-            return urls;
+            return urls.filter(u => u && !u.endsWith("://") && !u.endsWith(":///"));
         }
 
         function connectWebSocket(urlIndex = 0) {
             const urls = getWebSocketUrls();
-            ws = new WebSocket(urls[urlIndex]);
-            ws.onopen = () => {
-                setText("ws-status", "CONNECTED");
-                setStyleById("ws-status", "color", "var(--fia-green)");
-                ws.send(JSON.stringify({ action: "getAvailableTracks" }));
-                ws.send(JSON.stringify({ action: "getTrackData" }));
-            };
-            ws.onclose = () => {
-                setText("ws-status", "STANDBY (OFFLINE)");
-                setStyleById("ws-status", "color", "var(--fia-yellow)");
-                if (window.f1Analyzer) window.f1Analyzer.setStandby(true);
-            };
-            ws.onerror = () => {
+            if (!urls || urls.length === 0 || urlIndex >= urls.length) return;
+            try {
+                ws = new WebSocket(urls[urlIndex]);
+                ws.onopen = () => {
+                    setText("ws-status", "CONNECTED");
+                    setStyleById("ws-status", "color", "var(--fia-green)");
+                    ws.send(JSON.stringify({ action: "getAvailableTracks" }));
+                    ws.send(JSON.stringify({ action: "getTrackData" }));
+                };
+                ws.onclose = () => {
+                    setText("ws-status", "STANDBY (OFFLINE)");
+                    setStyleById("ws-status", "color", "var(--fia-yellow)");
+                    if (window.f1Analyzer) window.f1Analyzer.setStandby(true);
+                };
+                ws.onerror = () => {
+                    if (urlIndex + 1 < urls.length) {
+                        connectWebSocket(urlIndex + 1);
+                        return;
+                    }
+                    setText("ws-status", "OFFLINE");
+                    setStyleById("ws-status", "color", "var(--f1-red)");
+                    if (window.f1Analyzer) window.f1Analyzer.setStandby(true);
+                };
+                ws.onmessage = handleTelemetryMessage;
+            } catch (err) {
+                console.warn("WebSocket connection attempt failed:", urls[urlIndex], err);
                 if (urlIndex + 1 < urls.length) {
                     connectWebSocket(urlIndex + 1);
-                    return;
                 }
-                setText("ws-status", "OFFLINE");
-                setStyleById("ws-status", "color", "var(--f1-red)");
-                if (window.f1Analyzer) window.f1Analyzer.setStandby(true);
-            };
-            ws.onmessage = handleTelemetryMessage;
+            }
         }
 
         function syncTrackLines() {
@@ -3371,6 +3395,13 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const data = JSON.parse(event.data);
             window.lastTelemetryData = data;
 
+            if (data.type === "customTargetsData" || data.type === "customTargetsUpdated") {
+                if (window.targetPaceManager) {
+                    window.targetPaceManager.applyServerTargets(data.targets, data.permanentTarget);
+                }
+                return;
+            }
+
             if (data.type === "toast" && data.message) {
                 showToast(data.message);
                 return;
@@ -3486,6 +3517,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             const playerLbData = data.leaderboard ? data.leaderboard.find(d => d.carIndex === pIdx) : null;
 
             setText("track-name", (data.session.trackName || "UNKNOWN").toUpperCase());
+            if (window.targetPaceManager && data.session) window.targetPaceManager.onTrackDetected(data.session.trackId, data.session.trackName);
             setText("session-type", (data.session.type || "--").toUpperCase());
             setText("weather", `${data.session.weather || '--'} • ${data.session.airTemp || 0}°C`);
             setText("track-temp-sub", `Track: ${data.session.trackTemp || 0}°C`);
@@ -3624,6 +3656,15 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     else bestColor = "var(--fia-yellow)";
                 }
                 setDeltaText("lap-last-best", bestDiff, bestColor);
+
+                // Custom Target Last Lap Delta
+                if (window.targetPaceManager && window.targetPaceManager.isEnabled()) {
+                    const tgtLapMs = window.targetPaceManager.getTargetLapMs();
+                    const tgtDiff = displayLastMs > 0 && tgtLapMs > 0 ? displayLastMs - tgtLapMs : NaN;
+                    setDeltaText("lap-last-target", tgtDiff, tgtDiff <= 0 ? "var(--fia-green)" : "var(--fia-yellow)");
+                } else {
+                    setDeltaText("lap-last-target", NaN);
+                }
             }
 
             const bestMsEl = document.getElementById("lap-best");
@@ -3735,6 +3776,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             );
 
             updateSectorDeltas(data, playerLbData);
+            if (window.targetPaceManager) window.targetPaceManager.updateLiveTelemetry(data, playerLbData);
 
             // Session Fastest Lap & Track Record
             const sessFastest = (data.session.sessionFastestLapMs && data.session.sessionFastestLapMs !== Infinity) ? data.session.sessionFastestLapMs : 0;
@@ -4254,3 +4296,818 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 drawPaceChart(window.lastTelemetryData);
             }
         });
+
+        /* ══════════════════════════════════════════════════════════════════
+           🎯 CUSTOM TARGET LAP TIME & SECTOR PACE MANAGER
+           ══════════════════════════════════════════════════════════════════ */
+        class TargetPaceManager {
+            constructor() {
+                this.activeTrackId = -1;
+                this.activeTrackName = "Default Circuit";
+                this.storageKey = "f1_custom_targets_v1";
+                this.permanentStorageKey = "f1_permanent_custom_target_v1";
+                this.targets = this.loadFromStorage();
+                this.permanentTarget = this.loadPermanentFromStorage();
+                this.lastCelebratedLap = -1;
+                this.celebrationTimer = null;
+
+                // Sync UI on cold start
+                setTimeout(() => this.updateUiDisplay(), 150);
+
+                // Fetch latest shared targets from backend server so any device using the link gets them
+                this.fetchServerTargets();
+
+                // Cross-tab / storage change sync
+                if (typeof window !== "undefined") {
+                    window.addEventListener("storage", (e) => {
+                        if (e.key === this.storageKey || e.key === this.permanentStorageKey) {
+                            this.targets = this.loadFromStorage();
+                            this.permanentTarget = this.loadPermanentFromStorage();
+                            this.updateUiDisplay();
+                        }
+                    });
+                }
+            }
+
+            loadFromStorage() {
+                try {
+                    const raw = localStorage.getItem(this.storageKey);
+                    if (raw) return JSON.parse(raw);
+                } catch (e) {
+                    console.warn("Could not load custom targets from localStorage:", e);
+                }
+                return {};
+            }
+
+            loadPermanentFromStorage() {
+                try {
+                    const raw = localStorage.getItem(this.permanentStorageKey);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (parsed && typeof parsed === "object") return parsed;
+                    }
+                } catch (e) {
+                    console.warn("Could not load permanent custom target:", e);
+                }
+
+                // Fallback: check this.targets for any valid target previously set
+                if (this.targets) {
+                    if (this.targets["global"] && this.targets["global"].lapMs > 0) return this.targets["global"];
+                    if (this.targets["-1"] && this.targets["-1"].lapMs > 0) return this.targets["-1"];
+                    const firstKey = Object.keys(this.targets).find(k => this.targets[k] && this.targets[k].lapMs > 0);
+                    if (firstKey) return this.targets[firstKey];
+                }
+                return null;
+            }
+
+            saveToStorage() {
+                try {
+                    localStorage.setItem(this.storageKey, JSON.stringify(this.targets));
+                    if (this.permanentTarget) {
+                        localStorage.setItem(this.permanentStorageKey, JSON.stringify(this.permanentTarget));
+                    } else {
+                        localStorage.removeItem(this.permanentStorageKey);
+                    }
+                } catch (e) {
+                    console.warn("Could not save custom targets to localStorage:", e);
+                }
+            }
+
+            fetchServerTargets() {
+                if (typeof fetch === 'function') {
+                    fetch('/api/custom-targets')
+                        .then(res => res.ok ? res.json() : null)
+                        .then(data => {
+                            if (data && (data.targets || data.permanentTarget)) {
+                                this.applyServerTargets(data.targets, data.permanentTarget);
+                            }
+                        })
+                        .catch(() => {});
+                }
+            }
+
+            applyServerTargets(serverTargets, serverPermanentTarget) {
+                let changed = false;
+                if (serverTargets && typeof serverTargets === 'object') {
+                    this.targets = serverTargets;
+                    changed = true;
+                }
+                if (serverPermanentTarget !== undefined) {
+                    this.permanentTarget = serverPermanentTarget;
+                    changed = true;
+                }
+                if (changed) {
+                    this.saveToStorage();
+                    this.updateUiDisplay();
+                }
+            }
+
+            pushTargetsToServer() {
+                // 1. Broadcast via WebSocket if connected
+                if (typeof ws !== 'undefined' && ws && ws.readyState === 1 /* OPEN */) {
+                    try {
+                        ws.send(JSON.stringify({
+                            action: 'saveCustomTargets',
+                            targets: this.targets,
+                            permanentTarget: this.permanentTarget
+                        }));
+                    } catch (e) { }
+                }
+
+                // 2. Also persist via HTTP POST so server saves it even if WS is reconnecting
+                if (typeof fetch === 'function') {
+                    fetch('/api/custom-targets', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            targets: this.targets,
+                            permanentTarget: this.permanentTarget
+                        })
+                    }).catch(() => {});
+                }
+            }
+
+            getCurrentTargetKey() {
+                return String(this.activeTrackId !== undefined && this.activeTrackId !== null ? this.activeTrackId : -1);
+            }
+
+            getCurrentTarget() {
+                const key = this.getCurrentTargetKey();
+                const trackTarget = this.targets[key];
+                
+                // 1. If active track has specifically configured targets, prioritize them
+                if (trackTarget && (trackTarget.lapMs > 0 || trackTarget.s1Ms > 0 || trackTarget.s2Ms > 0 || trackTarget.s3Ms > 0)) {
+                    return trackTarget;
+                }
+
+                // 2. Otherwise, use permanent target that persists across ALL sessions and tracks
+                if (this.permanentTarget && (this.permanentTarget.lapMs > 0 || this.permanentTarget.s1Ms > 0 || this.permanentTarget.s2Ms > 0 || this.permanentTarget.s3Ms > 0)) {
+                    return this.permanentTarget;
+                }
+
+                // 3. Fallback to default -1 or global keys in dictionary
+                if (this.targets["-1"] && (this.targets["-1"].lapMs > 0 || this.targets["-1"].s1Ms > 0)) {
+                    return this.targets["-1"];
+                }
+                if (this.targets["global"] && (this.targets["global"].lapMs > 0 || this.targets["global"].s1Ms > 0)) {
+                    return this.targets["global"];
+                }
+
+                return {
+                    enabled: false,
+                    lapMs: 0,
+                    s1Ms: 0,
+                    s2Ms: 0,
+                    s3Ms: 0,
+                    showOnDdu: true,
+                    celebrate: true
+                };
+            }
+
+            getActiveTarget() {
+                return this.getCurrentTarget();
+            }
+
+            isEnabled() {
+                const t = this.getCurrentTarget();
+                return Boolean(t && t.enabled !== false && (t.lapMs > 0 || t.s1Ms > 0 || t.s2Ms > 0 || t.s3Ms > 0));
+            }
+
+            getTargetLapMs() {
+                const t = this.getCurrentTarget();
+                return (t && t.enabled !== false && t.lapMs > 0) ? t.lapMs : 0;
+            }
+
+            getTargetSectorMs(secKey) {
+                const t = this.getCurrentTarget();
+                if (!t || t.enabled === false) return 0;
+                const k = `${secKey.toLowerCase()}Ms`;
+                return (t[k] && t[k] > 0) ? t[k] : 0;
+            }
+
+            onTrackDetected(trackId, trackName) {
+                let changed = false;
+                if (trackId !== undefined && trackId !== null && trackId !== this.activeTrackId) {
+                    this.activeTrackId = trackId;
+                    changed = true;
+                }
+                if (trackName && trackName !== this.activeTrackName && trackName !== "UNKNOWN") {
+                    this.activeTrackName = trackName;
+                    changed = true;
+                }
+                if (changed) {
+                    this.updateUiDisplay();
+                    const trackLabel = document.getElementById("target-modal-track");
+                    if (trackLabel) trackLabel.textContent = this.activeTrackName;
+                }
+            }
+
+            toggleActive() {
+                const target = this.getCurrentTarget();
+                const hasTime = target && (target.lapMs > 0 || target.s1Ms > 0 || target.s2Ms > 0 || target.s3Ms > 0);
+                if (!hasTime) {
+                    this.openModal();
+                    return;
+                }
+
+                const newEnabled = target.enabled === false ? true : false;
+                target.enabled = newEnabled;
+
+                if (this.permanentTarget) {
+                    this.permanentTarget.enabled = newEnabled;
+                }
+                const key = this.getCurrentTargetKey();
+                if (this.targets[key]) this.targets[key].enabled = newEnabled;
+                if (this.targets["-1"]) this.targets["-1"].enabled = newEnabled;
+                if (this.targets["global"]) this.targets["global"].enabled = newEnabled;
+
+                this.saveToStorage();
+                this.pushTargetsToServer();
+                this.updateUiDisplay();
+
+                if (typeof window !== 'undefined' && window.f1Ddu && window.lastTelemetryData) {
+                    window.f1Ddu.updateDDU(window.lastTelemetryData);
+                }
+
+                showToast(newEnabled ? `🎯 Target Pace Activated: ${formatMs(target.lapMs)}` : `⏸️ Target Pace Turned Off / Paused`);
+            }
+
+            updateUiDisplay() {
+                const target = this.getCurrentTarget();
+                const hasTarget = target && (target.lapMs > 0 || target.s1Ms > 0 || target.s2Ms > 0 || target.s3Ms > 0);
+                const isActive = target && target.enabled && hasTarget;
+
+                // Header Action Button
+                const btn = document.getElementById("btn-target-pace");
+                const valEl = document.getElementById("hdr-target-val");
+                if (btn) {
+                    btn.classList.toggle("active", Boolean(isActive));
+                }
+                if (valEl) {
+                    if (isActive && target.lapMs > 0) {
+                        valEl.textContent = formatMs(target.lapMs);
+                        valEl.style.color = "#00E676";
+                    } else if (hasTarget && !target.enabled) {
+                        valEl.textContent = "PAUSED";
+                        valEl.style.color = "var(--rbr-yellow)";
+                    } else {
+                        valEl.textContent = "--:--.---";
+                        valEl.style.color = "var(--text-muted)";
+                    }
+                }
+
+                // Radar Target Pace Card
+                const badge = document.getElementById("target-card-badge");
+                const lapTimeEl = document.getElementById("tgt-card-lap-time");
+                const s1El = document.getElementById("tgt-card-s1-time");
+                const s2El = document.getElementById("tgt-card-s2-time");
+                const s3El = document.getElementById("tgt-card-s3-time");
+
+                const toggleBtnText = document.getElementById("target-quick-toggle-text");
+                if (badge) {
+                    if (isActive) {
+                        badge.className = "target-badge-pill active";
+                        badge.textContent = "TARGET ACTIVE";
+                    } else if (hasTarget && !target.enabled) {
+                        badge.className = "target-badge-pill standby";
+                        badge.textContent = "TARGET PAUSED / OFF";
+                    } else {
+                        badge.className = "target-badge-pill standby";
+                        badge.textContent = "NOT CONFIGURED";
+                    }
+                }
+
+                if (toggleBtnText) {
+                    if (isActive) {
+                        toggleBtnText.textContent = "⏸️ PAUSE";
+                    } else if (hasTarget && !target.enabled) {
+                        toggleBtnText.textContent = "▶️ ACTIVATE";
+                    } else {
+                        toggleBtnText.textContent = "⚡ SET";
+                    }
+                }
+
+                if (lapTimeEl) {
+                    lapTimeEl.textContent = (target && target.lapMs > 0) ? formatMs(target.lapMs) : "--:--.---";
+                }
+                if (s1El) s1El.textContent = (target && target.s1Ms > 0) ? formatSectorMs(target.s1Ms) : "--.---";
+                if (s2El) s2El.textContent = (target && target.s2Ms > 0) ? formatSectorMs(target.s2Ms) : "--.---";
+                if (s3El) s3El.textContent = (target && target.s3Ms > 0) ? formatSectorMs(target.s3Ms) : "--.---";
+            }
+
+            updateLiveTelemetry(data, playerLbData) {
+                if (!data || !data.lap) return;
+                const target = this.getCurrentTarget();
+                const statusText = document.getElementById("tgt-card-status-text");
+
+                if (!target || !target.enabled || target.lapMs <= 0) {
+                    if (statusText) {
+                        if (target && target.lapMs > 0 && !target.enabled) {
+                            statusText.textContent = "TARGET PAUSED (CLICK TO ACTIVATE)";
+                            statusText.style.color = "var(--rbr-yellow)";
+                        } else {
+                            statusText.textContent = "TARGET NOT CONFIGURED";
+                            statusText.style.color = "var(--rbr-yellow)";
+                        }
+                    }
+                    return;
+                }
+
+                const history = Array.isArray(playerLbData?.lapHistory) ? playerLbData.lapHistory : [];
+                const displayLastMs = (history.length >= 2 ? lapHistoryMs(history[history.length - 2], "lapTime") : 0) || data.lap.lastMs || 0;
+                const currentLapNum = data.lap.lapNum || 0;
+
+                // Last Lap Delta vs Target
+                const lapDeltaEl = document.getElementById("tgt-card-lap-delta");
+
+                if (displayLastMs > 0 && target.lapMs > 0) {
+                    const diffMs = displayLastMs - target.lapMs;
+                    if (lapDeltaEl) {
+                        lapDeltaEl.textContent = formatDeltaMs(diffMs);
+                        lapDeltaEl.style.color = diffMs <= 0 ? "var(--fia-green)" : "var(--f1-red)";
+                    }
+                    if (statusText) {
+                        if (diffMs <= -500) {
+                            statusText.textContent = `🚀 CRUSHING TARGET (${formatDeltaMs(diffMs)})`;
+                            statusText.style.color = "var(--fia-green)";
+                        } else if (diffMs <= 0) {
+                            statusText.textContent = `🎯 BEATING TARGET (${formatDeltaMs(diffMs)})`;
+                            statusText.style.color = "var(--fia-green)";
+                        } else if (diffMs < 500) {
+                            statusText.textContent = `⚡ CLOSE TO TARGET (${formatDeltaMs(diffMs)})`;
+                            statusText.style.color = "var(--rbr-yellow)";
+                        } else {
+                            statusText.textContent = `⚠️ OFF TARGET PACE (${formatDeltaMs(diffMs)})`;
+                            statusText.style.color = "var(--f1-red)";
+                        }
+                    }
+
+                    // Celebration when lap completes and beats target
+                    if (diffMs <= 0 && currentLapNum > 1 && this.lastCelebratedLap !== currentLapNum && target.celebrate !== false) {
+                        this.lastCelebratedLap = currentLapNum;
+                        this.triggerCelebration(displayLastMs, target.lapMs, diffMs);
+                    }
+                } else {
+                    if (lapDeltaEl) {
+                        lapDeltaEl.textContent = "--";
+                        lapDeltaEl.style.color = "var(--text-muted)";
+                    }
+                    if (statusText) {
+                        statusText.textContent = "DRIVE A LAP TO BENCHMARK";
+                        statusText.style.color = "var(--fia-cyan)";
+                    }
+                }
+
+                // Sector splits vs Target in the mini-strip
+                ['s1', 's2', 's3'].forEach((secKey) => {
+                    const stripDeltaEl = document.getElementById(`tgt-card-${secKey}-delta`);
+                    const tgtSecMs = this.getTargetSectorMs(secKey);
+                    const liveSecMs = Number(data.lap[`live${secKey.toUpperCase()}`] ?? data.lap[secKey] ?? 0);
+                    const state = data.lap[`${secKey}State`];
+
+                    if (stripDeltaEl) {
+                        if (state === "complete" && liveSecMs > 0 && tgtSecMs > 0) {
+                            const secDiff = liveSecMs - tgtSecMs;
+                            stripDeltaEl.textContent = formatDeltaMs(secDiff);
+                            stripDeltaEl.style.color = secDiff <= 0 ? "var(--fia-green)" : "var(--f1-red)";
+                        } else {
+                            stripDeltaEl.textContent = "Δ ±0.000";
+                            stripDeltaEl.style.color = "var(--text-muted)";
+                        }
+                    }
+                });
+            }
+
+            triggerCelebration(lapMs, targetMs, diffMs) {
+                const banner = document.getElementById("target-beaten-banner");
+                const details = document.getElementById("target-beaten-details");
+                if (banner && details) {
+                    details.textContent = `${formatMs(lapMs)} (${formatDeltaMs(diffMs)} vs Target)`;
+                    banner.classList.add("show");
+
+                    if (this.celebrationTimer) clearTimeout(this.celebrationTimer);
+                    this.celebrationTimer = setTimeout(() => {
+                        banner.classList.remove("show");
+                    }, 6000);
+                }
+                showToast(`🎯 TARGET BEATEN! Lap: ${formatMs(lapMs)} (${formatDeltaMs(diffMs)})`);
+            }
+
+            // --- Modal Controls ---
+            openModal() {
+                const modal = document.getElementById("target-modal");
+                if (!modal) return;
+
+                const trackLabel = document.getElementById("target-modal-track");
+                if (trackLabel) {
+                    trackLabel.textContent = this.activeTrackName || "Default Circuit";
+                }
+
+                const target = this.getCurrentTarget();
+                const enableSwitch = document.getElementById("target-enable-switch");
+                if (enableSwitch) enableSwitch.checked = target.enabled !== false;
+
+                // Populate Lap inputs
+                if (target.lapMs > 0) {
+                    const m = Math.floor(target.lapMs / 60000);
+                    const s = Math.floor((target.lapMs % 60000) / 1000);
+                    const ms = Math.floor(target.lapMs % 1000);
+                    const minInput = document.getElementById("tgt-lap-min");
+                    const secInput = document.getElementById("tgt-lap-sec");
+                    const msInput = document.getElementById("tgt-lap-ms");
+                    if (minInput) minInput.value = m;
+                    if (secInput) secInput.value = s;
+                    if (msInput) msInput.value = ms;
+                } else {
+                    const minInput = document.getElementById("tgt-lap-min");
+                    const secInput = document.getElementById("tgt-lap-sec");
+                    const msInput = document.getElementById("tgt-lap-ms");
+                    if (minInput) minInput.value = "";
+                    if (secInput) secInput.value = "";
+                    if (msInput) msInput.value = "";
+                }
+
+                // Populate Sector inputs
+                const s1Inp = document.getElementById("tgt-sec-1");
+                const s2Inp = document.getElementById("tgt-sec-2");
+                const s3Inp = document.getElementById("tgt-sec-3");
+                if (s1Inp) s1Inp.value = target.s1Ms > 0 ? (target.s1Ms / 1000).toFixed(3) : "";
+                if (s2Inp) s2Inp.value = target.s2Ms > 0 ? (target.s2Ms / 1000).toFixed(3) : "";
+                if (s3Inp) s3Inp.value = target.s3Ms > 0 ? (target.s3Ms / 1000).toFixed(3) : "";
+
+                const optDdu = document.getElementById("tgt-opt-ddu");
+                if (optDdu) optDdu.checked = target.showOnDdu !== false;
+
+                const optCelebrate = document.getElementById("tgt-opt-celebrate");
+                if (optCelebrate) optCelebrate.checked = target.celebrate !== false;
+
+                this.onLapInputChange();
+                this.onSectorInputChange();
+
+                modal.style.display = "flex";
+                modal.classList.add("open");
+            }
+
+            closeModal() {
+                const modal = document.getElementById("target-modal");
+                if (modal) {
+                    modal.style.display = "none";
+                    modal.classList.remove("open");
+                }
+            }
+
+            getLapInputMs() {
+                const minEl = document.getElementById("tgt-lap-min");
+                const secEl = document.getElementById("tgt-lap-sec");
+                const msEl = document.getElementById("tgt-lap-ms");
+                if (!minEl || !secEl || !msEl) return 0;
+                const m = parseInt(minEl.value || "0", 10);
+                const s = parseInt(secEl.value || "0", 10);
+                const ms = parseInt(msEl.value || "0", 10);
+                if (isNaN(m) && isNaN(s) && isNaN(ms)) return 0;
+                return (Math.max(0, m) * 60000) + (Math.max(0, s) * 1000) + Math.max(0, ms);
+            }
+
+            setLapInputFromMs(totalMs) {
+                const minEl = document.getElementById("tgt-lap-min");
+                const secEl = document.getElementById("tgt-lap-sec");
+                const msEl = document.getElementById("tgt-lap-ms");
+                if (!minEl || !secEl || !msEl) return;
+                if (!totalMs || totalMs <= 0) {
+                    minEl.value = "";
+                    secEl.value = "";
+                    msEl.value = "";
+                } else {
+                    const m = Math.floor(totalMs / 60000);
+                    const s = Math.floor((totalMs % 60000) / 1000);
+                    const ms = Math.floor(totalMs % 1000);
+                    minEl.value = m;
+                    secEl.value = s;
+                    msEl.value = ms;
+                }
+                this.onLapInputChange();
+            }
+
+            getSectorInputMs(num) {
+                const el = document.getElementById(`tgt-sec-${num}`);
+                if (!el) return 0;
+                const val = parseFloat(el.value || "0");
+                if (isNaN(val) || val <= 0) return 0;
+                return Math.round(val * 1000);
+            }
+
+            setSectorInputFromMs(num, ms) {
+                const el = document.getElementById(`tgt-sec-${num}`);
+                if (el) {
+                    el.value = (ms > 0) ? (ms / 1000).toFixed(3) : "";
+                }
+            }
+
+            onLapInputChange() {
+                const lapMs = this.getLapInputMs();
+                const preview = document.getElementById("target-lap-ms-preview");
+                if (preview) {
+                    preview.textContent = lapMs > 0 ? formatMs(lapMs) : "--:--.---";
+                }
+                this.validateSum();
+            }
+
+            onSectorInputChange() {
+                const s1 = this.getSectorInputMs(1);
+                const s2 = this.getSectorInputMs(2);
+                const s3 = this.getSectorInputMs(3);
+                const sumMs = s1 + s2 + s3;
+
+                const sumValEl = document.getElementById("target-sectors-sum-val");
+                if (sumValEl) {
+                    sumValEl.textContent = sumMs > 0 ? formatMs(sumMs) : "--:--.---";
+                }
+                this.validateSum();
+            }
+
+            validateSum() {
+                const lapMs = this.getLapInputMs();
+                const s1 = this.getSectorInputMs(1);
+                const s2 = this.getSectorInputMs(2);
+                const s3 = this.getSectorInputMs(3);
+                const sumMs = s1 + s2 + s3;
+
+                const badge = document.getElementById("target-alignment-badge");
+                if (!badge) return;
+
+                if (lapMs === 0 && sumMs === 0) {
+                    badge.className = "target-sum-badge match";
+                    badge.textContent = "Ready to set targets";
+                } else if (lapMs > 0 && sumMs > 0) {
+                    const diff = sumMs - lapMs;
+                    if (Math.abs(diff) <= 2) {
+                        badge.className = "target-sum-badge match";
+                        badge.textContent = "✓ Perfect Match (Sectors = Lap)";
+                    } else if (diff > 0) {
+                        badge.className = "target-sum-badge mismatch";
+                        badge.textContent = `⚠️ Sectors exceed lap by +${(diff/1000).toFixed(3)}s`;
+                    } else {
+                        badge.className = "target-sum-badge mismatch";
+                        badge.textContent = `⚠️ Sectors short of lap by -${(Math.abs(diff)/1000).toFixed(3)}s`;
+                    }
+                } else if (sumMs > 0 && lapMs === 0) {
+                    badge.className = "target-sum-badge mismatch";
+                    badge.textContent = "⚡ Click 'Sum Sectors → Set Lap Time'";
+                } else if (lapMs > 0 && sumMs === 0) {
+                    badge.className = "target-sum-badge mismatch";
+                    badge.textContent = "⚖️ Click 'Split Lap Time → Sectors'";
+                }
+            }
+
+            syncSectorsSumToLap() {
+                const s1 = this.getSectorInputMs(1);
+                const s2 = this.getSectorInputMs(2);
+                const s3 = this.getSectorInputMs(3);
+                const sumMs = s1 + s2 + s3;
+                if (sumMs <= 0) {
+                    showToast("⚠️ Enter sector times first to sum them.");
+                    return;
+                }
+                this.setLapInputFromMs(sumMs);
+                showToast(`⚡ Target Lap synced to sectors sum: ${formatMs(sumMs)}`);
+            }
+
+            autoSplitLapToSectors() {
+                const lapMs = this.getLapInputMs();
+                if (lapMs <= 0) {
+                    showToast("⚠️ Enter a target lap time first.");
+                    return;
+                }
+
+                let r1 = 0.30, r2 = 0.40, r3 = 0.30;
+                const telData = typeof window !== 'undefined' ? window.lastTelemetryData : null;
+                const pb1 = telData?.lap?.bestS1 || 0;
+                const pb2 = telData?.lap?.bestS2 || 0;
+                const pb3 = telData?.lap?.bestS3 || 0;
+                if (pb1 > 0 && pb2 > 0 && pb3 > 0) {
+                    const pbTotal = pb1 + pb2 + pb3;
+                    r1 = pb1 / pbTotal;
+                    r2 = pb2 / pbTotal;
+                    r3 = pb3 / pbTotal;
+                }
+
+                const s1 = Math.round(lapMs * r1);
+                const s2 = Math.round(lapMs * r2);
+                const s3 = lapMs - s1 - s2;
+
+                this.setSectorInputFromMs(1, s1);
+                this.setSectorInputFromMs(2, s2);
+                this.setSectorInputFromMs(3, s3);
+                this.onSectorInputChange();
+                showToast("⚖️ Split Target Lap into S1, S2, and S3.");
+            }
+
+            fillFromPB() {
+                const data = typeof window !== 'undefined' ? window.lastTelemetryData : null;
+                if (!data) {
+                    showToast("⚠️ No telemetry data available yet.");
+                    return;
+                }
+                const pbLap = data.lap?.bestMs || 0;
+                const s1 = data.lap?.bestS1 || 0;
+                const s2 = data.lap?.bestS2 || 0;
+                const s3 = data.lap?.bestS3 || 0;
+
+                if (pbLap <= 0 && (s1 <= 0 && s2 <= 0 && s3 <= 0)) {
+                    showToast("⚠️ No personal best recorded yet in this session.");
+                    return;
+                }
+
+                if (pbLap > 0) this.setLapInputFromMs(pbLap);
+                if (s1 > 0) this.setSectorInputFromMs(1, s1);
+                if (s2 > 0) this.setSectorInputFromMs(2, s2);
+                if (s3 > 0) this.setSectorInputFromMs(3, s3);
+
+                this.onSectorInputChange();
+                showToast(`📋 Loaded Personal Best: ${formatMs(pbLap || (s1 + s2 + s3))}`);
+            }
+
+            fillFromSessionBest() {
+                const data = typeof window !== 'undefined' ? window.lastTelemetryData : null;
+                if (!data || !data.session) {
+                    showToast("⚠️ No session data available.");
+                    return;
+                }
+                const sbLap = (data.session.sessionFastestLapMs && data.session.sessionFastestLapMs !== Infinity) ? data.session.sessionFastestLapMs : 0;
+                const sb1 = (data.session.sessionBestS1 && data.session.sessionBestS1 !== Infinity) ? data.session.sessionBestS1 : 0;
+                const sb2 = (data.session.sessionBestS2 && data.session.sessionBestS2 !== Infinity) ? data.session.sessionBestS2 : 0;
+                const sb3 = (data.session.sessionBestS3 && data.session.sessionBestS3 !== Infinity) ? data.session.sessionBestS3 : 0;
+
+                if (sbLap <= 0 && (sb1 <= 0 && sb2 <= 0 && sb3 <= 0)) {
+                    showToast("⚠️ No session fastest lap recorded yet.");
+                    return;
+                }
+
+                if (sbLap > 0) this.setLapInputFromMs(sbLap);
+                if (sb1 > 0) this.setSectorInputFromMs(1, sb1);
+                if (sb2 > 0) this.setSectorInputFromMs(2, sb2);
+                if (sb3 > 0) this.setSectorInputFromMs(3, sb3);
+
+                this.onSectorInputChange();
+                showToast(`⚡ Loaded Session Fastest: ${formatMs(sbLap || (sb1 + sb2 + sb3))}`);
+            }
+
+            applyOffset(offsetMs) {
+                let baseLap = this.getLapInputMs();
+                if (baseLap <= 0) {
+                    const tel = typeof window !== 'undefined' ? window.lastTelemetryData : null;
+                    baseLap = tel?.lap?.bestMs || 0;
+                }
+                if (baseLap <= 0) {
+                    showToast("⚠️ Enter a baseline lap time or record a PB first.");
+                    return;
+                }
+
+                const newLapMs = Math.max(10000, baseLap + offsetMs);
+                this.setLapInputFromMs(newLapMs);
+                this.autoSplitLapToSectors();
+                showToast(`🎯 Applied target offset: ${offsetMs < 0 ? '' : '+'}${(offsetMs / 1000).toFixed(3)}s`);
+            }
+
+            saveSettings() {
+                const key = this.getCurrentTargetKey();
+                const enabled = document.getElementById("target-enable-switch")?.checked ?? true;
+                let lapMs = this.getLapInputMs();
+                let s1Ms = this.getSectorInputMs(1);
+                let s2Ms = this.getSectorInputMs(2);
+                let s3Ms = this.getSectorInputMs(3);
+
+                if (lapMs <= 0 && (s1Ms > 0 || s2Ms > 0 || s3Ms > 0)) {
+                    lapMs = s1Ms + s2Ms + s3Ms;
+                }
+                if (lapMs > 0 && s1Ms <= 0 && s2Ms <= 0 && s3Ms <= 0) {
+                    s1Ms = Math.round(lapMs * 0.30);
+                    s2Ms = Math.round(lapMs * 0.40);
+                    s3Ms = lapMs - s1Ms - s2Ms;
+                }
+
+                const showOnDdu = document.getElementById("tgt-opt-ddu")?.checked ?? true;
+                const celebrate = document.getElementById("tgt-opt-celebrate")?.checked ?? true;
+
+                const targetObj = {
+                    trackId: this.activeTrackId,
+                    trackName: this.activeTrackName,
+                    enabled,
+                    lapMs,
+                    s1Ms,
+                    s2Ms,
+                    s3Ms,
+                    showOnDdu,
+                    celebrate,
+                    updatedAt: Date.now()
+                };
+
+                // Store for the specific track
+                this.targets[key] = { ...targetObj };
+
+                // Store PERMANENTLY so it stays across all new sessions and tracks
+                this.permanentTarget = { ...targetObj };
+                this.targets["-1"] = { ...targetObj, trackId: -1, trackName: "Default Circuit" };
+                this.targets["global"] = { ...targetObj, trackId: -1, trackName: "Global Permanent" };
+
+                this.saveToStorage();
+                this.pushTargetsToServer();
+                this.updateUiDisplay();
+                this.closeModal();
+
+                if (typeof window !== 'undefined' && window.f1Ddu && window.lastTelemetryData) {
+                    window.f1Ddu.updateDDU(window.lastTelemetryData);
+                }
+
+                showToast(`💾 Target Permanently Saved: ${formatMs(lapMs)} (${enabled ? 'Active' : 'Turned Off'})`);
+            }
+
+            clearTarget() {
+                const key = this.getCurrentTargetKey();
+                delete this.targets[key];
+                delete this.targets["-1"];
+                delete this.targets["global"];
+                this.permanentTarget = null;
+                try {
+                    localStorage.removeItem(this.permanentStorageKey);
+                } catch (e) { }
+
+                this.saveToStorage();
+                this.pushTargetsToServer();
+
+                this.setLapInputFromMs(0);
+                this.setSectorInputFromMs(1, 0);
+                this.setSectorInputFromMs(2, 0);
+                this.setSectorInputFromMs(3, 0);
+                this.onLapInputChange();
+                this.onSectorInputChange();
+
+                this.updateUiDisplay();
+                this.closeModal();
+
+                if (typeof window !== 'undefined' && window.f1Ddu && window.lastTelemetryData) {
+                    window.f1Ddu.updateDDU(window.lastTelemetryData);
+                }
+
+                showToast(`🗑️ Custom target turned off and cleared.`);
+            }
+        }
+
+        // Initialize global TargetPaceManager instance
+        window.targetPaceManager = new TargetPaceManager();
+
+        // Global Modal & Input Handlers with resilient fallback instantiation
+        window.openTargetModal = () => {
+            if (!window.targetPaceManager) {
+                window.targetPaceManager = new TargetPaceManager();
+            }
+            window.targetPaceManager.openModal();
+        };
+        window.closeTargetModal = () => window.targetPaceManager?.closeModal();
+        window.toggleTargetActive = () => window.targetPaceManager?.toggleActive();
+        window.onTargetLapInputChange = () => window.targetPaceManager?.onLapInputChange();
+        window.onTargetSectorInputChange = () => window.targetPaceManager?.onSectorInputChange();
+        window.syncSectorsSumToLapTime = () => window.targetPaceManager?.syncSectorsSumToLap();
+        window.autoSplitLapTimeToSectors = () => window.targetPaceManager?.autoSplitLapToSectors();
+        window.fillTargetFromPersonalBest = () => window.targetPaceManager?.fillFromPB();
+        window.fillTargetFromSessionBest = () => window.targetPaceManager?.fillFromSessionBest();
+        window.applyTargetOffset = (ms) => window.targetPaceManager?.applyOffset(ms);
+        window.saveTargetSettings = () => window.targetPaceManager?.saveSettings();
+        window.clearTargetForCurrentTrack = () => window.targetPaceManager?.clearTarget();
+
+        // Direct DOM click listeners for robustness
+        const bindTargetTriggers = () => {
+            const headerBtn = document.getElementById("btn-target-pace");
+            if (headerBtn && !headerBtn._hasTargetClick) {
+                headerBtn._hasTargetClick = true;
+                headerBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    window.openTargetModal();
+                });
+            }
+            const modalCloseBtn = document.querySelector(".target-modal-close-btn");
+            if (modalCloseBtn && !modalCloseBtn._hasTargetClick) {
+                modalCloseBtn._hasTargetClick = true;
+                modalCloseBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    window.closeTargetModal();
+                });
+            }
+            // Bind any custom SET button on cards
+            document.querySelectorAll('[onclick*="openTargetModal"]').forEach((el) => {
+                if (!el._hasTargetClick) {
+                    el._hasTargetClick = true;
+                    el.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        window.openTargetModal();
+                    });
+                }
+            });
+        };
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", bindTargetTriggers);
+        } else {
+            bindTargetTriggers();
+        }
+        setTimeout(bindTargetTriggers, 500);

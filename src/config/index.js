@@ -23,6 +23,7 @@ const telemetryDir = path.join(rootDir, 'telemetry');
 const setupsDir = path.join(rootDir, 'setups');
 const sessionTelemetryDir = path.join(rootDir, 'session_telemetry');
 const fastestJsonPath = path.join(lapTimeDir, 'fastest.json');
+const customTargetsPath = path.join(lapTimeDir, 'custom_targets.json');
 
 const IGNORED_SCAN_DIRS = new Set(['node_modules', '.git', '.agents', 'telemetry', 'track_maps', 'laptime', 'setups', 'session_telemetry', 'backup', 'scratch', 'css', 'js', 'src']);
 
@@ -40,5 +41,6 @@ module.exports = {
     setupsDir,
     sessionTelemetryDir,
     fastestJsonPath,
+    customTargetsPath,
     IGNORED_SCAN_DIRS
 };

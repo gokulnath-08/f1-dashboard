@@ -2513,6 +2513,7 @@
         const tId = parseInt(trackId, 10);
         if (isNaN(tId) || tId === -1) return;
         GhostState.currentTrackId = tId;
+        if (typeof updateGhostTargetDisplay === 'function') updateGhostTargetDisplay(tId);
         if (DOM.circuitSelect) DOM.circuitSelect.value = tId;
         fetchTrackData(tId);
 
@@ -2807,6 +2808,36 @@
         });
     }
 
+    function updateGhostTargetDisplay(trackId) {
+        const pill = document.getElementById('ghost-target-pill');
+        const lapEl = document.getElementById('ghost-target-lap');
+        if (!pill || !lapEl) return;
+        try {
+            const raw = localStorage.getItem('f1_custom_targets_v1');
+            const permRaw = localStorage.getItem('f1_permanent_custom_target_v1');
+            let target = null;
+            if (raw) {
+                const targets = JSON.parse(raw);
+                const key = String(trackId !== undefined && trackId !== null ? trackId : -1);
+                target = targets[key] || targets['-1'] || targets['global'];
+            }
+            if ((!target || !target.lapMs) && permRaw) {
+                target = JSON.parse(permRaw);
+            }
+            if (target && target.enabled !== false && target.lapMs > 0) {
+                const m = Math.floor(target.lapMs / 60000);
+                const s = Math.floor((target.lapMs % 60000) / 1000);
+                const ms = Math.floor(target.lapMs % 1000);
+                lapEl.textContent = `${m}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+                pill.style.display = 'inline-flex';
+            } else {
+                pill.style.display = 'none';
+            }
+        } catch (e) {
+            pill.style.display = 'none';
+        }
+    }
+
     // --- Initialization Entry Point ---
     document.addEventListener('DOMContentLoaded', () => {
         initDOMElements();
@@ -2814,6 +2845,24 @@
         setupEventListeners();
         initWebSocket();
         fetchAvailableTracksList();
+        updateGhostTargetDisplay(GhostState.currentTrackId);
+
+        // Fetch shared target pace from backend server
+        if (typeof fetch === 'function') {
+            fetch('/api/custom-targets')
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (data && (data.targets || data.permanentTarget)) {
+                        try {
+                            if (data.targets) localStorage.setItem('f1_custom_targets_v1', JSON.stringify(data.targets));
+                            if (data.permanentTarget) localStorage.setItem('f1_permanent_custom_target_v1', JSON.stringify(data.permanentTarget));
+                            updateGhostTargetDisplay(GhostState.currentTrackId);
+                        } catch (e) { }
+                    }
+                })
+                .catch(() => {});
+        }
+
         requestAnimationFrame(animationLoop);
     });
 

@@ -8,6 +8,7 @@ const { safeSaveTrackMap } = require('../utils/fileSystem');
 const { getTelemetryDrsZonesForTrack, isTrackFinalized, syncTrackLinesForTrack } = require('../services/trackService');
 const { generateSessionExportJson, getTrackDriverFastestLaps } = require('../services/storageService');
 const { resetSessionData } = require('../state/stateHelpers');
+const { getCustomTargetsData, saveCustomTargetsData } = require('../services/targetService');
 
 let clients = [];
 let wss = null;
@@ -26,6 +27,16 @@ function handleWsConnection(ws) {
     const { state, currentTrackId, fastestLapGhostData } = gameState;
     console.log('✅ Advanced Strategy Command Center Connected!');
     clients.push(ws);
+
+    // Send persistent custom target pace immediately to newly connected client
+    try {
+        const ctData = getCustomTargetsData();
+        ws.send(JSON.stringify({
+            type: 'customTargetsData',
+            targets: ctData.targets || {},
+            permanentTarget: ctData.permanentTarget || null
+        }));
+    } catch (e) { }
 
     // Send full 3D track map immediately on connection so the dashboard renders right away
     if (state.trackPoints && state.trackPoints.length >= 20) {
@@ -68,6 +79,26 @@ function handleWsConnection(ws) {
     ws.on('message', (msg) => {
         try {
             const data = JSON.parse(msg);
+
+            if (data.action === 'getCustomTargets') {
+                const ctData = getCustomTargetsData();
+                ws.send(JSON.stringify({
+                    type: 'customTargetsData',
+                    targets: ctData.targets || {},
+                    permanentTarget: ctData.permanentTarget || null
+                }));
+                return;
+            }
+
+            if (data.action === 'saveCustomTargets') {
+                const saved = saveCustomTargetsData(data.targets, data.permanentTarget);
+                broadcast(JSON.stringify({
+                    type: 'customTargetsUpdated',
+                    targets: saved.targets,
+                    permanentTarget: saved.permanentTarget
+                }));
+                return;
+            }
 
             if (data.action === 'getAvailableTracks') {
                 fs.readdir(trackMapsDir, (err, files) => {

@@ -66,10 +66,19 @@ class F1DduEngine {
         const sessionFastestS2 = lapData.sessionFastestS2 || this.personalBestSectors.s2;
         const sessionFastestS3 = lapData.sessionFastestS3 || this.personalBestSectors.s3;
 
+        const tgtMgr = window.targetPaceManager;
+        const isTgtActive = Boolean(tgtMgr && tgtMgr.isEnabled());
+        const tgtLapMs = isTgtActive ? tgtMgr.getTargetLapMs() : null;
+        const targetSectors = {
+            s1: isTgtActive ? tgtMgr.getTargetSectorMs('s1') : null,
+            s2: isTgtActive ? tgtMgr.getTargetSectorMs('s2') : null,
+            s3: isTgtActive ? tgtMgr.getTargetSectorMs('s3') : null
+        };
+
         const sectors = [
-            { id: 's1', num: 1, raw: s1Raw, best: bestS1Raw, sessionFastest: sessionFastestS1 },
-            { id: 's2', num: 2, raw: s2Raw, best: bestS2Raw, sessionFastest: sessionFastestS2 },
-            { id: 's3', num: 3, raw: s3Raw, best: bestS3Raw, sessionFastest: sessionFastestS3 }
+            { id: 's1', num: 1, raw: s1Raw, best: bestS1Raw, sessionFastest: sessionFastestS1, target: targetSectors.s1 },
+            { id: 's2', num: 2, raw: s2Raw, best: bestS2Raw, sessionFastest: sessionFastestS2, target: targetSectors.s2 },
+            { id: 's3', num: 3, raw: s3Raw, best: bestS3Raw, sessionFastest: sessionFastestS3, target: targetSectors.s3 }
         ];
 
         sectors.forEach(s => {
@@ -81,6 +90,7 @@ class F1DduEngine {
 
             const isCurrentActive = (activeSector === s.num);
             const hasTime = s.raw > 0;
+            const tgtMs = s.target;
 
             if (cardEl) {
                 cardEl.classList.remove('active-sector', 'purple-sector', 'green-sector', 'yellow-sector');
@@ -92,12 +102,21 @@ class F1DduEngine {
             }
 
             if (targetEl) {
-                targetEl.textContent = s.best ? `BEST: ${this.formatSectorTime(s.best)}` : 'BEST: --.---';
+                if (tgtMs && tgtMs > 0) {
+                    targetEl.textContent = `TGT: ${this.formatSectorTime(tgtMs)}`;
+                    targetEl.style.color = '#00F0FF';
+                } else {
+                    targetEl.textContent = s.best ? `BEST: ${this.formatSectorTime(s.best)}` : 'BEST: --.---';
+                    targetEl.style.color = '';
+                }
             }
 
-            if (hasTime && s.best) {
+            // Benchmark reference: use custom target if available, otherwise PB
+            const benchmark = (tgtMs && tgtMs > 0) ? tgtMs : s.best;
+
+            if (hasTime && benchmark) {
                 const sSec = s.raw > 500 ? s.raw / 1000 : s.raw;
-                const bSec = s.best > 500 ? s.best / 1000 : s.best;
+                const bSec = benchmark > 500 ? benchmark / 1000 : benchmark;
                 const delta = sSec - bSec;
 
                 if (deltaEl) {
@@ -111,6 +130,10 @@ class F1DduEngine {
                         statusEl.classList.add('purple');
                         statusEl.textContent = 'PURPLE';
                         if (cardEl) cardEl.classList.add('purple-sector');
+                    } else if (tgtMs && tgtMs > 0 && s.raw <= tgtMs) {
+                        statusEl.classList.add('green');
+                        statusEl.textContent = 'TGT OK';
+                        if (cardEl) cardEl.classList.add('green-sector');
                     } else if (delta <= 0) {
                         statusEl.classList.add('green');
                         statusEl.textContent = 'PB';
@@ -156,12 +179,19 @@ class F1DduEngine {
         }
 
         if (bestEl) {
-            const bestMs = lapData.bestLapTimeMs || lapData.bestMs;
-            if (bestMs && bestMs > 0) {
-                const m = Math.floor(bestMs / 60000);
-                const s = Math.floor((bestMs % 60000) / 1000);
-                const ms = Math.floor(bestMs % 1000);
-                bestEl.textContent = `${m}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+            if (tgtLapMs && tgtLapMs > 0) {
+                const m = Math.floor(tgtLapMs / 60000);
+                const s = Math.floor((tgtLapMs % 60000) / 1000);
+                const ms = Math.floor(tgtLapMs % 1000);
+                bestEl.innerHTML = `<span style="color:#00F0FF;" title="Custom Target Lap Time">TGT: ${m}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}</span>`;
+            } else {
+                const bestMs = lapData.bestLapTimeMs || lapData.bestMs;
+                if (bestMs && bestMs > 0) {
+                    const m = Math.floor(bestMs / 60000);
+                    const s = Math.floor((bestMs % 60000) / 1000);
+                    const ms = Math.floor(bestMs % 1000);
+                    bestEl.textContent = `${m}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+                }
             }
         }
     }
