@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+    <meta name="theme-color" content="#05070a">
+    <title>F1 25 Mobile Wheel Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/mobile-wheel.css?v=7">
+</head>
+<body>
+    <div class="rotate-hint" aria-hidden="true">
+        <div class="phone-icon">↻</div>
+        <strong>Rotate your phone</strong>
+        <span>This dashboard is designed for landscape driving.</span>
+    </div>
+
+    <main class="dash-shell" id="dash-shell">
+        <header class="topbar">
+            <div class="top-cell delta-cell">
+                <span class="eyebrow">DELTA</span>
+                <strong id="live-delta" class="delta neutral">±0.000</strong>
+            </div>
+            <div class="top-cell driver-cell">
+                <span id="driver-name">PLAYER</span>
+                <small id="track-name">WAITING FOR F1 TELEMETRY</small>
+            </div>
+            <div class="top-cell race-cell">
+                <span id="session-type">STANDBY</span>
+                <small><b id="lap-count">L0 / 0</b> · <span id="position">P--</span></small>
+            </div>
+            <div class="top-cell clock-cell">
+                <span id="clock">--:--</span>
+                <div class="top-actions">
+                    <button id="demo-btn" type="button" title="Toggle demo telemetry">DEMO</button>
+                </div>
+            </div>
+        </header>
+
+        <section class="shift-zone" aria-label="RPM shift lights">
+            <div id="shift-lights" class="shift-lights"></div>
+            <div class="connection-pill" id="connection-pill"><i></i><span id="connection-text">CONNECTING</span></div>
+        </section>
+
+        <section class="cockpit-grid">
+            <aside class="side-car side-car-left" aria-label="Vehicle temperature map">
+                <span class="side-label">TEMPERATURE</span>
+                <div class="generated-car-wrap temperature-map">
+                    <img class="modern-wireframe-art" src="assets/formula-wireframe-modern.png?v=2" alt="" aria-hidden="true">
+                    <img id="side-temp-fl" class="component-layer" src="assets/car-parts/front-left-wheel-neutral.png?v=1" alt="">
+                    <img id="side-temp-fr" class="component-layer" src="assets/car-parts/front-right-wheel-neutral.png?v=1" alt="">
+                    <img id="side-temp-rl" class="component-layer" src="assets/car-parts/rear-left-wheel-neutral.png?v=1" alt="">
+                    <img id="side-temp-rr" class="component-layer" src="assets/car-parts/rear-right-wheel-neutral.png?v=1" alt="">
+                    <img id="side-temp-engine" class="component-layer" src="assets/car-parts/engine-neutral.png?v=1" alt="">
+                </div>
+                <strong id="side-engine-temp">0°C</strong>
+                <small>ENGINE</small>
+            </aside>
+            <aside class="pedal brake-pedal">
+                <span class="pedal-title">BRAKE</span>
+                <div class="pedal-track"><div id="brake-bar" class="pedal-fill"></div></div>
+                <b id="brake-value">0%</b>
+            </aside>
+
+            <section class="left-stack">
+                <article class="panel timing-panel">
+                    <div class="panel-title"><span>RACE DATA</span><b id="flag-badge" class="flag green">GREEN</b></div>
+                    <div class="split-row primary-row">
+                        <div><small>GAP AHEAD</small><strong id="gap-front">+0.000</strong></div>
+                        <div><small>POSITION</small><strong id="position-big">P--</strong></div>
+                    </div>
+                    <div class="split-row fuel-row">
+                        <div><small>FUEL</small><strong><span id="fuel-kg">0.0</span><em>kg</em></strong></div>
+                        <div><small>FUEL DELTA</small><strong id="fuel-delta">+0.00 L</strong></div>
+                    </div>
+                </article>
+
+                <article class="panel tyre-panel">
+                    <div class="panel-title"><span>TYRE WEAR</span><b id="tyre-age">0 LAPS</b></div>
+                    <div class="tyre-grid wear-grid">
+                        <div class="tyre-corner"><i></i><span id="wear-fl">0%</span><small>FL</small></div>
+                        <div class="tyre-corner"><i></i><span id="wear-fr">0%</span><small>FR</small></div>
+                        <div class="compound-badge" id="compound-left">M</div>
+                        <div class="tyre-corner"><i></i><span id="wear-rl">0%</span><small>RL</small></div>
+                        <div class="tyre-corner"><i></i><span id="wear-rr">0%</span><small>RR</small></div>
+                    </div>
+                </article>
+
+                <article class="panel mini-car-panel" aria-label="Vehicle damage">
+                    <div class="panel-title"><span>CAR STATUS</span><b id="damage-label">OK</b></div>
+                    <svg class="car-map" viewBox="0 0 180 92" role="img" aria-label="Top-down vehicle damage map">
+                        <path class="car-body" d="M83 7h14l5 17 13 11 3 18-11 7-4 22H77l-4-22-11-7 3-18 13-11z"/>
+                        <rect id="damage-front-wing" class="car-part" x="56" y="3" width="68" height="8" rx="3"/>
+                        <rect id="damage-rear-wing" class="car-part" x="59" y="80" width="62" height="8" rx="3"/>
+                        <rect id="damage-fl" class="car-wheel" x="51" y="18" width="17" height="25" rx="4"/>
+                        <rect id="damage-fr" class="car-wheel" x="112" y="18" width="17" height="25" rx="4"/>
+                        <rect id="damage-rl" class="car-wheel" x="53" y="57" width="17" height="26" rx="4"/>
+                        <rect id="damage-rr" class="car-wheel" x="110" y="57" width="17" height="26" rx="4"/>
+                    </svg>
+                </article>
+            </section>
+
+            <section class="center-stage">
+                <div class="speed-ribbon">
+                    <div><small>SPEED</small><strong id="speed">0</strong><em>km/h</em></div>
+                    <div><small>RPM</small><strong id="rpm">0</strong></div>
+                </div>
+                <div class="gear-wrap">
+                    <span class="gear-label">GEAR</span>
+                    <div id="gear" class="seven-gear is-letter" aria-label="Gear N">
+                        <span class="seg seg-a"></span><span class="seg seg-b"></span><span class="seg seg-c"></span>
+                        <span class="seg seg-d"></span><span class="seg seg-e"></span><span class="seg seg-f"></span><span class="seg seg-g"></span>
+                        <b>N</b>
+                        <button id="fullscreen-btn" type="button" title="Tap the gear area to toggle fullscreen" aria-label="Toggle fullscreen"></button>
+                    </div>
+                </div>
+                <div class="mode-row">
+                    <div id="drs-box" class="mode-box"><small>DRS</small><b id="drs-state">OFF</b></div>
+                    <div class="mode-box ers-box"><small>ERS</small><b><span id="ers-value">100</span>%</b><i><span id="ers-bar"></span></i></div>
+                    <div id="pit-box" class="mode-box"><small>PIT</small><b id="pit-state">TRACK</b></div>
+                </div>
+                <div class="control-row">
+                    <div><small>BAL</small><strong id="brake-bias">50%</strong></div>
+                    <div><small>DIFF</small><strong id="diff-on">50%</strong></div>
+                    <div><small>ENGINE</small><strong id="engine-temp">0°</strong></div>
+                </div>
+            </section>
+
+            <section class="right-stack">
+                <article class="panel lap-panel">
+                    <div class="panel-title"><span>LAP TIMES</span><b id="invalid-lap">VALID</b></div>
+                    <div class="lap-line"><small>LAST</small><strong id="last-lap">--:--.---</strong></div>
+                    <div class="lap-line best"><small>BEST</small><strong id="best-lap">--:--.---</strong></div>
+                    <div class="lap-line current"><small>LIVE</small><strong id="current-lap">--:--.---</strong></div>
+                </article>
+
+                <article class="panel tyre-panel temp-panel">
+                    <div class="panel-title"><span>TYRE TEMP</span><b>INNER °C</b></div>
+                    <div class="tyre-grid temp-grid">
+                        <div class="tyre-corner"><i></i><span id="temp-fl">--°</span><small>FL</small></div>
+                        <div class="tyre-corner"><i></i><span id="temp-fr">--°</span><small>FR</small></div>
+                        <div class="compound-badge" id="compound-right">M</div>
+                        <div class="tyre-corner"><i></i><span id="temp-rl">--°</span><small>RL</small></div>
+                        <div class="tyre-corner"><i></i><span id="temp-rr">--°</span><small>RR</small></div>
+                    </div>
+                </article>
+
+                <article class="panel race-info-panel">
+                    <div><small>AHEAD</small><strong id="driver-ahead">LEADER</strong></div>
+                    <div><small>BEHIND</small><strong id="driver-behind">NONE</strong></div>
+                    <div><small>PENALTY</small><strong id="penalties">0 SEC</strong></div>
+                    <div><small>TRACK</small><strong id="track-temp">--°C</strong></div>
+                </article>
+            </section>
+
+            <aside class="pedal throttle-pedal">
+                <span class="pedal-title">THROTTLE</span>
+                <div class="pedal-track"><div id="throttle-bar" class="pedal-fill"></div></div>
+                <b id="throttle-value">0%</b>
+            </aside>
+
+            <aside class="side-car side-car-right" aria-label="Vehicle damage map">
+                <span class="side-label">DAMAGE</span>
+                <div class="generated-car-wrap damage-map">
+                    <img class="modern-wireframe-art" src="assets/formula-wireframe-modern.png?v=2" alt="" aria-hidden="true">
+                    <img id="side-damage-front-left-wing" class="component-layer" src="assets/car-parts/front-left-wing-neutral.png?v=1" alt="">
+                    <img id="side-damage-front-right-wing" class="component-layer" src="assets/car-parts/front-right-wing-neutral.png?v=1" alt="">
+                    <img id="side-damage-fl" class="component-layer" src="assets/car-parts/front-left-wheel-neutral.png?v=1" alt="">
+                    <img id="side-damage-fr" class="component-layer" src="assets/car-parts/front-right-wheel-neutral.png?v=1" alt="">
+                    <img id="side-damage-rl" class="component-layer" src="assets/car-parts/rear-left-wheel-neutral.png?v=1" alt="">
+                    <img id="side-damage-rr" class="component-layer" src="assets/car-parts/rear-right-wheel-neutral.png?v=1" alt="">
+                    <img id="side-damage-floor" class="component-layer" src="assets/car-parts/floor-neutral.png?v=1" alt="">
+                    <img id="side-damage-sidepod-left" class="component-layer" src="assets/car-parts/left-sidepod-neutral.png?v=1" alt="">
+                    <img id="side-damage-sidepod-right" class="component-layer" src="assets/car-parts/right-sidepod-neutral.png?v=1" alt="">
+                    <img id="side-damage-diffuser" class="component-layer" src="assets/car-parts/diffuser-neutral.png?v=1" alt="">
+                    <img id="side-damage-rear-wing" class="component-layer" src="assets/car-parts/rear-wing-neutral.png?v=1" alt="">
+                </div>
+                <strong id="side-damage-label">OK</strong>
+                <small>CHASSIS</small>
+            </aside>
+        </section>
+
+        <footer class="sector-strip">
+            <div class="sector-card" id="sector-card-1"><span>S1</span><strong id="sector-1">--.---</strong><small>PB <b id="sector-best-1">--.---</b></small></div>
+            <div class="sector-card" id="sector-card-2"><span>S2</span><strong id="sector-2">--.---</strong><small>PB <b id="sector-best-2">--.---</b></small></div>
+            <div class="sector-card" id="sector-card-3"><span>S3</span><strong id="sector-3">--.---</strong><small>PB <b id="sector-best-3">--.---</b></small></div>
+            <div class="status-card">
+                <span id="weather">--</span>
+                <strong id="session-remaining">--:--</strong>
+                <small id="udp-age">UDP WAITING</small>
+            </div>
+        </footer>
+    </main>
+
+    <script src="js/mobile-wheel.js?v=4"></script>
+</body>
+</html>
