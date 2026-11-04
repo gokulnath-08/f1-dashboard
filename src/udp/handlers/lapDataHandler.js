@@ -4,7 +4,8 @@ const { telemetryDir, lapTimeDir, setupsDir, fastestJsonPath, sessionTelemetryDi
 const { visualTyreNames, fallbackTyreNames, pitMap } = require('../../config/constants');
 const gameState = require('../../state/gameState');
 const { touchUdpPacket, setPlayerIndex, getSectorTime, getLiveSectorTiming } = require('../../state/stateHelpers');
-const { syncTrackLinesForTrack, lockOfficialSectorLinesFromTelemetry, buildApproxPitLane } = require('../../services/trackService');
+const { syncTrackLinesForTrack, lockOfficialSectorLinesFromTelemetry, buildApproxPitLane, isTrackFinalized } = require('../../services/trackService');
+const { saveActiveSessionSnapshot, extractBrakingZones } = require('../../services/storageService');
 const { completeLiveTrackMapping } = require('./motionHandler');
 const wsServer = require('../../websocket/wsServer');
 
@@ -54,12 +55,16 @@ function handleSessionHistory(data) {
             lapTime = s1 + s2 + s3;
         }
 
+        const lapNum = k + 1;
+        const lapSetup = existing?.setup || gameState.lapSetups?.[lapNum] || gameState.carLapSetups?.[carIndex]?.[lapNum] || (carIndex === state.playerIndex ? { ...state.setup } : null);
+
         updated.push({
             lapTime,
             s1,
             s2,
             s3,
-            validFlags
+            validFlags,
+            setup: lapSetup ? { ...lapSetup } : null
         });
     }
     allLapHistories[carIndex] = updated;
@@ -75,29 +80,60 @@ function handleSessionHistory(data) {
     }));
 
     if (numLaps > 0) {
+        const bLapNum = data.m_bestLapTimeLapNum !== undefined ? data.m_bestLapTimeLapNum : data.bestLapTimeLapNum;
         const bS1Lap = data.m_bestSector1LapNum !== undefined ? data.m_bestSector1LapNum : data.bestSector1LapNum;
         const bS2Lap = data.m_bestSector2LapNum !== undefined ? data.m_bestSector2LapNum : data.bestSector2LapNum;
         const bS3Lap = data.m_bestSector3LapNum !== undefined ? data.m_bestSector3LapNum : data.bestSector3LapNum;
 
-        const bestS1 = bS1Lap ? getSectorTime(historyArray[bS1Lap - 1], 1) : 0;
-        const bestS2 = bS2Lap ? getSectorTime(historyArray[bS2Lap - 1], 2) : 0;
-        const bestS3 = bS3Lap ? getSectorTime(historyArray[bS3Lap - 1], 3) : 0;
+        // DIRECT BEST LAP TIME FROM GAME (NO ARBITRARY RECALCULATION)
+        let directBestLapMs = 0;
+        if (bLapNum && bLapNum > 0 && bLapNum <= historyArray.length) {
+            const bLapObj = historyArray[bLapNum - 1];
+            directBestLapMs = bLapObj ? (bLapObj.m_lapTimeInMS || bLapObj.lapTimeInMS || (bLapObj.m_lapTime ? Math.round(bLapObj.m_lapTime * 1000) : 0) || 0) : 0;
+        }
 
-        carDataTracker[carIndex].bestS1 = bestS1;
-        carDataTracker[carIndex].bestS2 = bestS2;
-        carDataTracker[carIndex].bestS3 = bestS3;
+        if (directBestLapMs > 0) {
+            carDataTracker[carIndex].bestLapMs = directBestLapMs;
+            carDataTracker[carIndex].bestLapNum = bLapNum;
+            if (carIndex === state.playerIndex) {
+                state.lap.bestMs = directBestLapMs;
+            }
+            if (state.session.sessionFastestLapMs === Infinity || directBestLapMs < state.session.sessionFastestLapMs) {
+                state.session.sessionFastestLapMs = directBestLapMs;
+                state.session.fastestLapCarIndex = carIndex;
+                state.session.sessionFastestDriver = (state.participants && state.participants[carIndex]) ? state.participants[carIndex] : `Car ${carIndex}`;
+            }
+        }
 
-        if (bestS1 > 0 && bestS1 < state.session.sessionBestS1) state.session.sessionBestS1 = bestS1;
-        if (bestS2 > 0 && bestS2 < state.session.sessionBestS2) state.session.sessionBestS2 = bestS2;
-        if (bestS3 > 0 && bestS3 < state.session.sessionBestS3) state.session.sessionBestS3 = bestS3;
+        const bestS1 = (bS1Lap && bS1Lap > 0 && bS1Lap <= historyArray.length) ? getSectorTime(historyArray[bS1Lap - 1], 1) : 0;
+        const bestS2 = (bS2Lap && bS2Lap > 0 && bS2Lap <= historyArray.length) ? getSectorTime(historyArray[bS2Lap - 1], 2) : 0;
+        const bestS3 = (bS3Lap && bS3Lap > 0 && bS3Lap <= historyArray.length) ? getSectorTime(historyArray[bS3Lap - 1], 3) : 0;
+
+        if (bestS1 > 0) carDataTracker[carIndex].bestS1 = bestS1;
+        if (bestS2 > 0) carDataTracker[carIndex].bestS2 = bestS2;
+        if (bestS3 > 0) carDataTracker[carIndex].bestS3 = bestS3;
+
+        if (bestS1 > 0 && (state.session.sessionBestS1 === Infinity || bestS1 < state.session.sessionBestS1)) state.session.sessionBestS1 = bestS1;
+        if (bestS2 > 0 && (state.session.sessionBestS2 === Infinity || bestS2 < state.session.sessionBestS2)) state.session.sessionBestS2 = bestS2;
+        if (bestS3 > 0 && (state.session.sessionBestS3 === Infinity || bestS3 < state.session.sessionBestS3)) state.session.sessionBestS3 = bestS3;
 
         const lastCompletedLapIdx = numLaps - 2;
-        if (lastCompletedLapIdx >= 0) {
+        if (lastCompletedLapIdx >= 0 && lastCompletedLapIdx < historyArray.length) {
+            const finalS1 = getSectorTime(historyArray[lastCompletedLapIdx], 1);
+            const finalS2 = getSectorTime(historyArray[lastCompletedLapIdx], 2);
             const finalS3 = getSectorTime(historyArray[lastCompletedLapIdx], 3);
-            carDataTracker[carIndex].s3 = finalS3;
-            if (carIndex === state.playerIndex) state.lap.s3 = finalS3;
+            if (finalS1 > 0) carDataTracker[carIndex].s1 = finalS1;
+            if (finalS2 > 0) carDataTracker[carIndex].s2 = finalS2;
+            if (finalS3 > 0) carDataTracker[carIndex].s3 = finalS3;
+            if (carIndex === state.playerIndex) {
+                if (finalS1 > 0) state.lap.s1 = finalS1;
+                if (finalS2 > 0) state.lap.s2 = finalS2;
+                if (finalS3 > 0) state.lap.s3 = finalS3;
+            }
         }
     }
+
+    saveActiveSessionSnapshot();
 }
 
 function handleLapData(data) {
@@ -112,7 +148,8 @@ function handleLapData(data) {
     let fastestLapIndex = -1;
 
     for (let i = 0; i < 22; i++) {
-        const lap = data.m_lapData ? data.m_lapData[i] : data.lapData[i];
+        const lap = data.m_lapData ? data.m_lapData[i] : (data.lapData ? data.lapData[i] : null);
+        if (!lap) continue;
 
         // Lap Transition Logic
         if (carPhysics[i].lapNum === 0) {
@@ -159,14 +196,24 @@ function handleLapData(data) {
                 const completedLapNum = (lap.m_currentLapNum > 1) ? (lap.m_currentLapNum - 1) : (carPhysics[i].lapNum || 1);
                 const lapIdx = Math.max(0, completedLapNum - 1);
                 const existing = allLapHistories[i][lapIdx] || {};
+                const completedLapSetup = (i === pIdx)
+                    ? { ...state.setup }
+                    : (gameState.carLapSetups?.[i]?.[completedLapNum] || existing.setup || null);
 
                 allLapHistories[i][lapIdx] = {
                     lapTime: lastTime || existing.lapTime || 0,
                     s1: finishedS1 || existing.s1 || 0,
                     s2: finishedS2 || existing.s2 || 0,
                     s3: finishedS3 || existing.s3 || (lastTime > 0 && finishedS1 > 0 && finishedS2 > 0 ? Math.max(0, lastTime - (finishedS1 + finishedS2)) : 0),
-                    validFlags: (carDataTracker[i].penalties === 0 && !carDataTracker[i].invalidLap) ? 0x01 : (existing.validFlags !== undefined ? existing.validFlags : 0x00)
+                    validFlags: (carDataTracker[i].penalties === 0 && !carDataTracker[i].invalidLap) ? 0x01 : (existing.validFlags !== undefined ? existing.validFlags : 0x00),
+                    setup: completedLapSetup ? { ...completedLapSetup } : (existing.setup || null)
                 };
+                if (i === pIdx && gameState.lapSetups) {
+                    gameState.lapSetups[completedLapNum] = { ...state.setup };
+                }
+                if (gameState.carLapSetups && gameState.carLapSetups[i]) {
+                    gameState.carLapSetups[i][completedLapNum] = completedLapSetup ? { ...completedLapSetup } : { ...state.setup };
+                }
                 gameState.lapHistoryDirty = true;
             }
 
@@ -183,9 +230,8 @@ function handleLapData(data) {
             const completesLap = lastTelemetryPt && (lastTelemetryPt.d || 0) >= (tLen * 0.75);
             const isCleanLap = hasMinPoints && startsNearLine && completesLap;
 
-            // --- MANUAL RECORDING CONTROL & SESSION FASTEST LAP STORAGE ---
-            const isRecording = gameState.isRecordingSessionTelemetry === true;
-            if (isRecording && validTelemetry.length >= 10) {
+            // --- PROCESS & STORE SESSION LAP WITH BRAKING TELEMETRY ---
+            if (validTelemetry.length >= 10) {
                 validTelemetry.sort((a, b) => (a.d !== undefined && b.d !== undefined) ? a.d - b.d : a.t - b.t);
 
                 // Ensure the starting point is cleanly anchored at d = 0, t = 0
@@ -208,48 +254,114 @@ function handleLapData(data) {
 
                 const isPlayer = (i === pIdx);
                 const dName = (state.participants && state.participants[i]) || carDataTracker[i].teamName || (isPlayer ? 'Player' : `Driver ${i}`);
-                const existingDriverBest = gameState.sessionDriverFastestLaps && gameState.sessionDriverFastestLaps[i];
+                const completedLapNum = (lap.m_currentLapNum > 1) ? (lap.m_currentLapNum - 1) : (carPhysics[i].lapNum || 1);
 
-                // Rule: If first lap since recording started -> STORE AT ALL COSTS!
-                // Rule: If subsequent lap from same driver -> COMPARE and REPLACE if faster!
+                // Extract corner braking zones for this lap
+                const lapBrakingZones = extractBrakingZones(validTelemetry);
+                const totalBrakingDist = lapBrakingZones.reduce((sum, z) => sum + z.brakingDist, 0);
+
+                const sessionLapEntry = {
+                    id: `lap_${i}_${completedLapNum}_${Date.now()}`,
+                    trackId: currentTrackId,
+                    carIndex: i,
+                    driverName: dName,
+                    teamName: carDataTracker[i].teamName || 'Unknown',
+                    teamColor: carDataTracker[i].teamColor || '#FFFFFF',
+                    lapTimeMs: lastTime || (validTelemetry[validTelemetry.length - 1]?.t || 0),
+                    lapNum: completedLapNum,
+                    s1: finishedS1,
+                    s2: finishedS2,
+                    s3: finishedS3,
+                    isValid: (carDataTracker[i].penalties === 0 && !carDataTracker[i].invalidLap),
+                    brakingZones: lapBrakingZones,
+                    totalBrakingDist: Math.round(totalBrakingDist),
+                    avgDecelG: lapBrakingZones.length > 0 ? Number((lapBrakingZones.reduce((s, z) => s + z.avgDecelG, 0) / lapBrakingZones.length).toFixed(2)) : 0,
+                    setup: (i === pIdx) ? { ...state.setup } : (gameState.carLapSetups?.[i]?.[completedLapNum] || null),
+                    telemetry: validTelemetry,
+                    timestamp: Date.now()
+                };
+
+                // Store in session laps collections (tracking every lap driven in the session)
+                if (!gameState.allSessionLaps) gameState.allSessionLaps = [];
+                if (!gameState.sessionLapsByDriver) gameState.sessionLapsByDriver = Array.from({ length: 22 }, () => []);
+                if (!gameState.sessionLapsByDriver[i]) gameState.sessionLapsByDriver[i] = [];
+
+                const dLapIdx = gameState.sessionLapsByDriver[i].findIndex(l => l.lapNum === completedLapNum);
+                if (dLapIdx >= 0) {
+                    gameState.sessionLapsByDriver[i][dLapIdx] = sessionLapEntry;
+                } else {
+                    gameState.sessionLapsByDriver[i].push(sessionLapEntry);
+                }
+
+                const allLapsIdx = gameState.allSessionLaps.findIndex(l => l.carIndex === i && l.lapNum === completedLapNum);
+                if (allLapsIdx >= 0) {
+                    gameState.allSessionLaps[allLapsIdx] = sessionLapEntry;
+                } else {
+                    gameState.allSessionLaps.push(sessionLapEntry);
+                }
+
+                // Persist session laps to session_telemetry on disk
+                if (currentTrackId !== -1) {
+                    try {
+                        if (!fs.existsSync(sessionTelemetryDir)) {
+                            fs.mkdirSync(sessionTelemetryDir, { recursive: true });
+                        }
+                        const allLapsFilePath = path.join(sessionTelemetryDir, `session_all_laps_track_${currentTrackId}.json`);
+                        const sessionLapsPayload = {
+                            sessionUID: gameState.currentSessionUID,
+                            sessionLinkIdentifier: gameState.currentSessionLinkIdentifier,
+                            trackId: currentTrackId,
+                            savedAt: Date.now(),
+                            laps: gameState.allSessionLaps
+                        };
+                        fs.writeFileSync(allLapsFilePath, JSON.stringify(sessionLapsPayload, null, 2), 'utf8');
+                    } catch (e) {
+                        console.error('⚠️ [Session All Laps Save Error]:', e.message);
+                    }
+                }
+
+                // Broadcast completed lap event with braking summary to all WebSockets
+                try {
+                    wsServer.broadcast(JSON.stringify({
+                        type: 'sessionLapCompleted',
+                        carIndex: i,
+                        data: {
+                            id: sessionLapEntry.id,
+                            carIndex: i,
+                            driverName: dName,
+                            teamName: sessionLapEntry.teamName,
+                            teamColor: sessionLapEntry.teamColor,
+                            lapTimeMs: sessionLapEntry.lapTimeMs,
+                            lapNum: completedLapNum,
+                            s1: finishedS1,
+                            s2: finishedS2,
+                            s3: finishedS3,
+                            isValid: sessionLapEntry.isValid,
+                            brakingZonesCount: lapBrakingZones.length,
+                            totalBrakingDist: sessionLapEntry.totalBrakingDist,
+                            avgDecelG: sessionLapEntry.avgDecelG,
+                            timestamp: sessionLapEntry.timestamp
+                        }
+                    }));
+                } catch (e) { }
+
+                // --- SESSION FASTEST LAP STORAGE (DRIVER FASTEST) ---
+                const existingDriverBest = gameState.sessionDriverFastestLaps && gameState.sessionDriverFastestLaps[i];
                 const isFirstLap = !existingDriverBest;
                 const isFasterTime = lastTime > 0 && (!existingDriverBest || existingDriverBest.lapTimeMs === 0 || lastTime < existingDriverBest.lapTimeMs);
                 const isFullerLap = existingDriverBest && (existingDriverBest.lapTimeMs === 0) && (validTelemetry.length > (existingDriverBest.telemetry?.length || 0) * 1.3);
 
                 if (isFirstLap || isFasterTime || isFullerLap) {
                     if (!gameState.sessionDriverFastestLaps) gameState.sessionDriverFastestLaps = Array.from({ length: 22 }, () => null);
+                    gameState.sessionDriverFastestLaps[i] = sessionLapEntry;
 
-                    const completedLapNum = (lap.m_currentLapNum > 1) ? (lap.m_currentLapNum - 1) : (carPhysics[i].lapNum || 1);
-                    const lapEntry = {
-                        carIndex: i,
-                        driverName: dName,
-                        teamName: carDataTracker[i].teamName || 'Unknown',
-                        teamColor: carDataTracker[i].teamColor || '#FFFFFF',
-                        lapTimeMs: lastTime || (validTelemetry[validTelemetry.length - 1]?.t || 0),
-                        lapNum: completedLapNum,
-                        s1: finishedS1,
-                        s2: finishedS2,
-                        s3: finishedS3,
-                        telemetry: validTelemetry,
-                        timestamp: Date.now()
-                    };
-
-                    gameState.sessionDriverFastestLaps[i] = lapEntry;
-
-                    // Persist driver lap to session_telemetry directory on disk at all costs
                     if (currentTrackId !== -1) {
                         try {
-                            if (!fs.existsSync(sessionTelemetryDir)) {
-                                fs.mkdirSync(sessionTelemetryDir, { recursive: true });
-                            }
                             const sessionFilePath = path.join(sessionTelemetryDir, `fastest_car_${i}_track_${currentTrackId}.json`);
-                            fs.writeFileSync(sessionFilePath, JSON.stringify(lapEntry, null, 2), 'utf8');
-                        } catch (e) {
-                            console.error(`⚠️ [Telemetry Disk Save Error] Car ${i}:`, e.message);
-                        }
+                            fs.writeFileSync(sessionFilePath, JSON.stringify(sessionLapEntry, null, 2), 'utf8');
+                        } catch (e) { }
                     }
 
-                    // Broadcast live update to all connected WebSocket clients
                     try {
                         wsServer.broadcast(JSON.stringify({
                             type: 'driverFastestLapUpdate',
@@ -259,7 +371,7 @@ function handleLapData(data) {
                                 driverName: dName,
                                 teamName: carDataTracker[i].teamName || 'Unknown',
                                 teamColor: carDataTracker[i].teamColor || '#FFFFFF',
-                                lapTimeMs: lapEntry.lapTimeMs,
+                                lapTimeMs: sessionLapEntry.lapTimeMs,
                                 lapNum: completedLapNum,
                                 s1: finishedS1,
                                 s2: finishedS2,
@@ -270,7 +382,7 @@ function handleLapData(data) {
                         }));
                     } catch (e) { }
 
-                    console.log(`🔴⏱️ [Session Recording] Car ${i} (${dName}) - Lap ${lapEntry.lapTimeMs}ms (${validTelemetry.length} pts, ${isFirstLap ? 'FIRST LAP STORED AT ALL COSTS' : 'NEW FASTEST LAP REPLACED'})`);
+                    console.log(`⏱️ Car ${i} (${dName}) - Lap ${completedLapNum}: ${sessionLapEntry.lapTimeMs}ms (${validTelemetry.length} pts, Braking: ${totalBrakingDist}m across ${lapBrakingZones.length} zones)`);
                 }
             }
 
@@ -312,14 +424,16 @@ function handleLapData(data) {
                         console.log(`💾 PLAYER TELEMETRY SAVED! Track ${currentTrackId}: ${driverName} - ${lastTime}ms (${validTelemetry.length} pts)`);
                     }
 
-                    // Update sector lines in track map using the official sector times
-                    syncTrackLinesForTrack(currentTrackId, false, wsServer.broadcast, currentGameYear);
-                } else {
+                    // Update sector lines in track map using official sector times only if not finalized
+                    if (!isTrackFinalized(currentTrackId)) {
+                        syncTrackLinesForTrack(currentTrackId, false, wsServer.broadcast, currentGameYear);
+                    }
+                } else if (!isTrackFinalized(currentTrackId)) {
                     lockOfficialSectorLinesFromTelemetry(i, finishedS1, finishedS2, validTelemetry, wsServer.broadcast);
                 }
             }
 
-            if (!gameState.isTrackMapped && currentTrackId !== -1 && state.trackPoints && state.trackPoints.length >= 50 && i === pIdx) {
+            if (!gameState.isTrackMapped && currentTrackId !== -1 && state.trackPoints && state.trackPoints.length >= 50 && i === pIdx && !isTrackFinalized(currentTrackId)) {
                 completeLiveTrackMapping();
             }
 
@@ -536,18 +650,11 @@ function handleLapData(data) {
             }
         }
 
-        let calculatedBestMs = Infinity;
-        if (allLapHistories[i] && allLapHistories[i].length > 0) {
-            allLapHistories[i].forEach(lapData => {
-                const time = typeof lapData === 'object' ? lapData.lapTime : lapData;
-                if (time > 0 && time < calculatedBestMs) calculatedBestMs = time;
-            });
+        // Preserve official best lap time from PacketSessionHistoryData (or PacketLapData if present)
+        const currentBestMs = lap.m_bestLapTimeInMS || (lap.m_bestLapTime ? Math.round(lap.m_bestLapTime * 1000) : 0) || 0;
+        if (currentBestMs > 0 && (carDataTracker[i].bestLapMs === 0 || currentBestMs < carDataTracker[i].bestLapMs)) {
+            carDataTracker[i].bestLapMs = currentBestMs;
         }
-
-        const currentBestMs = lap.m_bestLapTimeInMS || (lap.m_bestLapTime * 1000) || 0;
-        const finalBestMs = calculatedBestMs !== Infinity ? calculatedBestMs : currentBestMs;
-
-        if (finalBestMs > 0) carDataTracker[i].bestLapMs = finalBestMs;
 
         if (carDataTracker[i].bestLapMs > 0 && carDataTracker[i].bestLapMs < sessionFastestLapMs) {
             sessionFastestLapMs = carDataTracker[i].bestLapMs;
@@ -557,6 +664,7 @@ function handleLapData(data) {
         carDataTracker[i].pos = lap.m_carPosition;
         carDataTracker[i].lapNum = lap.m_currentLapNum;
         carDataTracker[i].pitStatus = lap.m_pitStatus;
+        carDataTracker[i].numPitStops = lap.m_numPitStops !== undefined ? lap.m_numPitStops : (carDataTracker[i].numPitStops || 0);
         carDataTracker[i].driverStatus = lap.m_resultStatus;
         carDataTracker[i].penalties = lap.m_penalties || 0;
         carDataTracker[i].warnings = lap.m_totalWarnings || 0;
@@ -576,7 +684,8 @@ function handleLapData(data) {
             state.lap.pos = lap.m_carPosition;
             state.lap.lapNum = lap.m_currentLapNum;
             state.lap.pitStatus = pitMap[lap.m_pitStatus] || 'ON TRACK';
-            state.lap.bestMs = finalBestMs;
+            state.lap.numPitStops = carDataTracker[pIdx].numPitStops || 0;
+            state.lap.bestMs = carDataTracker[pIdx].bestLapMs || 0;
 
             if (liveS1 > 0) state.lap.s1 = liveS1;
             if (liveS2 > 0) state.lap.s2 = liveS2;

@@ -77,6 +77,13 @@
                 </svg>
                 <span style="color:#00f0ff;">GHOST COMPARE</span>
             </a>
+            <a href="/braking-comparison.html" class="rbr-tool-btn" style="text-decoration:none; color:inherit; background:linear-gradient(135deg, rgba(255,30,0,0.18), rgba(255,119,0,0.18)); border-color:rgba(255,30,0,0.45);" title="Open Session Braking Comparison & Multi-Lap Analysis">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="#ff1e00">
+                    <circle cx="12" cy="12" r="9" stroke="#ff1e00" stroke-width="2" fill="none"/>
+                    <circle cx="12" cy="12" r="4" fill="#ff1e00"/>
+                </svg>
+                <span style="color:#ff3b30; font-weight:800;">BRAKE COMPARE</span>
+            </a>
             <div class="rbr-kpi-pill" title="ERS Battery State of Charge"
                 onclick="switchTab('tab-ers-fuel', document.getElementById('nav-btn-ers-fuel'))"
                 style="cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; background: rgba(0,240,255,0.08); border: 1px solid rgba(0,240,255,0.25); font-family: 'Roboto Mono', monospace; font-size: 0.72rem; font-weight: 700;">
@@ -113,7 +120,7 @@
     <div class="hero-kpi-bar" id="hero-kpi-bar">
         <div class="hero-kpi-card">
             <div class="kpi-lbl"><span>TRACK</span><span id="weather-icon-mini"></span></div>
-            <div class="kpi-val" id="track-name">LOADING...</div>
+            <div class="kpi-val" id="track-name">NO ACTIVE TRACK</div>
             <div class="kpi-sub" id="weather">-- °C</div>
         </div>
 
@@ -240,6 +247,13 @@
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
             </svg>
             <span class="nav-label" style="color:#00f0ff; font-weight:700;">Ghost Compare</span>
+        </a>
+        <a href="/braking-comparison.html" class="nav-btn" style="text-decoration:none; color:inherit; border-color:rgba(255,30,0,0.35); background:rgba(255,30,0,0.06);" title="Session Braking Distance & Multi-Lap Analysis">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="#ff1e00">
+                <circle cx="12" cy="12" r="9" stroke="#ff1e00" stroke-width="2" fill="none"/>
+                <circle cx="12" cy="12" r="4" fill="#ff1e00"/>
+            </svg>
+            <span class="nav-label" style="color:#ff3b30; font-weight:700;">Brake Analysis</span>
         </a>
     </div>
 
@@ -618,7 +632,7 @@
                     <div style="display: flex; align-items: center; gap: 10px">
                         <span>Track Position</span>
                         <select id="track-selector" style="
-                  display: none;
+                  display: block;
                   background: var(--f1-dark);
                   color: #fff;
                   border: 1px solid var(--f1-border);
@@ -628,7 +642,7 @@
                   font-size: 0.8rem;
                   cursor: pointer;
                 " onchange="loadOfflineTrack(this.value)">
-                            <option value="">Load Track...</option>
+                            <option value="-1">Load Track...</option>
                         </select>
                     </div>
 
@@ -650,11 +664,11 @@
 
                     <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto;">
                         <button id="reg-mode-btn" onclick="toggleRegulationMode()" style="
-                                background: rgba(0, 240, 255, 0.12);
-                                border: 1px solid rgba(0, 240, 255, 0.35);
-                                color: #00f0ff;
+                                background: rgba(0, 255, 102, 0.12);
+                                border: 1px solid rgba(0, 255, 102, 0.35);
+                                color: #00ff66;
                                 height: 32px;
-                                padding: 0 8px;
+                                padding: 0 10px;
                                 border-radius: 8px;
                                 cursor: pointer;
                                 display: flex;
@@ -667,13 +681,14 @@
                                 backdrop-filter: blur(5px);
                                 z-index: 10;
                                 transition: all 0.2s ease;
-                            " onmouseover="this.style.background='rgba(0, 240, 255, 0.22)'"
-                            onmouseout="this.style.background='rgba(0, 240, 255, 0.12)'"
-                            title="Click to toggle between F1 26 Straight Mode and F1 25 DRS zones">
-                            <span id="reg-mode-dot" style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#00f0ff; box-shadow:0 0 8px #00f0ff;"></span>
-                            <span id="reg-mode-text">F1 26 STR</span>
+                            " onmouseover="this.style.background='rgba(0, 255, 102, 0.22)'"
+                            onmouseout="this.style.background='rgba(0, 255, 102, 0.12)'"
+                            title="Click to toggle between F1 25 DRS zones and F1 26 Straight Mode">
+                            <span id="reg-mode-dot" style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#00ff66; box-shadow:0 0 8px #00ff66;"></span>
+                            <span id="reg-mode-text">F1 25 DRS</span>
                         </button>
                         <button id="syncbttn" onclick="syncTrackLines()" style="
+                                display: none;
                                 background: rgba(255, 255, 255, 0.1);
                                 border: 1px solid rgba(255, 255, 255, 0.15);
                                 color: white;
@@ -697,6 +712,7 @@
                             </svg>
                         </button>
                         <button id="finalizebttn" onclick="toggleFinalizeTrack()" style="
+                                display: none;
                                 background: rgba(255, 255, 255, 0.1);
                                 border: 1px solid rgba(255, 255, 255, 0.15);
                                 color: white;
@@ -2395,7 +2411,7 @@
     <div class="toast-container" id="toast-container"></div>
 
     <!-- ══════════ JAVASCRIPT LOGIC ══════════ -->
-    <script src="js/dashboard.js?v=2.1"></script>
+    <script src="js/dashboard.js?v=2.3"></script>
 
     <!-- ══════════ SCREEN WAKE LOCK (KEEP MOBILE AWAKE) ══════════ -->
     <script>

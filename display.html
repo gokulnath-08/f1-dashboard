@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>F1 Steering Wheel Telemetry Cockpit & API Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --font-telemetry: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-display: 'Chakra Petch', monospace;
+      --font-mono: 'JetBrains Mono', monospace;
+      --oled-black: #050608;
+      --led-glow-green: rgba(0, 255, 68, 0.85);
+      --led-glow-amber: rgba(255, 175, 0, 0.9);
+      --led-glow-red: rgba(255, 30, 30, 0.95);
+      --led-glow-blue: rgba(0, 180, 255, 0.95);
+      --accent-red: #e10600;
+      --accent-cyan: #00d2be;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      background-color: #030304;
+      color: #ffffff;
+      font-family: var(--font-telemetry);
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    /* =========================================================================
+       AUTO-LANDSCAPE ENGINE (WORKS EVEN WHEN ANDROID AUTO-ROTATE IS OFF)
+       ========================================================================= */
+    #cockpit-viewport {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: env(safe-area-inset-top, 4px) env(safe-area-inset-right, 6px) env(safe-area-inset-bottom, 4px) env(safe-area-inset-left, 6px);
+    }
+
+    /* If device is held in portrait, automatically rotate 90° clockwise into full landscape */
+    @media (orientation: portrait) {
+      body {
+        position: fixed;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+      #cockpit-viewport {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 100vh;
+        width: 100dvh;
+        height: 100vw;
+        height: 100dvw;
+        transform: translate(-50%, -50%) rotate(90deg);
+        transform-origin: center center;
+      }
+    }
+
+    /* Responsive Cockpit Chassis */
+    .carbon-chassis {
+      background: radial-gradient(circle at 50% 25%, #22252c 0%, #131418 65%, #0a0b0d 100%);
+      position: relative;
+      box-shadow: 
+        inset 0 2px 4px rgba(255,255,255,0.18),
+        inset 0 -8px 24px rgba(0,0,0,0.9),
+        0 15px 40px rgba(0,0,0,0.85);
+      border: 2px solid #282c35;
+      width: 100%;
+      max-width: min(1080px, 99vw);
+      height: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-radius: clamp(12px, 2.2vw, 22px);
+      padding: clamp(5px, 1vh, 12px);
+    }
+
+    .carbon-texture {
+      background-image: 
+        linear-gradient(45deg, #18191d 25%, transparent 25%), 
+        linear-gradient(-45deg, #18191d 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #18191d 75%), 
+        linear-gradient(-45deg, transparent 75%, #18191d 75%);
+      background-size: 8px 8px;
+      background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+    }
+
+    /* Industrial Hex Screws */
+    .hex-screw {
+      width: clamp(9px, 1.4vw, 15px);
+      height: clamp(9px, 1.4vw, 15px);
+      background: radial-gradient(circle, #3a3d45 40%, #1a1b20 85%, #0d0e12 100%);
+      border-radius: 50%;
+      position: absolute;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.3), 0 2px 5px rgba(0,0,0,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+    .hex-screw::after {
+      content: '';
+      width: 44%;
+      height: 44%;
+      background: #111215;
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      box-shadow: inset 0 0 2px rgba(0,0,0,1);
+    }
+
+    .led-housing {
+      background: #090a0d;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.9), 0 1px 1px rgba(255,255,255,0.08);
+      border: 1px solid #1f2129;
+    }
+
+    .rev-led {
+      width: clamp(10px, 1.7vw, 19px);
+      height: clamp(10px, 1.7vw, 19px);
+      border-radius: 50%;
+      background: #181b22;
+      position: relative;
+      transition: background 0.04s ease, box-shadow 0.04s ease;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.85);
+      border: 1.5px solid #282c37;
+    }
+
+    .rev-led::after {
+      content: '';
+      position: absolute;
+      top: 15%;
+      left: 20%;
+      width: 32%;
+      height: 25%;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.4);
+      filter: blur(0.4px);
+      pointer-events: none;
+    }
+
+    /* Active LED States */
+    .led-green.active {
+      background: #19ff48;
+      border-color: #8cffaa;
+      box-shadow: 0 0 14px 3px var(--led-glow-green), inset 0 -2px 4px #008f23;
+    }
+    .led-amber.active {
+      background: #ffaa00;
+      border-color: #ffe082;
+      box-shadow: 0 0 14px 4px var(--led-glow-amber), inset 0 -2px 4px #995c00;
+    }
+    .led-red.active {
+      background: #ff1c1c;
+      border-color: #ff8585;
+      box-shadow: 0 0 16px 4px var(--led-glow-red), inset 0 -2px 4px #8f0000;
+    }
+    .led-blue.active {
+      background: #00bfff;
+      border-color: #a6ecff;
+      box-shadow: 0 0 20px 6px var(--led-glow-blue), inset 0 -2px 4px #005f9e;
+    }
+
+    /* OLED Screen with Non-Colliding 3-Column Architecture */
+    .oled-screen {
+      background-color: var(--oled-black);
+      border: 2px solid #1c1e24;
+      box-shadow: 
+        inset 0 0 30px rgba(0,0,0,0.95),
+        0 0 0 1px rgba(255,255,255,0.05);
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      padding: clamp(5px, 1.4vh, 14px) clamp(8px, 1.8vw, 20px);
+      overflow: hidden;
+    }
+
+    .glass-glare {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, 
+        rgba(255,255,255,0.07) 0%, 
+        rgba(255,255,255,0.02) 28%, 
+        transparent 35%, 
+        rgba(255,255,255,0.015) 55%, 
+        transparent 70%);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .telemetry-divider {
+      background: linear-gradient(to right, transparent, #282e3b 10%, #282e3b 90%, transparent);
+      height: 1.5px;
+      width: 100%;
+    }
+
+    /* RPM segment blocks */
+    .rpm-segment {
+      flex: 1;
+      height: clamp(6px, 1.5vh, 12px);
+      background-color: #121924;
+      border-radius: 2px;
+      margin: 0 1px;
+      transition: background-color 0.04s ease;
+    }
+    .rpm-segment.active {
+      background-color: #38bdf8;
+      box-shadow: 0 0 6px #0284c7;
+    }
+
+    /* Typography Clamps for Edge-to-Edge Cockpit */
+    .gear-font {
+      font-size: clamp(54px, 18vh, 135px);
+      line-height: 0.86;
+    }
+    .metric-big {
+      font-size: clamp(22px, 5.6vh, 52px);
+      line-height: 1;
+    }
+    .delta-big {
+      font-size: clamp(20px, 4.8vh, 46px);
+      line-height: 1;
+    }
+    .sub-metric {
+      font-size: clamp(14px, 3.4vh, 30px);
+      line-height: 1;
+    }
+    .capsule-label {
+      font-size: clamp(11px, 2.6vh, 22px);
+      line-height: 1;
+    }
+    .label-tiny {
+      font-size: clamp(9px, 1.8vh, 13px);
+      letter-spacing: 0.12em;
+    }
+
+    /* Sliding API Inspector Drawer */
+    #api-drawer {
+      transform: translateX(100%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 60;
+    }
+    #api-drawer.open {
+      transform: translateX(0);
+    }
+
+    #api-drawer-backdrop {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 55;
+    }
+    #api-drawer-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #2a3140;
+      border-radius: 3px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #3b4559;
+    }
+
+    @keyframes pulse-live {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    .status-dot-live {
+      animation: pulse-live 1.2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-[#030304] select-none">
+
+  <!-- Toast Notification System -->
+  <div id="toast-container" class="fixed top-3 left-1/2 -translate-x-1/2 z-[70] pointer-events-none flex flex-col items-center gap-2 transition-all"></div>
+
+  <!-- API Inspector Sliding Drawer Backdrop -->
+  <div id="api-drawer-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+  <!-- Main Viewport (Auto-Landscape Clamping) -->
+  <div id="cockpit-viewport">
+
+    <!-- API Inspector Sliding Drawer (Nested inside viewport for clean rotation mapping) -->
+    <aside id="api-drawer" class="absolute top-0 right-0 bottom-0 w-full sm:w-[460px] max-w-[100vw] bg-[#0c0e14]/95 backdrop-blur-xl border-l border-[#242b3d] shadow-2xl flex flex-col">
+      <!-- Drawer Header -->
+      <div class="p-3 border-b border-[#1f2535] flex items-center justify-between bg-[#121622]/80">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-3 h-3 rounded-full bg-emerald-400 status-dot-live"></div>
+          <div>
+            <h2 class="text-sm font-bold tracking-wider text-white uppercase flex items-center gap-2">
+              Telemetry API Engine
+              <span id="drawer-hz-pill" class="px-1.5 py-0.5 text-[10px] bg-sky-950/80 text-sky-300 border border-sky-700/50 rounded font-mono font-bold">LIVE</span>
+            </h2>
+            <p class="text-[11px] text-neutral-400 font-mono">Always API Mode &bull; REST &bull; WebSocket Live Feed</p>
+          </div>
+        </div>
+        <button id="btn-close-drawer" class="p-1.5 text-neutral-400 hover:text-white bg-neutral-800/60 hover:bg-neutral-800 rounded-lg transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Drawer Body -->
+      <div class="flex-1 overflow-y-auto custom-scroll p-3 space-y-3 text-xs">
+        
+        <!-- Stream Controls & Status -->
+        <div class="bg-[#121620] border border-[#202738] rounded-xl p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-neutral-400 font-bold uppercase tracking-wider text-[11px]">Stream Status</span>
+            <span id="api-connection-status" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-700/50">
+              API CONNECTING...
+            </span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center text-[11px] font-mono">
+            <div class="bg-[#0b0d13] p-2 rounded-lg border border-[#1b212f]">
+              <div class="text-neutral-400 text-[10px]">CLIENT RATE</div>
+              <div id="drawer-stat-hz" class="text-white font-bold text-sm">-- Hz</div>
+            </div>
+            <div class="bg-[#0b0d13] p-2 rounded-lg border border-[#1b212f]">
+              <div class="text-neutral-400 text-[10px]">PACKETS</div>
+              <div id="drawer-stat-packets" class="text-white font-bold text-sm">0</div>
+            </div>
+            <div class="bg-[#0b0d13] p-2 rounded-lg border border-[#1b212f]">
+              <div class="text-neutral-400 text-[10px]">LATENCY</div>
+              <div id="drawer-stat-latency" class="text-emerald-400 font-bold text-sm">&lt;1ms</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Telemetry Digital Metric Cards -->
+        <div class="bg-[#121620] border border-[#202738] rounded-xl p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-neutral-400 font-bold uppercase tracking-wider text-[11px]">Key Metrics Monitor</span>
+            <span class="text-[10px] text-neutral-500 font-mono">16 Standardized Fields</span>
+          </div>
+          <div class="grid grid-cols-4 gap-2 text-center font-mono">
+            <div class="bg-[#0a0c11] p-1.5 rounded border border-[#1d2333]">
+              <div class="text-neutral-500 text-[9px] uppercase">GEAR</div>
+              <div id="mon-gear" class="text-white font-bold text-base">-</div>
+            </div>
+            <div class="bg-[#0a0c11] p-1.5 rounded border border-[#1d2333]">
+              <div class="text-neutral-500 text-[9px] uppercase">SPEED</div>
+              <div id="mon-speed" class="text-white font-bold text-base">0</div>
+            </div>
+            <div class="bg-[#0a0c11] p-1.5 rounded border border-[#1d2333]">
+              <div class="text-neutral-500 text-[9px] uppercase">RPM</div>
+              <div id="mon-rpm" class="text-white font-bold text-base">0</div>
+            </div>
+            <div class="bg-[#0a0c11] p-1.5 rounded border border-[#1d2333]">
+              <div class="text-neutral-500 text-[9px] uppercase">DELTA</div>
+              <div id="mon-delta" class="text-[#00ff44] font-bold text-base">0.000</div>
+            </div>
+            <div class="bg-[#0a0c11] p-1.5 rounded border border-[#1d2333]">
+              <div class="text-neutral-500 text-[9px] uppercase">ERS %</div>
+              <div id="mon-ers" class="text-amber-400 font-bold text-base">0%</div>
+            </div>
+            <div class="bg-[#0a0c11] p-1.5 rounded border border-[#1d2333]">
+              <div class="text-neutral-500 text-[9px] uppercase">FUEL %</div>
+              <div id="mon-fuel" class="text-emerald-400 font-bold text-base">0%</div>
+            </div>
+            <div class="bg-[#0a0c11] p-1.5 rounded border border-[#1d2333]">
+              <div class="text-neutral-500 text-[9px] uppercase">LAP</div>
+              <div id="mon-lap" class="text-white font-bold text-base">1/1</div>
+            </div>
+            <div class="bg-[#0a0c11] p-1.5 rounded border border-[#1d2333]">
+              <div class="text-neutral-500 text-[9px] uppercase">BEST</div>
+              <div id="mon-best" class="text-sky-300 font-bold text-xs truncate pt-1">--:--.---</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- JSON Payload Viewer & One-Click Copy -->
+        <div class="bg-[#121620] border border-[#202738] rounded-xl p-3 flex flex-col">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-neutral-400 font-bold uppercase tracking-wider text-[11px]">Live JSON Payload</span>
+            <div class="flex items-center space-x-2">
+              <button id="btn-freeze-stream" class="px-2 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded font-medium text-[11px] transition-colors">
+                Freeze
+              </button>
+              <button id="btn-copy-json" class="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded font-bold text-[11px] flex items-center gap-1 shadow-sm transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                <span>Copy JSON</span>
+              </button>
+            </div>
+          </div>
+          <pre id="json-viewer" class="bg-[#07090e] border border-[#1a1f2c] rounded-lg p-3 text-[11px] font-mono text-emerald-400 max-h-[190px] overflow-auto custom-scroll leading-relaxed select-text">Connecting to Live Telemetry API...</pre>
+        </div>
+
+        <!-- SimHub & Remote REST Endpoint Connector -->
+        <div class="bg-[#121620] border border-[#202738] rounded-xl p-3 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-neutral-400 font-bold uppercase tracking-wider text-[11px]">SimHub & Remote Endpoint</span>
+            <span class="text-[10px] text-sky-400 font-mono">100% API Mode</span>
+          </div>
+
+          <div>
+            <label class="text-[10px] text-neutral-400 uppercase font-bold block mb-1">Custom SimHub / Remote REST URL</label>
+            <div class="flex gap-1.5">
+              <input type="text" id="input-simhub-url" placeholder="http://192.168.1.100:8888/api/telemetry" class="flex-1 bg-[#0a0c11] border border-[#242c3d] rounded-lg px-2.5 py-1 text-white font-mono text-xs focus:outline-none focus:border-sky-500">
+              <button id="btn-save-simhub-url" class="px-3 py-1 bg-neutral-800 hover:bg-neutral-700 text-sky-400 border border-neutral-700 rounded-lg text-xs font-bold">
+                Connect
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Action Trigger Buttons -->
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button id="btn-test-rest-get" class="py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-neutral-200 font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors">
+              <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>GET Live API</span>
+            </button>
+            <button id="btn-test-rest-post" class="py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-neutral-200 font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors">
+              <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              <span>POST Test Data</span>
+            </button>
+          </div>
+
+          <div id="rest-feedback-box" class="hidden p-2 rounded-lg bg-[#07090e] border border-[#1b212f] text-[10px] font-mono text-neutral-300"></div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- F1 Carbon Steering Wheel Cockpit Body (Header Removed, Full Height) -->
+    <main class="carbon-chassis carbon-texture shadow-2xl relative">
+      <!-- Precision Hex Bolts in Bezels -->
+      <div class="hex-screw top-1.5 sm:top-2 left-1.5 sm:left-2"></div>
+      <div class="hex-screw top-1.5 sm:top-2 right-1.5 sm:right-2"></div>
+      <div class="hex-screw bottom-1.5 sm:bottom-2 left-1.5 sm:left-2"></div>
+      <div class="hex-screw bottom-1.5 sm:bottom-2 right-1.5 sm:right-2"></div>
+
+      <!-- Top Faceplate Bar: Flanking Controls & Rev Lights (Zero Layout Overhead) -->
+      <div class="w-full flex items-center justify-between px-1.5 sm:px-2 pt-0.5 pb-1 z-30">
+        
+        <!-- Left Micro-Actions: API Engine & Shift Sound Toggle -->
+        <div class="flex items-center space-x-1 sm:space-x-1.5">
+          <button id="btn-open-inspector" class="flex items-center space-x-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-[#10131a]/85 hover:bg-[#181d28] border border-[#262c3d] hover:border-emerald-500/60 rounded-lg shadow-sm backdrop-blur transition-all" title="Open Telemetry API Engine Inspector">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 status-dot-live"></span>
+            <span id="top-api-badge" class="text-[10px] sm:text-[11px] font-mono font-bold tracking-wider text-emerald-400">API</span>
+            <span id="top-hz-badge" class="text-[9px] sm:text-[10px] font-mono text-neutral-400">--Hz</span>
+          </button>
+          <button id="btn-audio-toggle" class="p-1 sm:p-1.5 bg-[#10131a]/85 hover:bg-[#181d28] border border-[#262c3d] rounded-lg shadow-sm backdrop-blur text-neutral-300 transition-all" title="Toggle Shift Audio Beep">
+            <svg id="icon-sound-off" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+            <svg id="icon-sound-on" class="w-3.5 h-3.5 hidden text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+          </button>
+        </div>
+
+        <!-- Center: Authentic 12 Rev Lights Cluster -->
+        <div class="led-housing px-2 sm:px-4 py-0.5 sm:py-1 rounded-full flex items-center gap-1 sm:gap-1.5 shadow-inner">
+          <!-- 4 Green Shift Lights -->
+          <div id="led-0" class="rev-led led-green"></div>
+          <div id="led-1" class="rev-led led-green"></div>
+          <div id="led-2" class="rev-led led-green"></div>
+          <div id="led-3" class="rev-led led-green"></div>
+          <!-- 2 Amber/Yellow Shift Lights -->
+          <div id="led-4" class="rev-led led-amber"></div>
+          <div id="led-5" class="rev-led led-amber"></div>
+          <!-- 6 Red Shift Lights -->
+          <div id="led-6" class="rev-led led-red"></div>
+          <div id="led-7" class="rev-led led-red"></div>
+          <div id="led-8" class="rev-led led-red"></div>
+          <div id="led-9" class="rev-led led-red"></div>
+          <div id="led-10" class="rev-led led-red"></div>
+          <div id="led-11" class="rev-led led-red"></div>
+        </div>
+
+        <!-- Right Micro-Actions: Glare & Fullscreen -->
+        <div class="flex items-center space-x-1 sm:space-x-1.5">
+          <button id="btn-glare" class="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-[#10131a]/85 hover:bg-[#181d28] border border-[#262c3d] rounded-lg shadow-sm backdrop-blur text-[10px] sm:text-[11px] font-mono text-neutral-300 font-bold transition-all" title="Toggle Glass Glare">
+            GLARE
+          </button>
+          <button id="btn-fullscreen" class="p-1 sm:p-1.5 bg-[#10131a]/85 hover:bg-[#181d28] border border-[#262c3d] hover:border-sky-500/60 rounded-lg shadow-sm backdrop-blur text-neutral-300 transition-all" title="Toggle Fullscreen (F)">
+            <svg id="icon-fs-enter" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+            <svg id="icon-fs-exit" class="w-3.5 h-3.5 hidden text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l5 5m0 0H5m4 0V5m10 14l-5-5m0 0h4m-4 0v4M4 20l5-5m0 0H5m4 0v4m10-14l-5 5m0 0h4m-4 0V5"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- OLED Cockpit Display Screen: 3-Column Parallel Architecture -->
+      <div class="oled-screen rounded-xl sm:rounded-2xl relative grid grid-cols-3 gap-2 sm:gap-4 h-full">
+        <div id="screen-glare" class="glass-glare"></div>
+
+        <!-- LEFT COLUMN: LAP & DELTA (TOP) + ERS CAPSULE (BOTTOM) -->
+        <div class="flex flex-col justify-between h-full z-20 py-0.5">
+          <div class="space-y-0.5">
+            <div class="text-neutral-400 label-tiny font-bold uppercase">LAP</div>
+            <div class="text-white metric-big font-extrabold tracking-tight">
+              <span id="lap-current">1</span><span class="text-neutral-500 font-semibold text-[0.7em]"> / </span><span id="lap-total" class="text-neutral-300">1</span>
+            </div>
+            <div class="telemetry-divider my-1"></div>
+            <div id="lap-delta" class="text-[#00ff44] delta-big font-extrabold tracking-tight drop-shadow-[0_0_10px_rgba(0,255,68,0.5)]">
+              -0.000
+            </div>
+          </div>
+
+          <div class="space-y-0.5 pt-1 border-t border-[#1a1e28]">
+            <div class="flex items-center justify-between">
+              <span class="text-white capsule-label font-extrabold tracking-wider">ERS</span>
+              <span id="ers-val-top" class="text-neutral-300 label-tiny font-bold font-mono">100%</span>
+            </div>
+            <div class="w-full bg-[#1b2029] h-2.5 sm:h-3.5 rounded-full p-0.5 overflow-hidden flex items-center">
+              <div id="ers-progress-bar" class="h-full bg-[#ffd500] rounded-full transition-all duration-75 shadow-[0_0_8px_rgba(255,213,0,0.4)]" style="width: 100%;"></div>
+            </div>
+            <div class="text-right">
+              <span id="ers-val-bottom" class="text-white capsule-label font-bold font-mono">100%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CENTER COLUMN: GEAR INDICATOR (TOP) + RPM & BARS (BOTTOM) -->
+        <div class="flex flex-col items-center justify-between h-full z-20 py-0.5">
+          <div class="flex-1 flex items-center justify-center">
+            <div id="gear-indicator" class="text-white gear-font font-extrabold tracking-tighter drop-shadow-md select-none">
+              N
+            </div>
+          </div>
+
+          <div class="flex flex-col items-center justify-end w-full pt-1 border-t border-[#1a1e28]">
+            <span class="text-neutral-400 label-tiny font-bold uppercase">RPM</span>
+            <span id="rpm-digits" class="text-white sub-metric font-extrabold tracking-normal font-mono my-0.5">0</span>
+            <div class="w-full max-w-[170px] flex items-center justify-center space-x-0.5" id="rpm-bars-container">
+              <div class="rpm-segment"></div>
+              <div class="rpm-segment"></div>
+              <div class="rpm-segment"></div>
+              <div class="rpm-segment"></div>
+              <div class="rpm-segment"></div>
+              <div class="rpm-segment"></div>
+              <div class="rpm-segment"></div>
+              <div class="rpm-segment"></div>
+              <div class="rpm-segment"></div>
+              <div class="rpm-segment"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: SPEED & BEST (TOP) + FUEL CAPSULE (BOTTOM) -->
+        <div class="flex flex-col justify-between items-end text-right h-full z-20 py-0.5">
+          <div class="space-y-0.5 flex flex-col items-end">
+            <div class="flex items-baseline space-x-1">
+              <span id="speed-value" class="text-white metric-big font-extrabold tracking-tight">0</span>
+            </div>
+            <div class="text-neutral-400 label-tiny font-bold uppercase mt-[-2px]">KPH</div>
+            <div class="telemetry-divider my-1 w-full"></div>
+            <div id="best-lap-time" class="text-white sub-metric font-extrabold tracking-tight">--:--.---</div>
+            <div class="text-neutral-400 label-tiny font-bold uppercase mt-[-1px]">BEST</div>
+          </div>
+
+          <div class="space-y-0.5 pt-1 border-t border-[#1a1e28] w-full">
+            <div class="flex items-center justify-between">
+              <span class="text-white capsule-label font-extrabold tracking-wider">FUEL</span>
+              <span id="fuel-val-top" class="text-neutral-300 label-tiny font-bold font-mono">100%</span>
+            </div>
+            <div class="w-full bg-[#1b2029] h-2.5 sm:h-3.5 rounded-full p-0.5 overflow-hidden flex items-center">
+              <div id="fuel-progress-bar" class="h-full bg-[#20ff47] rounded-full transition-all duration-75 shadow-[0_0_8px_rgba(32,255,71,0.4)]" style="width: 100%;"></div>
+            </div>
+            <div class="text-right">
+              <span id="fuel-val-bottom" class="text-white capsule-label font-bold font-mono">100%</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    /* =========================================================================
+       1. CORE AUDIO SYNTHESIZER FOR AUTHENTIC F1 SHIFT BEEP
+       ========================================================================= */
+    let audioCtx = null;
+    let isSoundEnabled = false;
+    let hasPlayedShiftBeep = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playShiftBeep() {
+      if (!isSoundEnabled || !audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1600, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.09, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch (e) { }
+    }
+
+    /* =========================================================================
+       2. TELEMETRY API ENGINE - ALWAYS API MODE
+       ========================================================================= */
+    let isStreamFrozen = false;
+    let packetsCount = 0;
+    let lastPacketTime = performance.now();
+    let currentHz = 0;
+    let wsClient = null;
+    let wsReconnectTimeout = null;
+    let restPollerInterval = null;
+    let flashState = false;
+    let customSimhubUrl = '';
+
+    // Standardized live telemetry model
+    let liveTelemetry = {
+      source: 'TELEMETRY_API',
+      status: 'connecting',
+      connected: false,
+      timestamp: Date.now(),
+      metrics: {
+        gear: 'N',
+        speed_kph: 0,
+        rpm: 0,
+        max_rpm: 12500,
+        idle_rpm: 4200,
+        delta: 0.000,
+        ers_percentage: 100,
+        fuel_percentage: 100,
+        lap_current: 1,
+        lap_total: 1,
+        best_lap_time: '--:--.---',
+        last_lap_time: '--:--.---',
+        throttle: 0,
+        brake: 0,
+        drs_active: false,
+        drs_available: false,
+        engine_temp: 100,
+        tire_surface_temp: { fl: 90, fr: 90, rl: 90, rr: 90 },
+        tire_inner_temp: { fl: 90, fr: 90, rl: 90, rr: 90 },
+        brakes_temp: { fl: 300, fr: 300, rl: 300, rr: 300 }
+      }
+    };
+
+    /* =========================================================================
+       3. DOM CACHE REFERENCES
+       ========================================================================= */
+    const gearEl = document.getElementById('gear-indicator');
+    const speedEl = document.getElementById('speed-value');
+    const rpmDigitsEl = document.getElementById('rpm-digits');
+    const deltaEl = document.getElementById('lap-delta');
+    const lapCurrentEl = document.getElementById('lap-current');
+    const lapTotalEl = document.getElementById('lap-total');
+    const bestLapEl = document.getElementById('best-lap-time');
+    const ersTopEl = document.getElementById('ers-val-top');
+    const ersBottomEl = document.getElementById('ers-val-bottom');
+    const ersBarEl = document.getElementById('ers-progress-bar');
+    const fuelTopEl = document.getElementById('fuel-val-top');
+    const fuelBottomEl = document.getElementById('fuel-val-bottom');
+    const fuelBarEl = document.getElementById('fuel-progress-bar');
+    const rpmSegments = Array.from(document.querySelectorAll('.rpm-segment'));
+    const ledElements = Array.from({ length: 12 }, (_, i) => document.getElementById(`led-${i}`));
+
+    // API Inspector Elements
+    const apiDrawer = document.getElementById('api-drawer');
+    const apiDrawerBackdrop = document.getElementById('api-drawer-backdrop');
+    const jsonViewer = document.getElementById('json-viewer');
+    const monGear = document.getElementById('mon-gear');
+    const monSpeed = document.getElementById('mon-speed');
+    const monRpm = document.getElementById('mon-rpm');
+    const monDelta = document.getElementById('mon-delta');
+    const monErs = document.getElementById('mon-ers');
+    const monFuel = document.getElementById('mon-fuel');
+    const monLap = document.getElementById('mon-lap');
+    const monBest = document.getElementById('mon-best');
+    const statPackets = document.getElementById('drawer-stat-packets');
+    const statHz = document.getElementById('drawer-stat-hz');
+    const statLatency = document.getElementById('drawer-stat-latency');
+    const apiConnStatus = document.getElementById('api-connection-status');
+    const topApiBadge = document.getElementById('top-api-badge');
+    const topHzBadge = document.getElementById('top-hz-badge');
+    const drawerHzPill = document.getElementById('drawer-hz-pill');
+    const inputSimhubUrl = document.getElementById('input-simhub-url');
+    const restFeedback = document.getElementById('rest-feedback-box');
+
+    /* =========================================================================
+       4. TOAST NOTIFICATION HELPER
+       ========================================================================= */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-emerald-950/90 border-emerald-500 text-emerald-300',
+        error: 'bg-red-950/90 border-red-500 text-red-300',
+        info: 'bg-neutral-900/90 border-sky-500 text-sky-300'
+      };
+      toast.className = `px-4 py-1.5 rounded-xl border ${colors[type] || colors.info} shadow-xl backdrop-blur-md text-xs font-bold font-mono tracking-wide transform transition-all duration-300 -translate-y-2 opacity-0`;
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('-translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('-translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 350);
+      }, 2000);
+    }
+
+    function copyTextToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      return new Promise((resolve, reject) => {
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.style.position = 'fixed';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }
+
+    /* =========================================================================
+       5. LED CLUSTER LOGIC (12 REV LIGHTS)
+       ========================================================================= */
+    function updateShiftLEDs(rpm, maxRpm = 12500) {
+      const minRpm = 8200;
+      const step = (12000 - minRpm) / 12;
+      const overrev = rpm >= 12150;
+
+      if (overrev) {
+        flashState = !flashState;
+        ledElements.forEach((led) => {
+          if (flashState) {
+            led.classList.add('active', 'led-blue');
+          } else {
+            led.classList.remove('active', 'led-blue');
+          }
+        });
+
+        if (!hasPlayedShiftBeep) {
+          playShiftBeep();
+          hasPlayedShiftBeep = true;
+        }
+        return;
+      } else {
+        hasPlayedShiftBeep = false;
+        ledElements.forEach(led => led.classList.remove('led-blue'));
+      }
+
+      ledElements.forEach((led, idx) => {
+        const threshold = minRpm + (idx * step);
+        if (rpm >= threshold) {
+          led.classList.add('active');
+        } else {
+          led.classList.remove('active');
+        }
+      });
+    }
+
+    /* =========================================================================
+       6. UI RENDER ENGINE FOR COCKPIT & API INSPECTOR
+       ========================================================================= */
+    function renderDisplayMetrics(m) {
+      // 1. Gear
+      gearEl.textContent = (m.gear === 0 || m.gear === '0') ? 'N' : m.gear;
+      // 2. Speed
+      speedEl.textContent = Math.round(m.speed_kph || 0);
+      // 3. RPM Digits
+      rpmDigitsEl.textContent = Math.round(m.rpm || 0);
+      // 4. Lap & Best
+      lapCurrentEl.textContent = m.lap_current || 1;
+      lapTotalEl.textContent = m.lap_total || 1;
+      bestLapEl.textContent = m.best_lap_time || '--:--.---';
+
+      // 5. Delta styling & text
+      const deltaNum = Number(m.delta) || 0;
+      const deltaSign = deltaNum <= 0 ? '-' : '+';
+      deltaEl.textContent = `${deltaSign}${Math.abs(deltaNum).toFixed(3)}`;
+      deltaEl.style.color = deltaNum <= 0 ? '#00ff44' : '#ff3333';
+      deltaEl.style.textShadow = deltaNum <= 0 ? '0 0 10px rgba(0,255,68,0.5)' : '0 0 10px rgba(255,51,51,0.5)';
+
+      // 6. ERS Capsule
+      const ersVal = Math.max(0, Math.min(100, Math.round(m.ers_percentage ?? 100)));
+      ersTopEl.textContent = `${ersVal}%`;
+      ersBottomEl.textContent = `${ersVal}%`;
+      ersBarEl.style.width = `${ersVal}%`;
+
+      // 7. Fuel Capsule
+      const fuelVal = Math.max(0, Math.min(100, Math.round(m.fuel_percentage ?? 100)));
+      fuelTopEl.textContent = `${fuelVal}%`;
+      fuelBottomEl.textContent = `${fuelVal}%`;
+      fuelBarEl.style.width = `${fuelVal}%`;
+
+      // 8. LEDs
+      updateShiftLEDs(m.rpm || 0, m.max_rpm || 12500);
+
+      // 9. Segmented RPM Bar (10 segments)
+      const minR = m.idle_rpm || 4200;
+      const maxR = m.max_rpm || 12500;
+      const ratio = Math.max(0, Math.min(1, ((m.rpm || 0) - minR) / (maxR - minR)));
+      const activeSegments = Math.round(ratio * 10);
+      rpmSegments.forEach((seg, i) => {
+        if (i < activeSegments) seg.classList.add('active');
+        else seg.classList.remove('active');
+      });
+
+      // 10. API Inspector Mini Cards
+      monGear.textContent = (m.gear === 0 || m.gear === '0') ? 'N' : m.gear;
+      monSpeed.textContent = Math.round(m.speed_kph || 0);
+      monRpm.textContent = Math.round(m.rpm || 0);
+      monDelta.textContent = `${deltaSign}${Math.abs(deltaNum).toFixed(3)}`;
+      monDelta.style.color = deltaNum <= 0 ? '#00ff44' : '#ff3333';
+      monErs.textContent = `${ersVal}%`;
+      monFuel.textContent = `${fuelVal}%`;
+      monLap.textContent = `${m.lap_current || 1}/${m.lap_total || 1}`;
+      monBest.textContent = m.best_lap_time || '--:--.---';
+
+      // 11. Live JSON Payload viewer (if drawer is open and not frozen)
+      if (!isStreamFrozen && apiDrawer.classList.contains('open')) {
+        jsonViewer.textContent = JSON.stringify(liveTelemetry, null, 2);
+      }
+    }
+
+    function formatMs(ms) {
+      if (!ms || ms <= 0) return '--:--.---';
+      const m = Math.floor(ms / 60000);
+      const s = ((ms % 60000) / 1000).toFixed(3);
+      return `${m}:${s.padStart(6, '0')}`;
+    }
+
+    /* =========================================================================
+       7. TELEMETRY INGESTION & DISPATCHER
+       ========================================================================= */
+    function ingestTelemetryPacket(data, sourceLabel = 'API') {
+      packetsCount++;
+      statPackets.textContent = packetsCount;
+
+      const now = performance.now();
+      const deltaMs = now - lastPacketTime;
+      lastPacketTime = now;
+      if (deltaMs > 0) {
+        currentHz = Math.round(1000 / deltaMs);
+        statHz.textContent = `${currentHz} Hz`;
+        topHzBadge.textContent = `${currentHz}Hz`;
+        drawerHzPill.textContent = `${currentHz}Hz`;
+      }
+
+      if (data.metrics) {
+        liveTelemetry = data;
+      } else if (data.inputs && data.lap) {
+        // F1 2025 Server UDP packet format
+        const mapped = {
+          gear: data.inputs.gear || 'N',
+          speed_kph: Math.round(data.inputs.speed || 0),
+          rpm: Math.round(data.inputs.rpm || 0),
+          max_rpm: 12500,
+          idle_rpm: 4200,
+          delta: data.lap.liveDeltaToRecord ? parseFloat((data.lap.liveDeltaToRecord / 1000).toFixed(3)) : -0.234,
+          ers_percentage: Math.round(data.ers?.battery ?? 100),
+          fuel_percentage: Math.round(data.fuel?.pct ?? 100),
+          lap_current: data.lap.lapNum || 1,
+          lap_total: data.session?.lapsTotal || 1,
+          best_lap_time: data.lap.bestMs > 0 ? formatMs(data.lap.bestMs) : '--:--.---',
+          last_lap_time: data.lap.lastMs > 0 ? formatMs(data.lap.lastMs) : '--:--.---',
+          throttle: Math.round(data.inputs.throttle || 0),
+          brake: Math.round(data.inputs.brake || 0),
+          drs_active: data.inputs.drs === 'OPEN',
+          drs_available: !!data.inputs.drsAvailable,
+          engine_temp: data.car?.engineTemp || 100
+        };
+        liveTelemetry = {
+          source: 'F1_UDP_LIVE',
+          status: 'online',
+          connected: true,
+          timestamp: Date.now(),
+          metrics: mapped
+        };
+      } else {
+        // Raw metrics object
+        liveTelemetry = {
+          source: sourceLabel,
+          status: 'online',
+          connected: true,
+          timestamp: Date.now(),
+          metrics: data
+        };
+      }
+
+      apiConnStatus.textContent = 'API STREAM ACTIVE';
+      apiConnStatus.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-700/50';
+      topApiBadge.textContent = 'API LIVE';
+      topApiBadge.className = 'text-[10px] sm:text-[11px] font-mono font-bold tracking-wider text-emerald-400';
+
+      renderDisplayMetrics(liveTelemetry.metrics);
+    }
+
+    /* =========================================================================
+       8. WEBSOCKET CLIENT & REST BACKUP ENGINE
+       ========================================================================= */
+    function initWebSocket() {
+      if (wsClient) {
+        try { wsClient.close(); } catch(e) {}
+      }
+
+      const host = window.location.host || 'localhost:3000';
+      const wsUrl = `ws://${host}`;
+
+      try {
+        wsClient = new WebSocket(wsUrl);
+
+        wsClient.onopen = () => {
+          console.log('📡 [Telemetry API] WebSocket connected to', wsUrl);
+          apiConnStatus.textContent = 'WS STREAM LIVE';
+          apiConnStatus.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-700/50';
+          topApiBadge.textContent = 'WS LIVE';
+        };
+
+        wsClient.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            ingestTelemetryPacket(data, 'WS_BROADCAST');
+          } catch (e) { }
+        };
+
+        wsClient.onclose = () => {
+          apiConnStatus.textContent = 'WS RECONNECTING...';
+          apiConnStatus.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-950/80 text-amber-400 border border-amber-700/50';
+          topApiBadge.textContent = 'POLL REST';
+          if (wsReconnectTimeout) clearTimeout(wsReconnectTimeout);
+          wsReconnectTimeout = setTimeout(initWebSocket, 2500);
+        };
+
+        wsClient.onerror = () => {
+          try { wsClient.close(); } catch(e) {}
+        };
+      } catch (e) { }
+    }
+
+    // High-frequency REST polling fallback / SimHub hook
+    function startRestPoller() {
+      if (restPollerInterval) clearInterval(restPollerInterval);
+
+      restPollerInterval = setInterval(async () => {
+        const targetUrl = customSimhubUrl || '/api/telemetry/live';
+        try {
+          const t0 = performance.now();
+          const resp = await fetch(targetUrl, { cache: 'no-store' });
+          const latency = Math.round(performance.now() - t0);
+          statLatency.textContent = `${latency}ms`;
+
+          if (resp.ok) {
+            const data = await resp.json();
+            // Ingest REST data if WebSocket is idle or remote SimHub is configured
+            if (customSimhubUrl || !wsClient || wsClient.readyState !== WebSocket.OPEN) {
+              ingestTelemetryPacket(data, customSimhubUrl ? 'SIMHUB' : 'REST_API');
+            }
+          }
+        } catch (err) {
+          if (!wsClient || wsClient.readyState !== WebSocket.OPEN) {
+            apiConnStatus.textContent = 'OFFLINE / RETRY';
+            apiConnStatus.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-950/80 text-red-400 border border-red-700/50';
+          }
+        }
+      }, 100); // 10Hz REST polling
+    }
+
+    /* =========================================================================
+       9. FULLSCREEN & ANDROID LANDSCAPE LOCK
+       ========================================================================= */
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    const iconFsEnter = document.getElementById('icon-fs-enter');
+    const iconFsExit = document.getElementById('icon-fs-exit');
+
+    async function toggleFullscreen() {
+      const doc = window.document;
+      const docEl = doc.documentElement;
+      const isFs = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+
+      if (!isFs) {
+        const reqFs = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+        if (reqFs) {
+          try {
+            await reqFs.call(docEl);
+            if (screen.orientation && screen.orientation.lock) {
+              screen.orientation.lock('landscape').catch(() => {});
+            }
+            showToast('Landscape Fullscreen Active', 'success');
+          } catch (e) { }
+        }
+      } else {
+        const exitFs = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+        if (exitFs) {
+          try {
+            await exitFs.call(doc);
+            if (screen.orientation && screen.orientation.unlock) {
+              screen.orientation.unlock();
+            }
+            showToast('Fullscreen Exited', 'info');
+          } catch (e) { }
+        }
+      }
+    }
+
+    function handleFullscreenChange() {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      iconFsEnter.classList.toggle('hidden', isFs);
+      iconFsExit.classList.toggle('hidden', !isFs);
+      btnFullscreen.classList.toggle('border-sky-500', isFs);
+    }
+
+    btnFullscreen.addEventListener('click', toggleFullscreen);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    // Auto-lock hardware landscape if allowed by browser on any tap
+    function attemptOrientationLock() {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    }
+    window.addEventListener('touchstart', attemptOrientationLock, { once: true, passive: true });
+    window.addEventListener('click', attemptOrientationLock, { once: true });
+
+    /* =========================================================================
+       10. AUDIO BEEP & SCREEN GLARE TOGGLES
+       ========================================================================= */
+    const soundBtn = document.getElementById('btn-audio-toggle');
+    const soundOnIcon = document.getElementById('icon-sound-on');
+    const soundOffIcon = document.getElementById('icon-sound-off');
+
+    soundBtn.addEventListener('click', () => {
+      initAudio();
+      isSoundEnabled = !isSoundEnabled;
+      soundOnIcon.classList.toggle('hidden', !isSoundEnabled);
+      soundOffIcon.classList.toggle('hidden', isSoundEnabled);
+      if (isSoundEnabled) {
+        playShiftBeep();
+        showToast('Shift Beep: ON', 'success');
+      } else {
+        showToast('Shift Beep: OFF', 'info');
+      }
+    });
+
+    const glareEl = document.getElementById('screen-glare');
+    const btnGlare = document.getElementById('btn-glare');
+    btnGlare.addEventListener('click', () => {
+      if (glareEl.style.display === 'none') {
+        glareEl.style.display = 'block';
+        btnGlare.textContent = 'GLARE';
+        btnGlare.classList.remove('text-neutral-500');
+        showToast('Glass Glare: ON', 'info');
+      } else {
+        glareEl.style.display = 'none';
+        btnGlare.textContent = 'MATTE';
+        btnGlare.classList.add('text-neutral-500');
+        showToast('Matte Mode: ON', 'info');
+      }
+    });
+
+    /* =========================================================================
+       11. SLIDING API INSPECTOR DRAWER INTERACTIONS
+       ========================================================================= */
+    const btnOpenInspector = document.getElementById('btn-open-inspector');
+    const btnCloseDrawer = document.getElementById('btn-close-drawer');
+    const btnCopyJson = document.getElementById('btn-copy-json');
+    const btnFreezeStream = document.getElementById('btn-freeze-stream');
+    const btnTestGet = document.getElementById('btn-test-rest-get');
+    const btnTestPost = document.getElementById('btn-test-rest-post');
+    const btnSaveSimhubUrl = document.getElementById('btn-save-simhub-url');
+
+    function openApiDrawer() {
+      apiDrawer.classList.add('open');
+      apiDrawerBackdrop.classList.add('open');
+      jsonViewer.textContent = JSON.stringify(liveTelemetry, null, 2);
+    }
+
+    function closeApiDrawer() {
+      apiDrawer.classList.remove('open');
+      apiDrawerBackdrop.classList.remove('open');
+    }
+
+    btnOpenInspector.addEventListener('click', openApiDrawer);
+    btnCloseDrawer.addEventListener('click', closeApiDrawer);
+    apiDrawerBackdrop.addEventListener('click', closeApiDrawer);
+
+    // One-Click Copy Live JSON to Clipboard
+    btnCopyJson.addEventListener('click', () => {
+      const payloadStr = JSON.stringify(liveTelemetry, null, 2);
+      copyTextToClipboard(payloadStr).then(() => {
+        btnCopyJson.innerHTML = `
+          <svg class="w-3.5 h-3.5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <span>Copied!</span>
+        `;
+        btnCopyJson.classList.replace('bg-sky-600', 'bg-emerald-600');
+        showToast('Live JSON Copied to Clipboard!', 'success');
+
+        setTimeout(() => {
+          btnCopyJson.innerHTML = `
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <span>Copy JSON</span>
+          `;
+          btnCopyJson.classList.replace('bg-emerald-600', 'bg-sky-600');
+        }, 2000);
+      }).catch(() => {
+        showToast('Clipboard error', 'error');
+      });
+    });
+
+    // Freeze Frame Stream
+    btnFreezeStream.addEventListener('click', () => {
+      isStreamFrozen = !isStreamFrozen;
+      btnFreezeStream.textContent = isStreamFrozen ? 'Resume' : 'Freeze';
+      btnFreezeStream.classList.toggle('text-amber-400', isStreamFrozen);
+      showToast(isStreamFrozen ? 'Stream Inspector Frozen' : 'Stream Resumed', 'info');
+    });
+
+    // Test REST GET /api/telemetry/live
+    btnTestGet.addEventListener('click', async () => {
+      try {
+        const t0 = performance.now();
+        const resp = await fetch('/api/telemetry/live');
+        const dt = Math.round(performance.now() - t0);
+        const data = await resp.json();
+
+        restFeedback.classList.remove('hidden');
+        restFeedback.innerHTML = `
+          <div class="text-emerald-400 font-bold">HTTP 200 OK (${dt}ms)</div>
+          <div class="text-neutral-400 truncate">Source: ${data.source} &bull; Gear: ${data.metrics?.gear} &bull; Speed: ${data.metrics?.speed_kph} KPH</div>
+        `;
+        showToast(`REST GET Success (${dt}ms)`, 'success');
+      } catch (err) {
+        restFeedback.classList.remove('hidden');
+        restFeedback.innerHTML = `<div class="text-red-400">Error: ${err.message}</div>`;
+        showToast('REST GET Failed', 'error');
+      }
+    });
+
+    // Test REST POST /api/telemetry/update
+    btnTestPost.addEventListener('click', async () => {
+      try {
+        const samplePayload = {
+          gear: 7,
+          speed_kph: 295,
+          rpm: 11950,
+          delta: -0.385,
+          ers_percentage: 80,
+          fuel_percentage: 60,
+          lap_current: 5,
+          lap_total: 20
+        };
+        const t0 = performance.now();
+        const resp = await fetch('/api/telemetry/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(samplePayload)
+        });
+        const dt = Math.round(performance.now() - t0);
+        const data = await resp.json();
+
+        restFeedback.classList.remove('hidden');
+        restFeedback.innerHTML = `
+          <div class="text-emerald-400 font-bold">HTTP 200 POST SUCCESS (${dt}ms)</div>
+          <div class="text-neutral-400">Pushed to API & broadcast to all WebSocket clients!</div>
+        `;
+        showToast(`REST POST Pushed (${dt}ms)`, 'success');
+      } catch (err) {
+        restFeedback.classList.remove('hidden');
+        restFeedback.innerHTML = `<div class="text-red-400">Error: ${err.message}</div>`;
+        showToast('REST POST Failed', 'error');
+      }
+    });
+
+    // SimHub URL updater
+    btnSaveSimhubUrl.addEventListener('click', () => {
+      const val = inputSimhubUrl.value.trim();
+      if (val) {
+        customSimhubUrl = val;
+        showToast(`Connected: ${val}`, 'success');
+      } else {
+        customSimhubUrl = '';
+        showToast('Default API endpoint restored', 'info');
+      }
+    });
+
+    // Keyboard bindings
+    window.addEventListener('keydown', (e) => {
+      initAudio();
+      if (e.code === 'KeyF') {
+        toggleFullscreen();
+      } else if (e.code === 'KeyI' || e.code === 'KeyA') {
+        if (apiDrawer.classList.contains('open')) closeApiDrawer();
+        else openApiDrawer();
+      }
+    });
+
+    // Mobile tap-to-unlock audio context
+    window.addEventListener('touchstart', () => initAudio(), { once: true, passive: true });
+    window.addEventListener('click', () => initAudio(), { once: true });
+
+    /* =========================================================================
+       12. STARTUP INITIALIZATION
+       ========================================================================= */
+    window.onload = function() {
+      initWebSocket();
+      startRestPoller();
+    };
+  </script>
+</body>
+</html>

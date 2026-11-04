@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+const { sessionTelemetryDir } = require('../config');
 const gameState = require('./gameState');
 const { teamMap, sessionMap, formulaMap } = require('../config/constants');
 const { resetGForceData, gForceData } = require('../services/gforceService');
@@ -42,6 +45,43 @@ function getAccurateSessionName(sessionType, formula) {
         return `${formulaMap[formula]} ${baseSession}`;
     }
     return baseSession;
+}
+
+/**
+ * Accurately determines whether a session is a Race or Sprint (race).
+ * Non-race sessions (Practice 1-3, Qualifying 1-3, Sprint Shootout 1-3, Time Trial)
+ * return false so the system uses best lap time classification.
+ */
+function isRaceOrSprintSession(sessionType, sessionName, gameYear, formula) {
+    if (formula === 2) {
+        if (sessionType === 10 || sessionType === 11 || sessionType === 15 || sessionType === 16) {
+            return true;
+        }
+    }
+
+    if (sessionName && typeof sessionName === 'string') {
+        const sLower = sessionName.toLowerCase();
+        // Any session that is Shootout, Qualifying, Practice, or Time Trial is NEVER a race or sprint
+        if (sLower.includes('shootout') || sLower.includes('qualifying') || sLower.includes('practice') || sLower.includes('time trial')) {
+            return false;
+        }
+        if (sLower.includes('race')) {
+            return true;
+        }
+        if (sLower.includes('sprint') && !sLower.includes('shootout') && !sLower.includes('qualifying')) {
+            return true;
+        }
+    }
+
+    const raw = Number(sessionType);
+    const gy = Number(gameYear) || 25;
+    if (gy <= 23) {
+        // F1 2023 format: 10 = Race, 11 = Race 2 (Sprint), 12 = Race 3
+        return [10, 11, 12].includes(raw);
+    } else {
+        // F1 2024 / 2025 / 2026 format: 15 = Race, 16 = Race 2 (Sprint), 17 = Race 3
+        return [15, 16, 17].includes(raw);
+    }
 }
 
 /**
@@ -134,7 +174,7 @@ function getLiveSectorTiming(currentMs, sector, s1, s2, s3) {
  * when a new session is detected, session type changes, session is restarted, or track changes.
  */
 function resetSessionData(broadcastFn) {
-    const { state, carDataTracker, carPhysics, allLapHistories, allTyreStints, currentLapTelemetry, lastLapTelemetry } = gameState;
+    const { state, carDataTracker, carPhysics, allLapHistories, allTyreStints, lapSetups, carLapSetups, currentLapTelemetry, lastLapTelemetry } = gameState;
 
     // Keep reference sectors if previously loaded
     const refS1 = state.session.referenceS1 || 0;
@@ -143,7 +183,7 @@ function resetSessionData(broadcastFn) {
 
     for (let i = 0; i < 22; i++) {
         carDataTracker[i] = {
-            pos: 0, lapNum: 0, pitStatus: 0, driverStatus: 0, bestLapMs: 0, gapText: '', maxSpeed: 0, tyre: 'UNK', tyreClass: '#FFFFFF', teamColor: '#FFFFFF', teamName: 'Unknown',
+            pos: 0, lapNum: 0, pitStatus: 0, driverStatus: 0, bestLapMs: 0, bestLapNum: 0, gapText: '', maxSpeed: 0, tyre: 'UNK', tyreClass: '#FFFFFF', tyreAge: 0, numPitStops: 0, teamColor: '#FFFFFF', teamName: 'Unknown',
             s1: 0, s2: 0, s3: 0, bestS1: refS1, bestS2: refS2, bestS3: refS3,
             s1Status: 'pending', s2Status: 'pending', s3Status: 'pending',
             penalties: 0, warnings: 0, cornerCutting: 0, unservedDT: 0, unservedSG: 0, invalidLap: false
@@ -156,6 +196,18 @@ function resetSessionData(broadcastFn) {
 
     Object.keys(allLapHistories).forEach(k => delete allLapHistories[k]);
     Object.keys(allTyreStints).forEach(k => delete allTyreStints[k]);
+    if (lapSetups) Object.keys(lapSetups).forEach(k => delete lapSetups[k]);
+    if (carLapSetups) carLapSetups.forEach(m => Object.keys(m).forEach(k => delete m[k]));
+    gameState.allSessionLaps = [];
+    gameState.sessionLapsByDriver = Array.from({ length: 22 }, () => []);
+    if (gameState.currentTrackId !== -1 && sessionTelemetryDir) {
+        try {
+            const diskPath = path.join(sessionTelemetryDir, `session_all_laps_track_${gameState.currentTrackId}.json`);
+            if (fs.existsSync(diskPath)) {
+                fs.unlinkSync(diskPath);
+            }
+        } catch (e) { }
+    }
 
     resetGForceData();
 
@@ -204,6 +256,7 @@ module.exports = {
     getParticipantTeamId,
     setPlayerIndex,
     getAccurateSessionName,
+    isRaceOrSprintSession,
     getSectorTime,
     getLiveSectorTiming,
     resetSessionData

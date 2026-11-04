@@ -1,7 +1,7 @@
 [
   {
     "lapNum": 1,
-    "time": 104680,
+    "time": 109353,
     "setup": {
       "wingF": 36,
       "wingR": 28,
@@ -12,14 +12,14 @@
       "camberR": -1.2000000476837158,
       "toeF": 0,
       "toeR": 0.10000000149011612,
-      "suspF": 35,
+      "suspF": 32,
       "suspR": 8,
-      "arbF": 16,
-      "arbR": 5,
+      "arbF": 14,
+      "arbR": 7,
       "heightF": 28,
-      "heightR": 50,
+      "heightR": 47,
       "bPressure": 100,
-      "bBias": 55,
+      "bBias": 53,
       "pressFLeft": 28.5,
       "pressFRight": 28.5,
       "pressRLeft": 25.5,
@@ -30,7 +30,7 @@
       "fuelCapacity": 110,
       "fuelMix": "Standard"
     },
-    "timestamp": 1788794197202
+    "timestamp": 1788797311373
   },
   {
     "lapNum": 2,

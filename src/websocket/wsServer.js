@@ -6,7 +6,7 @@ const { OFFICIAL_TRACK_SECTOR_DISTANCES } = require('../config/catalogs');
 const gameState = require('../state/gameState');
 const { safeSaveTrackMap } = require('../utils/fileSystem');
 const { getTelemetryDrsZonesForTrack, getTelemetryStraightModeZonesForTrack, isTrackFinalized, syncTrackLinesForTrack } = require('../services/trackService');
-const { generateSessionExportJson, getTrackDriverFastestLaps } = require('../services/storageService');
+const { generateSessionExportJson, getTrackDriverFastestLaps, compareLapsBraking, buildAllLapsComparisonMatrix, getSessionAllLaps } = require('../services/storageService');
 const { resetSessionData } = require('../state/stateHelpers');
 const { getCustomTargetsData, saveCustomTargetsData } = require('../services/targetService');
 
@@ -42,6 +42,36 @@ function handleWsConnection(ws) {
     if (state.trackPoints && state.trackPoints.length >= 20) {
         try {
             const trkLen = state.session.trackLength || OFFICIAL_TRACK_SECTOR_DISTANCES[gameState.currentTrackId]?.len || 0;
+            let drsToSend = (Array.isArray(state.drsZones) && state.drsZones.length > 0) ? state.drsZones : null;
+            let straightToSend = (Array.isArray(state.straightModeZones) && state.straightModeZones.length > 0) ? state.straightModeZones : null;
+            let isFinalized = isTrackFinalized(gameState.currentTrackId);
+
+            if ((!drsToSend || !straightToSend) && gameState.currentTrackId !== -1) {
+                const mapPath = path.join(trackMapsDir, `track_${gameState.currentTrackId}.json`);
+                if (fs.existsSync(mapPath)) {
+                    try {
+                        const fData = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+                        if (!drsToSend && Array.isArray(fData.drsZones) && fData.drsZones.length > 0) {
+                            drsToSend = fData.drsZones;
+                            state.drsZones = drsToSend;
+                        }
+                        if (!straightToSend && Array.isArray(fData.straightModeZones) && fData.straightModeZones.length > 0) {
+                            straightToSend = fData.straightModeZones;
+                            state.straightModeZones = straightToSend;
+                        }
+                        if (fData.finalized !== undefined) isFinalized = !!fData.finalized;
+                    } catch (e) { }
+                }
+            }
+
+            if (!drsToSend) {
+                drsToSend = getTelemetryDrsZonesForTrack(gameState.currentTrackId, trkLen, null, null);
+            }
+            if (!straightToSend) {
+                straightToSend = (gameYear === 26) ? getTelemetryStraightModeZonesForTrack(gameState.currentTrackId, trkLen, null, null) : [];
+            }
+
+            const gameYear = state.gameYear || (drsToSend.length > 0 && straightToSend.length === 0 ? 25 : (gameState.currentGameYear || 26));
             ws.send(JSON.stringify({
                 type: 'trackDataResponse',
                 trackId: gameState.currentTrackId,
@@ -51,10 +81,10 @@ function handleWsConnection(ws) {
                     startLine: state.startLine,
                     sector1: state.sector1,
                     sector2: state.sector2,
-                    drsZones: (Array.isArray(state.drsZones) && state.drsZones.length > 0) ? state.drsZones : getTelemetryDrsZonesForTrack(gameState.currentTrackId, trkLen, null, state.drsZones),
-                    straightModeZones: (Array.isArray(state.straightModeZones) && state.straightModeZones.length > 0) ? state.straightModeZones : getTelemetryStraightModeZonesForTrack(gameState.currentTrackId, trkLen, null, state.straightModeZones),
-                    gameYear: gameState.currentGameYear || 26,
-                    finalized: isTrackFinalized(gameState.currentTrackId)
+                    drsZones: drsToSend,
+                    straightModeZones: straightToSend,
+                    gameYear: gameYear,
+                    finalized: isFinalized
                 }
             }));
         } catch (e) { }
@@ -84,6 +114,63 @@ function handleWsConnection(ws) {
     ws.on('message', (msg) => {
         try {
             const data = JSON.parse(msg);
+
+            // Telemetry API Engine WebSocket handlers
+            if (data.action === 'telemetry_update' || data.type === 'telemetry_update' || data.action === 'broadcast_telemetry') {
+                const incomingMetrics = data.metrics || data.data || data;
+                gameState.simulatedTelemetry = {
+                    source: data.source || "SIMULATOR_WS",
+                    timestamp: Date.now(),
+                    metrics: incomingMetrics
+                };
+                broadcast(JSON.stringify({
+                    type: 'telemetryPayload',
+                    ...gameState.simulatedTelemetry
+                }));
+                return;
+            }
+
+            if (data.action === 'get_telemetry' || data.action === 'getLiveTelemetry') {
+                const { state } = gameState;
+                const now = Date.now();
+                const isGameActive = (gameState.lastUdpPacketTime > 0) && (now - gameState.lastUdpPacketTime < 2500);
+                const sim = gameState.simulatedTelemetry;
+                let payload;
+                if (!isGameActive && sim) {
+                    payload = {
+                        type: 'telemetryPayload',
+                        status: 'online',
+                        source: sim.source || 'SIMULATOR',
+                        timestamp: sim.timestamp || now,
+                        metrics: sim.metrics || sim
+                    };
+                } else {
+                    payload = {
+                        type: 'telemetryPayload',
+                        status: isGameActive ? 'online' : 'idle',
+                        source: isGameActive ? 'F1_UDP' : 'STANDBY',
+                        timestamp: now,
+                        metrics: {
+                            gear: state.inputs.gear || 'N',
+                            speed_kph: Math.round(state.inputs.speed || 0),
+                            rpm: Math.round(state.inputs.rpm || 0),
+                            max_rpm: 12500,
+                            idle_rpm: 4200,
+                            delta: state.lap.liveDeltaToRecord !== undefined ? parseFloat((state.lap.liveDeltaToRecord / 1000).toFixed(3)) : -0.234,
+                            ers_percentage: Math.round(state.ers.battery || 0),
+                            fuel_percentage: Math.round(state.fuel.pct || 0),
+                            lap_current: state.lap.lapNum || 1,
+                            lap_total: state.session.lapsTotal || 20,
+                            best_lap_time: "1:16.927",
+                            throttle: Math.round(state.inputs.throttle || 0),
+                            brake: Math.round(state.inputs.brake || 0),
+                            engine_temp: Math.round(state.car.engineTemp || 102)
+                        }
+                    };
+                }
+                ws.send(JSON.stringify(payload));
+                return;
+            }
 
             if (data.action === 'getCustomTargets') {
                 const ctData = getCustomTargetsData();
@@ -181,13 +268,26 @@ function handleWsConnection(ws) {
                                     if (tData && typeof tData === 'object' && !Array.isArray(tData)) {
                                         tData.finalized = isTrackFinalized(trackId);
                                         const trkLen = tData.trackLength || OFFICIAL_TRACK_SECTOR_DISTANCES[trackId]?.len || gameState.state.session.trackLength || 0;
-                                        if (!Array.isArray(tData.drsZones) || tData.drsZones.length === 0) {
+                                        const hasSavedDrs = Array.isArray(tData.drsZones) && tData.drsZones.length > 0;
+                                        const hasSavedStraight = Array.isArray(tData.straightModeZones) && tData.straightModeZones.length > 0;
+
+                                        if (!hasSavedDrs && !hasSavedStraight) {
                                             tData.drsZones = getTelemetryDrsZonesForTrack(trackId, trkLen, null, tData.drsZones);
                                         }
-                                        if (!Array.isArray(tData.straightModeZones) || tData.straightModeZones.length === 0) {
-                                            tData.straightModeZones = getTelemetryStraightModeZonesForTrack(trackId, trkLen, null, tData.straightModeZones);
+
+                                        if (tData.gameYear) {
+                                            // Keep saved gameYear
+                                        } else if (hasSavedDrs && !hasSavedStraight) {
+                                            tData.gameYear = 25;
+                                        } else if (hasSavedStraight && !hasSavedDrs) {
+                                            tData.gameYear = 26;
+                                        } else {
+                                            tData.gameYear = (gameState.currentGameYear === 25 || gameState.currentGameYear === 26) ? gameState.currentGameYear : 25;
                                         }
-                                        tData.gameYear = tData.gameYear || gameState.currentGameYear || 26;
+
+                                        if (!tData.straightModeZones) {
+                                            tData.straightModeZones = (tData.gameYear === 26) ? getTelemetryStraightModeZonesForTrack(trackId, trkLen, null, null) : [];
+                                        }
                                     }
                                     ws.send(JSON.stringify({ type: 'trackDataResponse', trackId, data: tData }));
                                     return;
@@ -199,6 +299,37 @@ function handleWsConnection(ws) {
                     // If requesting the current active game track and live points exist for it
                     if (trackId === gameState.currentTrackId && gameState.state.trackPoints && gameState.state.trackPoints.length >= 20) {
                         const trkLen = gameState.state.session.trackLength || OFFICIAL_TRACK_SECTOR_DISTANCES[gameState.currentTrackId]?.len || 0;
+                        let drsToSend = (Array.isArray(gameState.state.drsZones) && gameState.state.drsZones.length > 0) ? gameState.state.drsZones : null;
+                        let straightToSend = (Array.isArray(gameState.state.straightModeZones) && gameState.state.straightModeZones.length > 0) ? gameState.state.straightModeZones : null;
+                        let isFin = isTrackFinalized(gameState.currentTrackId);
+
+                        if ((!drsToSend || !straightToSend) && gameState.currentTrackId !== -1) {
+                            const mapPath = path.join(trackMapsDir, `track_${gameState.currentTrackId}.json`);
+                            if (fs.existsSync(mapPath)) {
+                                try {
+                                    const fData = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+                                    if (!drsToSend && Array.isArray(fData.drsZones) && fData.drsZones.length > 0) {
+                                        drsToSend = fData.drsZones;
+                                        gameState.state.drsZones = drsToSend;
+                                    }
+                                    if (!straightToSend && Array.isArray(fData.straightModeZones) && fData.straightModeZones.length > 0) {
+                                        straightToSend = fData.straightModeZones;
+                                        gameState.state.straightModeZones = straightToSend;
+                                    }
+                                    if (fData.finalized !== undefined) isFin = !!fData.finalized;
+                                } catch (e) { }
+                            }
+                        }
+
+                        if (!drsToSend) {
+                            drsToSend = getTelemetryDrsZonesForTrack(gameState.currentTrackId, trkLen, null, null);
+                        }
+                        if (!straightToSend) {
+                            straightToSend = (gameState.state.gameYear === 26) ? getTelemetryStraightModeZonesForTrack(gameState.currentTrackId, trkLen, null, null) : [];
+                        }
+
+                        const liveGameYear = gameState.state.gameYear || (drsToSend.length > 0 && straightToSend.length === 0 ? 25 : (gameState.currentGameYear || 26));
+
                         ws.send(JSON.stringify({
                             type: 'trackDataResponse',
                             trackId: gameState.currentTrackId,
@@ -208,10 +339,10 @@ function handleWsConnection(ws) {
                                 startLine: gameState.state.startLine,
                                 sector1: gameState.state.sector1,
                                 sector2: gameState.state.sector2,
-                                drsZones: (Array.isArray(gameState.state.drsZones) && gameState.state.drsZones.length > 0) ? gameState.state.drsZones : getTelemetryDrsZonesForTrack(gameState.currentTrackId, trkLen, null, gameState.state.drsZones),
-                                straightModeZones: (Array.isArray(gameState.state.straightModeZones) && gameState.state.straightModeZones.length > 0) ? gameState.state.straightModeZones : getTelemetryStraightModeZonesForTrack(gameState.currentTrackId, trkLen, null, gameState.state.straightModeZones),
-                                gameYear: gameState.currentGameYear || 26,
-                                finalized: isTrackFinalized(gameState.currentTrackId)
+                                drsZones: drsToSend,
+                                straightModeZones: straightToSend,
+                                gameYear: liveGameYear,
+                                finalized: isFin
                             }
                         }));
                         return;
@@ -316,6 +447,87 @@ function handleWsConnection(ws) {
                 return;
             }
 
+            if (data.action === 'getSessionAllLaps') {
+                const tId = data.trackId !== undefined ? parseInt(data.trackId, 10) : gameState.currentTrackId;
+                const cIdx = data.carIndex !== undefined ? parseInt(data.carIndex, 10) : null;
+                const laps = getSessionAllLaps(tId, cIdx, false);
+
+                ws.send(JSON.stringify({
+                    type: 'sessionAllLapsResponse',
+                    trackId: tId,
+                    data: laps.map(l => ({
+                        id: l.id,
+                        lapNum: l.lapNum,
+                        carIndex: l.carIndex,
+                        driverName: l.driverName,
+                        teamName: l.teamName,
+                        teamColor: l.teamColor,
+                        lapTimeMs: l.lapTimeMs,
+                        s1: l.s1,
+                        s2: l.s2,
+                        s3: l.s3,
+                        isValid: l.isValid !== false,
+                        isPersonalBest: !!l.isPersonalBest,
+                        totalBrakingDist: l.totalBrakingDist,
+                        avgDecelG: l.avgDecelG,
+                        brakingZonesCount: (l.brakingZones || []).length,
+                        telemetryPoints: (l.telemetry || []).length,
+                        timestamp: l.timestamp
+                    }))
+                }));
+                return;
+            }
+
+            if (data.action === 'getLapBrakingData') {
+                const tId = data.trackId !== undefined ? parseInt(data.trackId, 10) : gameState.currentTrackId;
+                const cIdx = data.carIndex !== undefined ? parseInt(data.carIndex, 10) : (gameState.state.playerIndex || 0);
+                const allLaps = getSessionAllLaps(tId, cIdx, false);
+
+                let baselineLap = null;
+                if (data.baseline !== undefined) {
+                    const bNum = parseInt(data.baseline, 10);
+                    baselineLap = allLaps.find(l => l.lapNum === bNum) || null;
+                }
+                if (!baselineLap && allLaps.length > 0) {
+                    const validLaps = allLaps.filter(l => l.lapTimeMs > 0);
+                    baselineLap = validLaps.length > 0 ? [...validLaps].sort((a, b) => a.lapTimeMs - b.lapTimeMs)[0] : allLaps[0];
+                }
+
+                let compareLap = null;
+                if (data.compare !== undefined) {
+                    const cNum = parseInt(data.compare, 10);
+                    compareLap = allLaps.find(l => l.lapNum === cNum) || null;
+                } else if (allLaps.length > 1 && baselineLap) {
+                    compareLap = allLaps.find(l => l.lapNum !== baselineLap.lapNum) || null;
+                }
+
+                const h2h = baselineLap ? compareLapsBraking(baselineLap, compareLap) : null;
+                const matrix = baselineLap ? buildAllLapsComparisonMatrix(baselineLap, allLaps) : null;
+
+                ws.send(JSON.stringify({
+                    type: 'lapBrakingDataResponse',
+                    trackId: tId,
+                    trackName: gameState.state.session.trackName || 'Circuit',
+                    trackLength: gameState.state.session.trackLength || 5000,
+                    trackPoints: gameState.state.trackPoints || [],
+                    baselineLap: baselineLap,
+                    compareLap: compareLap,
+                    h2hComparison: h2h,
+                    comparisonMatrix: matrix,
+                    allLapsSummary: allLaps.map(l => ({
+                        lapNum: l.lapNum,
+                        driverName: l.driverName,
+                        teamColor: l.teamColor,
+                        lapTimeMs: l.lapTimeMs,
+                        totalBrakingDist: l.totalBrakingDist,
+                        avgDecelG: l.avgDecelG,
+                        brakingZonesCount: (l.brakingZones || []).length,
+                        isValid: l.isValid !== false
+                    }))
+                }));
+                return;
+            }
+
             if (data.action === 'getTrackSetups') {
                 const trackId = data.trackId !== undefined ? parseInt(data.trackId) : gameState.currentTrackId;
                 if (!isNaN(trackId) && trackId !== -1) {
@@ -391,7 +603,20 @@ function handleWsConnection(ws) {
 
             if (data.action === 'syncTrackLines') {
                 const tId = data.trackId !== undefined ? data.trackId : gameState.currentTrackId;
-                syncTrackLinesForTrack(tId, data.force !== undefined ? data.force === true : true, broadcast, data.gameYear || gameState.currentGameYear);
+                if (isTrackFinalized(tId)) {
+                    console.log(`🔒 Track ${tId} is finalized/locked. Sync request rejected.`);
+                    ws.send(JSON.stringify({
+                        type: 'toast',
+                        message: `🔒 Track ${tId} is locked/finalized. Unlock to allow sync.`
+                    }));
+                    ws.send(JSON.stringify({
+                        type: 'trackFinalizedState',
+                        trackId: tId,
+                        finalized: true
+                    }));
+                    return;
+                }
+                syncTrackLinesForTrack(tId, false, broadcast, data.gameYear || gameState.currentGameYear);
                 return;
             }
 

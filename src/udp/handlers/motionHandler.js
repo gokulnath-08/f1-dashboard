@@ -5,7 +5,7 @@ const gameState = require('../../state/gameState');
 const { touchUdpPacket, setPlayerIndex } = require('../../state/stateHelpers');
 const { processServerGForce, gForceData } = require('../../services/gforceService');
 const { safeSaveTrackMap } = require('../../utils/fileSystem');
-const { buildApproxPitLane, syncTrackLinesForTrack } = require('../../services/trackService');
+const { buildApproxPitLane, syncTrackLinesForTrack, isTrackFinalized } = require('../../services/trackService');
 const wsServer = require('../../websocket/wsServer');
 
 /**
@@ -16,6 +16,10 @@ const wsServer = require('../../websocket/wsServer');
 function completeLiveTrackMapping() {
     const { state, currentTrackId } = gameState;
     if (gameState.isTrackMapped || currentTrackId === -1 || !state.trackPoints || state.trackPoints.length < 50) return;
+    if (isTrackFinalized(currentTrackId)) {
+        gameState.isTrackMapped = true;
+        return;
+    }
     gameState.isTrackMapped = true;
 
     const pts = state.trackPoints;
@@ -28,15 +32,34 @@ function completeLiveTrackMapping() {
     state.pitLanePoints = buildApproxPitLane(pts);
 
     const filePath = path.join(trackMapsDir, `track_${currentTrackId}.json`);
+    let drsZones = state.drsZones || [];
+    let straightModeZones = state.straightModeZones || [];
+    let gameYear = state.gameYear || 25;
+    let finalized = false;
+    if (fs.existsSync(filePath)) {
+        try {
+            const existing = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            if (Array.isArray(existing.drsZones) && existing.drsZones.length > 0) drsZones = existing.drsZones;
+            if (Array.isArray(existing.straightModeZones) && existing.straightModeZones.length > 0) straightModeZones = existing.straightModeZones;
+            if (existing.gameYear) gameYear = existing.gameYear;
+            if (existing.finalized !== undefined) finalized = !!existing.finalized;
+        } catch (e) { }
+    }
     safeSaveTrackMap(filePath, {
         trackPoints: pts,
         startLine: state.startLine,
         sector1: state.sector1,
-        sector2: state.sector2
+        sector2: state.sector2,
+        drsZones: drsZones,
+        straightModeZones: straightModeZones,
+        gameYear: gameYear,
+        finalized: finalized
     });
 
-    // Synchronize official sector lines using exact distance
-    syncTrackLinesForTrack(currentTrackId, false, wsServer.broadcast);
+    // Synchronize official sector lines using exact distance if not finalized
+    if (!finalized) {
+        syncTrackLinesForTrack(currentTrackId, false, wsServer.broadcast);
+    }
 
     // Broadcast full trackDataResponse to all clients
     const completeMsg = JSON.stringify({
@@ -113,8 +136,32 @@ function handleMotion(data) {
                     lapDistance: lapDist
                 };
                 if (gameState.isTrackMapped && gameState.currentTrackId !== -1) {
-                    const filePath = path.join(trackMapsDir, `track_${gameState.currentTrackId}.json`);
-                    safeSaveTrackMap(filePath, { trackPoints: state.trackPoints, startLine: state.startLine, sector1: state.sector1, sector2: state.sector2 });
+                    if (!isTrackFinalized(gameState.currentTrackId)) {
+                        const filePath = path.join(trackMapsDir, `track_${gameState.currentTrackId}.json`);
+                        let drsZones = state.drsZones || [];
+                        let straightModeZones = state.straightModeZones || [];
+                        let gameYear = state.gameYear || 25;
+                        let finalized = false;
+                        if (fs.existsSync(filePath)) {
+                            try {
+                                const existing = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                                if (Array.isArray(existing.drsZones) && existing.drsZones.length > 0) drsZones = existing.drsZones;
+                                if (Array.isArray(existing.straightModeZones) && existing.straightModeZones.length > 0) straightModeZones = existing.straightModeZones;
+                                if (existing.gameYear) gameYear = existing.gameYear;
+                                if (existing.finalized !== undefined) finalized = !!existing.finalized;
+                            } catch (e) { }
+                        }
+                        safeSaveTrackMap(filePath, {
+                            trackPoints: state.trackPoints,
+                            startLine: state.startLine,
+                            sector1: state.sector1,
+                            sector2: state.sector2,
+                            drsZones: drsZones,
+                            straightModeZones: straightModeZones,
+                            gameYear: gameYear,
+                            finalized: finalized
+                        });
+                    }
                 }
             }
         }

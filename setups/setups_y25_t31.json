@@ -34,7 +34,7 @@
   },
   {
     "lapNum": 1,
-    "time": 104007,
+    "time": 133827,
     "setup": {
       "wingF": 20,
       "wingR": 13,
@@ -58,12 +58,13 @@
       "pressRLeft": 22,
       "pressRRight": 22,
       "ballast": 6,
-      "fuel": 102.13734436035156,
-      "fuelLaps": 3.926025390625,
+      "fuel": 10,
+      "fuelLaps": 2.4499902725219727,
       "fuelCapacity": 110,
-      "fuelMix": "Standard"
+      "fuelMix": "Standard",
+      "nextFrontWingValue": 20
     },
-    "timestamp": 1788344654599
+    "timestamp": 1793344184746
   },
   {
     "lapNum": 2,

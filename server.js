@@ -15,9 +15,13 @@ const { createHttpServer } = require('./src/http/httpServer');
 const { initWebSocketServer } = require('./src/websocket/wsServer');
 const { startBroadcastLoop } = require('./src/services/broadcastService');
 const { initUdpClient } = require('./src/udp/udpClient');
+const { loadActiveSessionSnapshot } = require('./src/services/storageService');
 
 // 1. Initialize file system storage directories
 initDirectories();
+
+// Restore active session state if available
+loadActiveSessionSnapshot();
 
 // 2. Initialize HTTP Server
 const server = createHttpServer();
@@ -38,6 +42,10 @@ console.log(`Listening for UDP on port ${UDP_PORT}...`);
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on all IPs at port ${PORT}`);
     displayAllLocalIPv4();
+    console.log('📡 [Telemetry API Engine] REST & WebSocket endpoints ready:');
+    console.log(`   - GET  http://localhost:${PORT}/api/telemetry/live`);
+    console.log(`   - POST http://localhost:${PORT}/api/telemetry/update`);
+    console.log(`   - WS   ws://localhost:${PORT} (Live Telemetry Stream)`);
 });
 
 module.exports = server;

@@ -319,8 +319,18 @@
          * Checks if the current session is a Race or Sprint session.
          */
         function isRaceSession(data) {
+            if (data?.session?.isRaceOrSprint !== undefined) {
+                return Boolean(data.session.isRaceOrSprint);
+            }
+            const sessionCategory = data?.session?.sessionCategory;
+            if (sessionCategory === "Race") return true;
+            if (sessionCategory === "TimeAttack") return false;
+
             const sessionType = data?.session?.type || "";
-            return sessionType.includes("Race") || sessionType.includes("Sprint");
+            if (sessionType.includes("Shootout") || sessionType.includes("Qualifying") || sessionType.includes("Practice") || sessionType.includes("Time Trial")) {
+                return false;
+            }
+            return sessionType.includes("Race") || (sessionType.includes("Sprint") && !sessionType.includes("Shootout"));
         }
 
         /**
@@ -531,11 +541,40 @@
             if (!data || !data.leaderboard || data.leaderboard.length === 0) return;
 
             const pIdx = data.playerIndex ?? -1;
-            const isTimeBased = data.session.sessionCategory === "TimeAttack";
+            const isTimeBased = !isRaceSession(data);
+
+            // In time-based sessions (Practice, Qualifying, Shootout, Time Trial), ensure ranking is strictly by best lap time
+            if (isTimeBased) {
+                data.leaderboard.sort((a, b) => {
+                    const aBest = a.bestLapMs || 0;
+                    const bBest = b.bestLapMs || 0;
+                    if (aBest === 0 && bBest === 0) return (a.carIndex ?? 0) - (b.carIndex ?? 0);
+                    if (aBest === 0) return 1;
+                    if (bBest === 0) return -1;
+                    return aBest - bBest;
+                });
+            }
+
             const sb1 = data.session.sessionBestS1 || 0;
             const sb2 = data.session.sessionBestS2 || 0;
             const sb3 = data.session.sessionBestS3 || 0;
             const poleTime = data.leaderboard.find(d => d.bestLapMs > 0)?.bestLapMs || 0;
+
+            // Dynamically update the header badge according to session type
+            const modeTagEl = document.getElementById("lb-mode-tag");
+            if (modeTagEl) {
+                if (isTimeBased) {
+                    const sType = data.session?.type || "";
+                    if (sType.includes("Practice")) modeTagEl.textContent = "PRACTICE TIMING";
+                    else if (sType.includes("Qualifying")) modeTagEl.textContent = "QUALIFYING CLASSIFICATION";
+                    else if (sType.includes("Shootout")) modeTagEl.textContent = "SHOOTOUT CLASSIFICATION";
+                    else if (sType.includes("Time Trial")) modeTagEl.textContent = "TIME TRIAL STANDINGS";
+                    else modeTagEl.textContent = "LIVE CLASSIFICATION";
+                } else {
+                    const sType = data.session?.type || "";
+                    modeTagEl.textContent = sType.includes("Sprint") ? "SPRINT STANDINGS" : "RACE STANDINGS";
+                }
+            }
 
             // Reference driver handling
             const refIndicator = document.getElementById("lb-ref-indicator");
@@ -570,7 +609,7 @@
                 if (isTimeBased) {
                     headersHtml += `
                         <span class="col-best">BEST</span>
-                        <span class="col-gap">${refDriver ? 'GAP' : 'GAP'}</span>
+                        <span class="col-gap">${refDriver ? 'GAP' : 'LEAD'}</span>
                         <span class="col-int">INT</span>
                         <span class="col-laps">LAPS</span>
                         <span class="col-stat">STAT</span>
@@ -590,17 +629,20 @@
                     <span class="col-s2">S2</span>
                     <span class="col-s3">S3</span>
                     <span class="col-best">BEST</span>
-                    <span class="col-gap">${refDriver ? 'GAP' : (isTimeBased ? 'GAP' : 'LEAD')}</span>
+                    <span class="col-gap">${refDriver ? 'GAP' : 'LEAD'}</span>
+                    <span class="col-int">INT</span>
                 `;
             } else {
                 // 'all' mode
                 if (isTimeBased) {
                     headersHtml += `
+                        <span class="col-tyre">TYRE</span>
                         <span class="col-s1">S1</span>
                         <span class="col-s2">S2</span>
                         <span class="col-s3">S3</span>
                         <span class="col-best">BEST</span>
-                        <span class="col-gap">${refDriver ? 'GAP' : 'GAP'}</span>
+                        <span class="col-gap">${refDriver ? 'GAP' : 'LEAD'}</span>
+                        <span class="col-int">INT</span>
                         <span class="col-laps">LAPS</span>
                         <span class="col-stat">STAT</span>
                     `;
@@ -653,7 +695,7 @@
                     if (isRefDriver) {
                         gapDisplay = `<span class="val-ref">0.000</span>`;
                         intDisplay = `<span class="val-ref">REF</span>`;
-                    } else if (driver.pitStatus > 0) {
+                    } else if (driver.pitStatus > 0 && !isTimeBased) {
                         gapDisplay = '<span class="badge-pen">PIT</span>';
                         intDisplay = '<span class="badge-pen">PIT</span>';
                     } else if (isTimeBased) {
@@ -671,7 +713,21 @@
                         } else {
                             gapDisplay = '--';
                         }
-                        intDisplay = (idx > 0) ? (driver.gapInt || '--') : '--';
+
+                        // Interval relative to car ahead in classification based on best lap
+                        if (idx === 0) {
+                            intDisplay = 'LEAD';
+                        } else if (currBest > 0 && idx > 0) {
+                            const prevBest = data.leaderboard[idx - 1]?.bestLapMs || 0;
+                            if (prevBest > 0) {
+                                const diffInt = (currBest - prevBest) / 1000;
+                                intDisplay = `+${diffInt.toFixed(3)}`;
+                            } else {
+                                intDisplay = '--';
+                            }
+                        } else {
+                            intDisplay = '--';
+                        }
                     } else {
                         // RACE MODE relative to Reference Driver
                         const currLead = Number.isFinite(driver.leadSec) ? driver.leadSec : (parseFloat(String(driver.gapLead).replace(/[^\d.-]/g, '')) || 0);
@@ -702,14 +758,28 @@
                     }
                 } else {
                     // DEFAULT (Leader reference)
-                    if (isTimeBased && driver.bestLapMs > 0 && poleTime > 0) {
-                        if (driver.bestLapMs === poleTime) {
-                            gapDisplay = '<span style="color:var(--rbr-yellow); font-weight:700;">POLE</span>';
+                    if (isTimeBased) {
+                        if (idx === 0) {
+                            const isQualiOrShootout = data.session?.type?.includes('Qualifying') || data.session?.type?.includes('Shootout');
+                            gapDisplay = driver.bestLapMs > 0
+                                ? `<span style="color:var(--rbr-yellow); font-weight:700;">${isQualiOrShootout ? 'POLE' : 'LEAD'}</span>`
+                                : '--';
+                            intDisplay = driver.bestLapMs > 0 ? 'LEAD' : '--';
+                        } else if (driver.bestLapMs > 0 && poleTime > 0) {
+                            const diffLead = (driver.bestLapMs - poleTime) / 1000;
+                            gapDisplay = `+${diffLead.toFixed(3)}`;
+
+                            const prevDriver = data.leaderboard[idx - 1];
+                            if (prevDriver && prevDriver.bestLapMs > 0) {
+                                const diffInt = (driver.bestLapMs - prevDriver.bestLapMs) / 1000;
+                                intDisplay = `+${diffInt.toFixed(3)}`;
+                            } else {
+                                intDisplay = '--';
+                            }
                         } else {
-                            const diff = (driver.bestLapMs - poleTime) / 1000;
-                            gapDisplay = `+${diff.toFixed(3)}`;
+                            gapDisplay = '--';
+                            intDisplay = '--';
                         }
-                        intDisplay = (idx > 0) ? (driver.gapInt || `+${((driver.bestLapMs - (data.leaderboard[idx - 1].bestLapMs || poleTime)) / 1000).toFixed(3)}`) : '--';
                     } else {
                         gapDisplay = (idx === 0) ? 'LEAD' : (driver.gapLead || driver.gapText || '--');
                         intDisplay = (idx === 0) ? 'LEAD' : (driver.gapInt || driver.gapText || '--');
@@ -748,16 +818,19 @@
                         <span class="col-s3">${s3Badge}</span>
                         <span class="col-best val ${bestClass}">${bestStr}</span>
                         <span class="col-gap val">${gapDisplay}</span>
+                        <span class="col-int val">${intDisplay}</span>
                     `;
                 } else {
                     // 'all' mode
                     if (isTimeBased) {
                         rowHtml += `
+                            <span class="col-tyre" style="color:${driver.tyreClass || '#FFF'};">${driver.tyre || '-'}</span>
                             <span class="col-s1">${s1Badge}</span>
                             <span class="col-s2">${s2Badge}</span>
                             <span class="col-s3">${s3Badge}</span>
                             <span class="col-best val ${bestClass}">${bestStr}</span>
                             <span class="col-gap val">${gapDisplay}</span>
+                            <span class="col-int val">${intDisplay}</span>
                             <span class="col-laps val">${driver.lapNum || 0}</span>
                             <span class="col-stat val" style="color:var(--text-muted);">${driver.pitStatus > 0 ? 'PIT' : 'TRACK'}</span>
                         `;
@@ -1352,19 +1425,30 @@
             sector2: null,
             drsZones: null,
             straightModeZones: null,
-            gameYear: 26,
+            gameYear: 25,
+            finalized: false,
             isOfflineOverride: false,
             requestedTrackId: null
         };
 
-        let activeRegYear = 26; // 25 for F1 25 (DRS), 26 for F1 26 (Straight Mode)
-        let regYearUserSelected = false;
+        let savedRegYear = null;
+        try {
+            const rVal = localStorage.getItem('f1_active_reg_year');
+            if (rVal !== null && rVal !== "") {
+                savedRegYear = parseInt(rVal, 10);
+            }
+        } catch (e) {}
+        let activeRegYear = (savedRegYear === 25 || savedRegYear === 26) ? savedRegYear : 25; // Default to F1 25 (DRS) so synced DRS zones are loaded and rendered
+        let regYearUserSelected = (savedRegYear !== null && !isNaN(savedRegYear));
 
         function updateRegModeUI() {
             const btn = document.getElementById("reg-mode-btn");
             const dot = document.getElementById("reg-mode-dot");
             const text = document.getElementById("reg-mode-text");
             if (!btn || !text) return;
+            try {
+                localStorage.setItem('f1_active_reg_year', activeRegYear);
+            } catch (e) {}
             if (activeRegYear === 26) {
                 btn.style.background = "rgba(0, 240, 255, 0.12)";
                 btn.style.borderColor = "rgba(0, 240, 255, 0.35)";
@@ -1391,6 +1475,9 @@
         function toggleRegulationMode() {
             regYearUserSelected = true;
             activeRegYear = activeRegYear === 26 ? 25 : 26;
+            try {
+                localStorage.setItem('f1_active_reg_year', activeRegYear);
+            } catch (e) {}
             updateRegModeUI();
             showToast(activeRegYear === 26 ? "⚡ Switched to F1 26 Regulations (Straight Mode Aero)" : "🟢 Switched to F1 25 Regulations (DRS Activation Zones)");
             if (currentTrackMap.trackPoints && currentTrackMap.trackPoints.length >= 20) {
@@ -1519,7 +1606,10 @@
                 window.liveRecordingLineMesh = null;
             }
 
-            try { localStorage.removeItem('f1_cached_track_map'); } catch (e) { }
+            const syncBtn = document.getElementById("syncbttn");
+            if (syncBtn) syncBtn.style.display = "none";
+            const finBtn = document.getElementById("finalizebttn");
+            if (finBtn) finBtn.style.display = "none";
         }
 
         /**
@@ -1594,8 +1684,15 @@
                 window.liveRecordingLineMesh = null;
             }
 
-            const tId = mapData.trackId !== undefined && mapData.trackId !== null ? parseInt(mapData.trackId, 10) : currentTrackMap.trackId;
+            const tId = (mapData.trackId !== undefined && mapData.trackId !== null)
+                ? parseInt(mapData.trackId, 10)
+                : (currentTrackMap.trackId !== null ? parseInt(currentTrackMap.trackId, 10) : (currentTrackMap.requestedTrackId !== null ? parseInt(currentTrackMap.requestedTrackId, 10) : null));
             const ptsLen = mapData.trackPoints.length;
+
+            if (tId !== null && !isNaN(tId) && tId !== -1) {
+                currentTrackMap.trackId = tId;
+                mapData.trackId = tId;
+            }
 
             // Skip expensive CatmullRom and TubeGeometry regeneration if this exact track is already rendered
             if (!force && currentTrackMap.trackId === tId && currentTrackMap.pointsLength === ptsLen && trackLines[0].geometry && trackLines[0].geometry.attributes && trackLines[0].geometry.attributes.position) {
@@ -1608,9 +1705,24 @@
             currentTrackMap.startLine = mapData.startLine || null;
             currentTrackMap.sector1 = mapData.sector1 || null;
             currentTrackMap.sector2 = mapData.sector2 || null;
-            currentTrackMap.drsZones = Array.isArray(mapData.drsZones) ? mapData.drsZones : currentTrackMap.drsZones;
-            currentTrackMap.straightModeZones = Array.isArray(mapData.straightModeZones) ? mapData.straightModeZones : currentTrackMap.straightModeZones;
+            if (Array.isArray(mapData.drsZones) && mapData.drsZones.length > 0) {
+                currentTrackMap.drsZones = mapData.drsZones;
+            }
+            if (Array.isArray(mapData.straightModeZones) && mapData.straightModeZones.length > 0) {
+                currentTrackMap.straightModeZones = mapData.straightModeZones;
+            }
             currentTrackMap.gameYear = mapData.gameYear || activeRegYear;
+
+            if (mapData.finalized !== undefined) {
+                currentTrackMap.finalized = !!mapData.finalized;
+                updateFinalizeButtonState(!!mapData.finalized);
+                updateSyncButtonState(!!mapData.finalized);
+            }
+
+            const syncBtn = document.getElementById("syncbttn");
+            if (syncBtn) syncBtn.style.display = "flex";
+            const finBtn = document.getElementById("finalizebttn");
+            if (finBtn) finBtn.style.display = "flex";
 
             // Update Start Line Mesh
             if (mapData.startLine && mapData.startLine.yaw !== undefined && (mapData.startLine.x !== 0 || mapData.startLine.z !== 0)) {
@@ -1921,15 +2033,82 @@
             // Cache valid track geometry in localStorage so it never disappears on refresh
             try {
                 if (mapData && Array.isArray(mapData.trackPoints) && mapData.trackPoints.length >= 20) {
+                    const cacheId = (tId !== null && !isNaN(tId) && tId !== -1) ? tId : currentTrackMap.trackId;
                     localStorage.setItem('f1_cached_track_map', JSON.stringify({
-                        trackId: tId,
+                        trackId: cacheId,
                         trackPoints: mapData.trackPoints,
                         startLine: mapData.startLine,
                         sector1: mapData.sector1,
-                        sector2: mapData.sector2
+                        sector2: mapData.sector2,
+                        drsZones: mapData.drsZones || currentTrackMap.drsZones || null,
+                        straightModeZones: mapData.straightModeZones || currentTrackMap.straightModeZones || null,
+                        gameYear: mapData.gameYear || currentTrackMap.gameYear || activeRegYear,
+                        finalized: mapData.finalized !== undefined ? mapData.finalized : currentTrackMap.finalized
                     }));
+                    if (cacheId !== null && cacheId !== -1 && !isNaN(cacheId)) {
+                        localStorage.setItem('f1_last_track_id', cacheId);
+                    }
                 }
             } catch (e) { }
+        }
+
+        function restoreCachedTrackMap() {
+            try {
+                let savedId = null;
+                try {
+                    const s = localStorage.getItem('f1_last_track_id');
+                    if (s !== null && s !== "" && s !== "-1") {
+                        savedId = parseInt(s, 10);
+                    }
+                } catch (e) {}
+
+                // If no last track was ever loaded/saved, we should start with nothing
+                if (savedId === null || isNaN(savedId) || savedId === -1) {
+                    return false;
+                }
+
+                const cached = localStorage.getItem('f1_cached_track_map');
+                if (cached) {
+                    const mapData = JSON.parse(cached);
+                    if (mapData && Array.isArray(mapData.trackPoints) && mapData.trackPoints.length >= 20) {
+                        const tId = mapData.trackId !== undefined && mapData.trackId !== null ? parseInt(mapData.trackId, 10) : null;
+                        // Validate cached track matches the last loaded track
+                        if (tId === null || isNaN(tId) || tId !== savedId) {
+                            return false;
+                        }
+
+                        currentTrackMap.trackId = tId;
+                        const name = F1_TRACK_MAP[tId] || `TRACK ${tId}`;
+                        setText("track-name", name.toUpperCase());
+                        const trackSel = document.getElementById("track-selector");
+                        if (trackSel) trackSel.value = tId;
+                        const syncBtn = document.getElementById("syncbttn");
+                        if (syncBtn) syncBtn.style.display = "flex";
+                        const finBtn = document.getElementById("finalizebttn");
+                        if (finBtn) finBtn.style.display = "flex";
+
+                        if (mapData.finalized !== undefined) {
+                            currentTrackMap.finalized = !!mapData.finalized;
+                            updateFinalizeButtonState(!!mapData.finalized);
+                            updateSyncButtonState(!!mapData.finalized);
+                        }
+                        if (mapData.drsZones && mapData.drsZones.length > 0 && (!mapData.straightModeZones || mapData.straightModeZones.length === 0 || mapData.gameYear === 25)) {
+                            if (!regYearUserSelected) {
+                                activeRegYear = 25;
+                                updateRegModeUI();
+                            }
+                        } else if (mapData.gameYear && !regYearUserSelected) {
+                            activeRegYear = mapData.gameYear === 25 ? 25 : 26;
+                            updateRegModeUI();
+                        }
+                        renderTrackGeometry(mapData, true);
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to restore cached track map:", e);
+            }
+            return false;
         }
 
         /**
@@ -3316,6 +3495,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     setText("ws-status", "CONNECTED");
                     setStyleById("ws-status", "color", "var(--fia-green)");
                     ws.send(JSON.stringify({ action: "getAvailableTracks" }));
+                    // Only request track data for the active live session (no old session map auto-load)
                     ws.send(JSON.stringify({ action: "getTrackData" }));
                 };
                 ws.onclose = () => {
@@ -3341,7 +3521,30 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             }
         }
 
+        function updateSyncButtonState(isFinalized) {
+            const syncBtn = document.getElementById("syncbttn");
+            if (!syncBtn) return;
+            if (isFinalized) {
+                syncBtn.classList.add("locked");
+                syncBtn.style.opacity = "0.45";
+                syncBtn.style.cursor = "not-allowed";
+                syncBtn.title = "🔒 Track Map Locked - Sync not allowed";
+            } else {
+                syncBtn.classList.remove("locked");
+                syncBtn.style.opacity = "1";
+                syncBtn.style.cursor = "pointer";
+                syncBtn.title = "Sync Track Lines from Telemetry";
+            }
+        }
+
         function syncTrackLines() {
+            const finBtn = document.getElementById("finalizebttn");
+            const isFinalized = (currentTrackMap && currentTrackMap.finalized) || (finBtn && finBtn.classList.contains("finalized"));
+            if (isFinalized) {
+                showToast("🔒 Track Map is locked/finalized. No more sync is allowed.");
+                return;
+            }
+
             if (!ws || ws.readyState !== WebSocket.OPEN) {
                 showToast("⚠️ WebSocket not connected. Check server connection.");
                 return;
@@ -3379,7 +3582,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             if (resolvedTrackId !== null && resolvedTrackId !== -1) {
                 const trackName = F1_TRACK_MAP[resolvedTrackId] || window.lastTelemetryData?.session?.trackName || `TRACK ${resolvedTrackId}`;
                 showToast(`🏎️ Syncing ${trackName.toUpperCase()} lines (${activeRegYear === 26 ? 'F1 26 Straight Mode' : 'F1 25 DRS'})...`);
-                ws.send(JSON.stringify({ action: "syncTrackLines", trackId: resolvedTrackId, gameYear: activeRegYear, force: true }));
+                ws.send(JSON.stringify({ action: "syncTrackLines", trackId: resolvedTrackId, gameYear: activeRegYear, force: false }));
                 ws.send(JSON.stringify({ action: "getTrackData", trackId: resolvedTrackId }));
                 const trackSel = document.getElementById("track-selector");
                 if (trackSel && trackSel.value != resolvedTrackId) {
@@ -3388,7 +3591,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             } else {
                 // Let server auto-detect the track from UDP session
                 showToast(`🔍 Auto-syncing track lines from telemetry (${activeRegYear === 26 ? 'F1 26 Straight Mode' : 'F1 25 DRS'})...`);
-                ws.send(JSON.stringify({ action: "syncTrackLines", gameYear: activeRegYear, force: true }));
+                ws.send(JSON.stringify({ action: "syncTrackLines", gameYear: activeRegYear, force: false }));
                 ws.send(JSON.stringify({ action: "getTrackData" }));
             }
         }
@@ -3418,6 +3621,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     path.setAttribute("d", "M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5-2.28 0-4.27 1.54-4.84 3.75-.14.54.18 1.08.72 1.22.53.14 1.08-.18 1.22-.72C10.51 3.66 11.98 2.9 12 2.9c1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z");
                 }
             }
+            updateSyncButtonState(isFinalized);
         }
 
         function toggleFinalizeTrack() {
@@ -3446,7 +3650,9 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             const btn = document.getElementById("finalizebttn");
             const currentlyFinalized = btn ? btn.classList.contains("finalized") : false;
-            updateFinalizeButtonState(!currentlyFinalized);
+            const nextFinalized = !currentlyFinalized;
+            currentTrackMap.finalized = nextFinalized;
+            updateFinalizeButtonState(nextFinalized);
 
             ws.send(JSON.stringify({
                 action: "toggleFinalizeTrack",
@@ -3455,7 +3661,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         }
 
         document.getElementById("track-selector")?.addEventListener('change', function () {
-            if (document.getElementById("track-selector").value !== -1 && document.getElementById("track-selector").value !== "-1") {
+            const val = document.getElementById("track-selector").value;
+            if (val !== -1 && val !== "-1" && val !== "") {
                 const syncBtn = document.getElementById("syncbttn");
                 if (syncBtn) syncBtn.style.display = "flex";
                 const finBtn = document.getElementById("finalizebttn");
@@ -3465,11 +3672,30 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
         function loadOfflineTrack(trackId) {
             if (!trackId || trackId === -1 || trackId === "-1" || trackId === "") {
+                clearTrackGeometry();
+                currentTrackMap.trackId = null;
+                currentTrackMap.requestedTrackId = null;
+                currentTrackMap.isOfflineOverride = false;
+                setText("track-name", "NO ACTIVE TRACK");
+                const syncBtn = document.getElementById("syncbttn");
+                if (syncBtn) syncBtn.style.display = "none";
+                const finBtn = document.getElementById("finalizebttn");
+                if (finBtn) finBtn.style.display = "none";
+                const trackSel = document.getElementById("track-selector");
+                if (trackSel) trackSel.value = "-1";
+                try {
+                    localStorage.removeItem('f1_last_track_id');
+                    localStorage.removeItem('f1_cached_track_map');
+                } catch (e) {}
                 return;
             }
             const tId = parseInt(trackId, 10);
             currentTrackMap.isOfflineOverride = true;
             currentTrackMap.requestedTrackId = tId;
+            currentTrackMap.trackId = tId;
+            try {
+                localStorage.setItem('f1_last_track_id', tId);
+            } catch (e) {}
 
             // Immediately display track name in UI header
             const trackName = F1_TRACK_MAP[tId] ? F1_TRACK_MAP[tId].toUpperCase() : `TRACK ${tId}`;
@@ -3477,6 +3703,39 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
             const syncBtn = document.getElementById("syncbttn");
             if (syncBtn) syncBtn.style.display = "flex";
+            const finBtn = document.getElementById("finalizebttn");
+            if (finBtn) finBtn.style.display = "flex";
+            const trackSel = document.getElementById("track-selector");
+            if (trackSel && trackSel.value != tId) trackSel.value = tId;
+
+            // Immediately load synced trackmap directly from json file on disk/web
+            fetch(`track_maps/track_${tId}.json`)
+                .then(res => {
+                    if (!res.ok) throw new Error(`track_${tId}.json not found`);
+                    return res.json();
+                })
+                .then(mapData => {
+                    if (mapData && Array.isArray(mapData.trackPoints) && mapData.trackPoints.length >= 20) {
+                        const isFin = !!mapData.finalized;
+                        currentTrackMap.finalized = isFin;
+                        updateFinalizeButtonState(isFin);
+                        updateSyncButtonState(isFin);
+
+                        if (mapData.drsZones && mapData.drsZones.length > 0 && (!mapData.straightModeZones || mapData.straightModeZones.length === 0 || mapData.gameYear === 25)) {
+                            if (!regYearUserSelected) {
+                                activeRegYear = 25;
+                                updateRegModeUI();
+                            }
+                        } else if (mapData.gameYear && !regYearUserSelected) {
+                            activeRegYear = mapData.gameYear === 25 ? 25 : 26;
+                            updateRegModeUI();
+                        }
+
+                        mapData.trackId = tId;
+                        renderTrackGeometry(mapData, true);
+                    }
+                })
+                .catch(() => {});
 
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ action: "getTrackData", trackId: tId }));
@@ -3511,8 +3770,11 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         opt.textContent = F1_TRACK_MAP[id] ? F1_TRACK_MAP[id].toUpperCase() : `TRACK ${id}`;
                         select.appendChild(opt);
                     });
-                    if (currentVal && currentVal !== "-1") {
-                        select.value = currentVal;
+                    const activeId = (currentTrackMap.trackId !== null && currentTrackMap.trackId !== -1)
+                        ? currentTrackMap.trackId
+                        : (currentVal && currentVal !== "-1" ? currentVal : null);
+                    if (activeId !== null) {
+                        select.value = activeId;
                     }
                 }
                 return;
@@ -3528,15 +3790,38 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         const name = F1_TRACK_MAP[trackId] || `TRACK ${trackId}`;
                         setText("track-name", name.toUpperCase() + " (DRIVE 1 LAP TO MAP)");
                     } else {
+                        currentTrackMap.trackId = null;
+                        currentTrackMap.requestedTrackId = null;
+                        currentTrackMap.isOfflineOverride = false;
                         setText("track-name", "NO ACTIVE TRACK");
+                        const trackSel = document.getElementById("track-selector");
+                        if (trackSel) {
+                            trackSel.value = "-1";
+                            trackSel.style.display = "block";
+                        }
+                        const syncBtn = document.getElementById("syncbttn");
+                        if (syncBtn) syncBtn.style.display = "none";
+                        const finBtn = document.getElementById("finalizebttn");
+                        if (finBtn) finBtn.style.display = "none";
                     }
                     return;
                 }
 
-                if (trackData.gameYear && !regYearUserSelected) {
+                currentTrackMap.trackId = trackId;
+                trackData.trackId = trackId;
+
+                // Prioritize DRS mode if track contains DRS zones and not straight mode zones
+                if (trackData.drsZones && trackData.drsZones.length > 0 && (!trackData.straightModeZones || trackData.straightModeZones.length === 0 || trackData.gameYear === 25)) {
+                    if (!regYearUserSelected) {
+                        activeRegYear = 25;
+                        updateRegModeUI();
+                    }
+                } else if (trackData.gameYear && !regYearUserSelected) {
                     activeRegYear = trackData.gameYear === 25 ? 25 : 26;
                     updateRegModeUI();
                 }
+
+                currentTrackMap.finalized = !!trackData.finalized;
 
                 renderTrackGeometry({
                     trackId: trackId,
@@ -3544,14 +3829,21 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     startLine: trackData.startLine,
                     sector1: trackData.sector1,
                     sector2: trackData.sector2,
-                    drsZones: trackData.drsZones,
-                    straightModeZones: trackData.straightModeZones,
-                    gameYear: trackData.gameYear || activeRegYear
+                    drsZones: (Array.isArray(trackData.drsZones) && trackData.drsZones.length > 0) ? trackData.drsZones : currentTrackMap.drsZones,
+                    straightModeZones: (Array.isArray(trackData.straightModeZones) && trackData.straightModeZones.length > 0) ? trackData.straightModeZones : currentTrackMap.straightModeZones,
+                    gameYear: trackData.gameYear || activeRegYear,
+                    finalized: currentTrackMap.finalized
                 }, true);
 
                 if (trackData.finalized !== undefined) {
                     updateFinalizeButtonState(!!trackData.finalized);
+                    updateSyncButtonState(!!trackData.finalized);
                 }
+
+                const syncBtn = document.getElementById("syncbttn");
+                if (syncBtn) syncBtn.style.display = "flex";
+                const finBtn = document.getElementById("finalizebttn");
+                if (finBtn) finBtn.style.display = "flex";
 
                 const select = document.getElementById("track-selector");
                 if (trackId !== null && select && select.value != trackId) {
@@ -3560,6 +3852,9 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 if (trackId !== null && trackId !== -1) {
                     const name = F1_TRACK_MAP[trackId] || `TRACK ${trackId}`;
                     setText("track-name", name.toUpperCase());
+                    try {
+                        localStorage.setItem('f1_last_track_id', trackId);
+                    } catch (e) {}
                 }
                 return;
             }
@@ -3567,6 +3862,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             if (data.type === "trackFinalizedState") {
                 const trackId = data.trackId !== undefined && data.trackId !== null ? parseInt(data.trackId, 10) : null;
                 if (trackId === null || currentTrackMap.trackId === trackId) {
+                    currentTrackMap.finalized = !!data.finalized;
                     updateFinalizeButtonState(!!data.finalized);
                 }
                 return;
@@ -3583,6 +3879,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             if (data.type === "trackLinesUpdated") {
                 const trackId = data.trackId !== undefined && data.trackId !== null ? parseInt(data.trackId, 10) : null;
                 if (data.finalized !== undefined) {
+                    currentTrackMap.finalized = !!data.finalized;
                     updateFinalizeButtonState(!!data.finalized);
                 }
                 if (currentTrackMap.trackPoints && (trackId === null || currentTrackMap.trackId === trackId)) {
@@ -3598,7 +3895,8 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                         sector2: data.sector2 || currentTrackMap.sector2,
                         drsZones: Array.isArray(data.drsZones) ? data.drsZones : currentTrackMap.drsZones,
                         straightModeZones: Array.isArray(data.straightModeZones) ? data.straightModeZones : currentTrackMap.straightModeZones,
-                        gameYear: data.gameYear || activeRegYear
+                        gameYear: data.gameYear || activeRegYear,
+                        finalized: currentTrackMap.finalized
                     }, true);
                 }
                 return;
@@ -3729,7 +4027,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
 
                 const pbLap = playerLbData?.bestLapMs;
                 const sbLap = data.session.sessionFastestLapMs;
-                const isQualiOrTT = data.session.sessionCategory === "TimeAttack";
+                const isQualiOrTT = !isRaceSession(data);
                 const bestLapRef = isQualiOrTT
                     ? (sbLap > 0 ? sbLap : (pbLap > 0 ? pbLap : 0))
                     : (pbLap > 0 ? pbLap : (sbLap > 0 ? sbLap : 0));
@@ -3970,7 +4268,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             setText("hud-gap", data.lap.gapFront || "+0.000");
 
             // Hero Bar Target Cards
-            const isQualiOrPractice = data.session.sessionCategory === "TimeAttack";
+            const isQualiOrPractice = !isRaceSession(data);
             setText('hero-pos-lbl', isQualiOrPractice ? "QUALI RANK" : "POSITION");
 
             if (isQualiOrPractice) {
@@ -4269,6 +4567,25 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     }
                     const liveName = F1_TRACK_MAP[liveTrackId] || data.session.trackName || `TRACK ${liveTrackId}`;
                     setText("track-name", liveName.toUpperCase());
+                    try {
+                        localStorage.setItem('f1_last_track_id', liveTrackId);
+                    } catch (e) {}
+                }
+            } else if (!isLiveSession && !currentTrackMap.isOfflineOverride) {
+                // If no session is found, keep track map empty (do not show old session map)
+                if (currentTrackMap.trackId !== null || (currentTrackMap.trackPoints && currentTrackMap.trackPoints.length > 0)) {
+                    clearTrackGeometry();
+                    currentTrackMap.trackId = null;
+                    currentTrackMap.requestedTrackId = null;
+                    setText("track-name", "NO ACTIVE TRACK");
+                    if (trackSelector) {
+                        trackSelector.value = "-1";
+                        trackSelector.style.display = "block";
+                    }
+                    const syncBtn = document.getElementById("syncbttn");
+                    if (syncBtn) syncBtn.style.display = "none";
+                    const finBtn = document.getElementById("finalizebttn");
+                    if (finBtn) finBtn.style.display = "none";
                 }
             }
 
@@ -4280,9 +4597,10 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                     startLine: data.startLine,
                     sector1: data.sector1,
                     sector2: data.sector2,
-                    drsZones: data.drsZones,
-                    straightModeZones: data.straightModeZones,
-                    gameYear: data.gameYear || activeRegYear
+                    drsZones: (Array.isArray(data.drsZones) && data.drsZones.length > 0) ? data.drsZones : currentTrackMap.drsZones,
+                    straightModeZones: (Array.isArray(data.straightModeZones) && data.straightModeZones.length > 0) ? data.straightModeZones : currentTrackMap.straightModeZones,
+                    gameYear: data.gameYear || activeRegYear,
+                    finalized: currentTrackMap.finalized
                 });
             }
 
@@ -4396,8 +4714,24 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
         setRadarMobileView('map');
         drawInputTrace(0, 0, false, false);
 
-        // Open empty on cold startup - do not auto-load stale tracks until live session or user selection
+        // Regulations mode UI
+        updateRegModeUI();
+
+        // Starting state: if no session is found, keep track map empty and show "Load Track..."
+        clearTrackGeometry();
+        currentTrackMap.trackId = null;
+        currentTrackMap.requestedTrackId = null;
+        currentTrackMap.isOfflineOverride = false;
         setText("track-name", "NO ACTIVE TRACK");
+        const syncBtn = document.getElementById("syncbttn");
+        if (syncBtn) syncBtn.style.display = "none";
+        const finBtn = document.getElementById("finalizebttn");
+        if (finBtn) finBtn.style.display = "none";
+        const trackSel = document.getElementById("track-selector");
+        if (trackSel) {
+            trackSel.value = "-1";
+            trackSel.style.display = "block";
+        }
 
         connectWebSocket();
         window.addEventListener('DOMContentLoaded', () => {

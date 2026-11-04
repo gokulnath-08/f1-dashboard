@@ -5,8 +5,9 @@ const { touchUdpPacket, setPlayerIndex } = require('../../state/stateHelpers');
 function handleCarSetups(data) {
     touchUdpPacket();
     setPlayerIndex(data.m_header);
-    const { state } = gameState;
-    const setup = data.m_carSetups[state.playerIndex];
+    const { state, carPhysics, lapSetups, carLapSetups } = gameState;
+    const pIdx = state.playerIndex;
+    const setup = data.m_carSetups ? data.m_carSetups[pIdx] : null;
     if (setup) {
         state.setup.wingF = setup.m_frontWing !== undefined ? setup.m_frontWing : state.setup.wingF;
         state.setup.wingR = setup.m_rearWing !== undefined ? setup.m_rearWing : state.setup.wingR;
@@ -32,6 +33,55 @@ function handleCarSetups(data) {
         state.setup.ballast = setup.m_ballast !== undefined ? setup.m_ballast : state.setup.ballast;
         state.setup.fuel = setup.m_fuelLoad !== undefined ? setup.m_fuelLoad : state.setup.fuel;
     }
+
+    if (data.m_nextFrontWingValue !== undefined) {
+        state.setup.nextFrontWingValue = data.m_nextFrontWingValue;
+    }
+
+    // Record setup snapshot for the current active lap
+    const currentLap = carPhysics[pIdx]?.lapNum || state.lap?.lapNum || 1;
+    if (currentLap > 0 && lapSetups) {
+        lapSetups[currentLap] = { ...state.setup };
+    }
+
+    // Also track all 22 cars' setups per lap
+    if (Array.isArray(data.m_carSetups) && carLapSetups) {
+        for (let c = 0; c < 22; c++) {
+            const cs = data.m_carSetups[c];
+            if (cs && carLapSetups[c]) {
+                const cLap = carPhysics[c]?.lapNum || 1;
+                if (c === pIdx) {
+                    carLapSetups[c][cLap] = { ...state.setup };
+                } else if (cs.m_frontWing !== undefined || cs.m_rearWing !== undefined) {
+                    carLapSetups[c][cLap] = {
+                        wingF: cs.m_frontWing ?? 0,
+                        wingR: cs.m_rearWing ?? 0,
+                        diffOn: cs.m_onThrottle ?? 50,
+                        diffOff: cs.m_offThrottle ?? 50,
+                        engineBraking: cs.m_engineBraking ?? 100,
+                        camberF: cs.m_frontCamber ?? 0,
+                        camberR: cs.m_rearCamber ?? 0,
+                        toeF: cs.m_frontToe ?? 0,
+                        toeR: cs.m_rearToe ?? 0,
+                        suspF: cs.m_frontSuspension ?? 0,
+                        suspR: cs.m_rearSuspension ?? 0,
+                        arbF: cs.m_frontAntiRollBar ?? 0,
+                        arbR: cs.m_rearAntiRollBar ?? 0,
+                        heightF: cs.m_frontSuspensionHeight ?? 0,
+                        heightR: cs.m_rearSuspensionHeight ?? 0,
+                        bPressure: cs.m_brakePressure ?? 100,
+                        bBias: cs.m_brakeBias ?? 50,
+                        pressFLeft: cs.m_frontLeftTyrePressure ?? 0,
+                        pressFRight: cs.m_frontRightTyrePressure ?? 0,
+                        pressRLeft: cs.m_rearLeftTyrePressure ?? 0,
+                        pressRRight: cs.m_rearRightTyrePressure ?? 0,
+                        ballast: cs.m_ballast ?? 0,
+                        fuel: cs.m_fuelLoad ?? 0
+                    };
+                }
+            }
+        }
+    }
 }
 
 function handleCarStatus(data) {
@@ -42,11 +92,14 @@ function handleCarStatus(data) {
 
     for (let i = 0; i < 22; i++) {
         const s = data.m_carStatusData[i];
-        const visual = s.m_visualTyreCompound;
-        const actual = s.m_actualTyreCompound;
+        if (s) {
+            const visual = s.m_visualTyreCompound;
+            const actual = s.m_actualTyreCompound;
 
-        carDataTracker[i].tyre = visualTyreNames[visual] || fallbackTyreNames[actual] || 'UNK';
-        carDataTracker[i].tyreClass = visualTyreColors[visual] || '#808080';
+            carDataTracker[i].tyre = visualTyreNames[visual] || fallbackTyreNames[actual] || 'UNK';
+            carDataTracker[i].tyreClass = visualTyreColors[visual] || '#808080';
+            carDataTracker[i].tyreAge = s.m_tyresAgeLaps !== undefined ? s.m_tyresAgeLaps : (carDataTracker[i].tyreAge || 0);
+        }
     }
 
     const pStat = data.m_carStatusData[pIdx];

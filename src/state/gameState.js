@@ -16,6 +16,8 @@ const finalizedTracks = {};
 
 let currentSessionUID = null;
 let currentSessionType = null;
+let currentSessionLinkIdentifier = null;
+let currentWeekendLinkIdentifier = null;
 let lastSessionTime = 0;
 let currentTrackId = -1;
 let isTrackMapped = false;
@@ -28,7 +30,7 @@ let lapHistoryDirty = true;
 let broadcastTick = 0;
 
 let carDataTracker = Array.from({ length: 22 }, () => ({
-    pos: 0, lapNum: 0, pitStatus: 0, driverStatus: 0, bestLapMs: 0, gapText: '', maxSpeed: 0, tyre: 'UNK', tyreClass: '#FFFFFF', teamColor: '#FFFFFF', teamName: 'Unknown',
+    pos: 0, lapNum: 0, pitStatus: 0, driverStatus: 0, bestLapMs: 0, bestLapNum: 0, gapText: '', maxSpeed: 0, tyre: 'UNK', tyreClass: '#FFFFFF', tyreAge: 0, numPitStops: 0, teamColor: '#FFFFFF', teamName: 'Unknown',
     s1: 0, s2: 0, s3: 0, bestS1: 0, bestS2: 0, bestS3: 0,
     penalties: 0, warnings: 0, cornerCutting: 0, unservedDT: 0, unservedSG: 0, invalidLap: false
 }));
@@ -43,8 +45,13 @@ let currentLapTelemetry = Array.from({ length: 22 }, () => []);
 let lastLapTelemetry = Array.from({ length: 22 }, () => []);
 let fastestLapGhostData = [];
 let sessionDriverFastestLaps = Array.from({ length: 22 }, () => null);
+let allSessionLaps = [];
+let sessionLapsByDriver = Array.from({ length: 22 }, () => []);
 let isRecordingSessionTelemetry = false;
 let sessionRecordingStartTime = 0;
+let simulatedTelemetry = null;
+let lapSetups = {};
+let carLapSetups = Array.from({ length: 22 }, () => ({}));
 
 let state = {
     type: 'telemetry',
@@ -123,7 +130,8 @@ let state = {
         suspF: 0, suspR: 0, arbF: 0, arbR: 0, heightF: 0, heightR: 0,
         bPressure: 100, bBias: 50,
         pressFLeft: 0, pressFRight: 0, pressRLeft: 0, pressRRight: 0,
-        ballast: 0, fuel: 0, fuelLaps: 0
+        ballast: 0, fuel: 0, fuelLaps: 0, fuelCapacity: 110, fuelMix: 'Standard',
+        nextFrontWingValue: null
     },
     car: {
         tyreAge: 0, flag: 'GREEN', compound: 'Unknown', engineTemp: 0,
@@ -143,16 +151,26 @@ module.exports = {
     carPhysics,
     allLapHistories,
     allTyreStints,
+    lapSetups,
+    carLapSetups,
     currentLapTelemetry,
     lastLapTelemetry,
     fastestLapGhostData,
     sessionDriverFastestLaps,
+    get allSessionLaps() { return allSessionLaps; },
+    set allSessionLaps(v) { allSessionLaps = v; },
+    get sessionLapsByDriver() { return sessionLapsByDriver; },
+    set sessionLapsByDriver(v) { sessionLapsByDriver = v; },
     get isRecordingSessionTelemetry() { return isRecordingSessionTelemetry; },
     set isRecordingSessionTelemetry(v) { isRecordingSessionTelemetry = v; },
     get sessionRecordingStartTime() { return sessionRecordingStartTime; },
     set sessionRecordingStartTime(v) { sessionRecordingStartTime = v; },
     get currentSessionUID() { return currentSessionUID; },
     set currentSessionUID(v) { currentSessionUID = v; },
+    get currentSessionLinkIdentifier() { return currentSessionLinkIdentifier; },
+    set currentSessionLinkIdentifier(v) { currentSessionLinkIdentifier = v; },
+    get currentWeekendLinkIdentifier() { return currentWeekendLinkIdentifier; },
+    set currentWeekendLinkIdentifier(v) { currentWeekendLinkIdentifier = v; },
     get currentSessionType() { return currentSessionType; },
     set currentSessionType(v) { currentSessionType = v; },
     get lastSessionTime() { return lastSessionTime; },
@@ -172,5 +190,7 @@ module.exports = {
     get lapHistoryDirty() { return lapHistoryDirty; },
     set lapHistoryDirty(v) { lapHistoryDirty = v; },
     get broadcastTick() { return broadcastTick; },
-    set broadcastTick(v) { broadcastTick = v; }
+    set broadcastTick(v) { broadcastTick = v; },
+    get simulatedTelemetry() { return simulatedTelemetry; },
+    set simulatedTelemetry(v) { simulatedTelemetry = v; }
 };

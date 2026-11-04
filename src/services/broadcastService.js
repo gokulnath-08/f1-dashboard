@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 const { intervalMs } = require('../config');
 const gameState = require('../state/gameState');
 const { gForceData } = require('./gforceService');
+const { isRaceOrSprintSession } = require('../state/stateHelpers');
 const wsServer = require('../websocket/wsServer');
 
 let broadcastTimer = null;
@@ -29,35 +30,55 @@ function startBroadcastLoop() {
             }
         }
 
-        if (state.session.sessionCategory === 'TimeAttack') {
+        const isRaceOrSprint = (state.session.isRaceOrSprint !== undefined)
+            ? Boolean(state.session.isRaceOrSprint)
+            : isRaceOrSprintSession(state.session.sessionTypeRaw, state.session.type, gameState.currentGameYear);
+
+        if (!isRaceOrSprint) {
             newLeaderboard.sort((a, b) => {
-                if (a.bestLapMs === 0 && b.bestLapMs === 0) return a.carIndex - b.carIndex;
-                if (a.bestLapMs === 0) return 1;
-                if (b.bestLapMs === 0) return -1;
-                return a.bestLapMs - b.bestLapMs;
+                const aBest = a.bestLapMs || 0;
+                const bBest = b.bestLapMs || 0;
+                if (aBest === 0 && bBest === 0) return (a.carIndex ?? 0) - (b.carIndex ?? 0);
+                if (aBest === 0) return 1;
+                if (bBest === 0) return -1;
+                return aBest - bBest;
             });
 
-            const poleTimeMs = newLeaderboard.length > 0 ? newLeaderboard[0].bestLapMs : 0;
+            const poleTimeMs = (newLeaderboard.length > 0 && newLeaderboard[0].bestLapMs > 0)
+                ? newLeaderboard[0].bestLapMs
+                : 0;
 
             newLeaderboard.forEach((driver, idx) => {
                 driver.pos = idx + 1;
-                if (driver.bestLapMs === 0) {
+                if (!driver.bestLapMs || driver.bestLapMs === 0) {
                     driver.gapText = driver.pitStatus > 0 ? 'IN PIT' : 'OUT LAP';
+                    driver.gapLead = '--';
+                    driver.gapInt = '--';
                     driver.leadSec = 9999;
                     driver.intSec = 9999;
                 } else if (idx === 0) {
                     const mins = Math.floor(driver.bestLapMs / 60000);
                     const secs = ((driver.bestLapMs % 60000) / 1000).toFixed(3);
                     driver.gapText = `${mins}:${secs.padStart(6, '0')}`;
+                    driver.gapLead = 'LEAD';
+                    driver.gapInt = 'LEAD';
                     driver.leadSec = 0;
                     driver.intSec = 0;
                 } else {
-                    const diff = (driver.bestLapMs - poleTimeMs) / 1000;
-                    driver.gapText = `+${diff.toFixed(3)}`;
-                    driver.leadSec = diff;
+                    const diffLead = (driver.bestLapMs - poleTimeMs) / 1000;
+                    driver.gapLead = `+${diffLead.toFixed(3)}`;
+                    driver.gapText = driver.gapLead;
+                    driver.leadSec = diffLead;
+
                     const prev = newLeaderboard[idx - 1];
-                    const intDiff = (driver.bestLapMs - (prev.bestLapMs || poleTimeMs)) / 1000;
-                    driver.intSec = Math.max(0, intDiff);
+                    if (prev && prev.bestLapMs > 0) {
+                        const intDiff = (driver.bestLapMs - prev.bestLapMs) / 1000;
+                        driver.gapInt = `+${intDiff.toFixed(3)}`;
+                        driver.intSec = Math.max(0, intDiff);
+                    } else {
+                        driver.gapInt = '--';
+                        driver.intSec = 9999;
+                    }
                 }
             });
 
@@ -172,7 +193,12 @@ function startBroadcastLoop() {
         const playerLbInfo = playerLbIndex >= 0 ? state.leaderboard[playerLbIndex] : null;
 
         if (playerLbInfo) {
-            state.lap.gapFront = playerLbInfo.gapText || '+0.000';
+            state.lap.gapFront = (!isRaceOrSprint) ? (playerLbInfo.gapInt || '--') : (playerLbInfo.gapText || '+0.000');
+            if (!isRaceOrSprint) {
+                state.lap.pos = playerLbInfo.pos;
+                const poleTimeMs = (newLeaderboard.length > 0 && newLeaderboard[0].bestLapMs > 0) ? newLeaderboard[0].bestLapMs : 0;
+                state.lap.deltaToLeader = (playerLbInfo.bestLapMs > 0 && poleTimeMs > 0) ? (playerLbInfo.bestLapMs - poleTimeMs) : 0;
+            }
 
             // Driver Ahead Info (Race Interval or Quali Target)
             if (playerLbIndex > 0) {

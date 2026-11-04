@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <title>FIA F1 Braking Comparison &amp; Multi-Lap Session Telemetry Suite</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Roboto+Mono:wght@400;500;700;800&family=Titillium+Web:ital,wght@0,400;0,600;0,700;0,900;1,700&display=swap" rel="stylesheet">
+
+    <!-- CSS Design System -->
+    <link rel="stylesheet" href="css/braking-comparison.css?v=2.0">
+</head>
+
+<body>
+    <!-- Top Glowing F1 Apex Line -->
+    <div class="f1-apex-line"></div>
+
+    <!-- ══════════ TOP BRANDING & CIRCUIT HEADER ══════════ -->
+    <header class="brake-header-bar">
+        <div class="brake-brand-left">
+            <a href="/" class="brake-nav-back" title="Return to Main Telemetry Dashboard">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>DASHBOARD</span>
+            </a>
+            <a href="/ghost-comparison.html" class="brake-nav-back ghost-link" title="Open 3D Ghost Replay & Telemetry Comparison">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/></svg>
+                <span>GHOST 3D</span>
+            </a>
+            <div class="brake-brand-title">
+                <span class="brake-logo-badge">BRAKING LAB</span>
+                <span class="brake-suite-label">MULTI-LAP TELEMETRY</span>
+                <span id="sessionDatasetTag" class="role-tag live-tag">LIVE SESSION DATA</span>
+            </div>
+        </div>
+
+        <div class="brake-header-center">
+            <div class="circuit-pill-selector">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                <select id="circuitSelect" class="custom-select" title="Select Circuit Map"></select>
+            </div>
+            <div class="circuit-stats-pill" id="circuitStatsBadge">
+                <span id="trackNameDisplay">MELBOURNE</span>
+                <span class="sep">&bull;</span>
+                <span id="trackLengthDisplay">5,278 M</span>
+                <span class="sep">&bull;</span>
+                <span id="trackZonesDisplay">6 BRAKE ZONES</span>
+            </div>
+        </div>
+
+        <div class="brake-header-actions">
+            <!-- Analysis Mode Segmented Control -->
+            <div class="mode-toggle-group">
+                <button type="button" class="mode-btn active" id="btnModeMatrix" title="Compare Selected Lap against ALL other laps driven in the session">
+                    <span>▦</span> ALL LAPS MATRIX
+                </button>
+                <button type="button" class="mode-btn" id="btnModeH2H" title="Head-to-head comparison between two specific laps">
+                    <span>⚔</span> HEAD-TO-HEAD
+                </button>
+                <button type="button" class="mode-btn" id="btnModeSingle" title="Deep dive corner telemetry analysis of the baseline lap">
+                    <span>⌕</span> SINGLE LAP
+                </button>
+            </div>
+
+            <div class="tool-btn-group">
+                <button id="btnDemo" class="btn-header-tool btn-header-demo" title="Toggle Benchmark Demo Multi-Lap Comparison Dataset">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    <span id="btnDemoText">DEMO BENCHMARK</span>
+                </button>
+                <button id="btnSync" class="btn-header-tool" title="Refresh &amp; Sync Session Laps from Server">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    <span>SYNC</span>
+                </button>
+                <button id="btnExport" class="btn-header-tool" title="Export Full Braking Comparison Report (JSON)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span>EXPORT</span>
+                </button>
+            </div>
+
+            <div class="live-status-pill" id="liveStatusBadge">
+                <span class="live-pulse-dot"></span>
+                <span id="liveStatusText">CONNECTING</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ══════════ SESSION LAPS INTERACTIVE SELECTOR RIBBON ══════════ -->
+    <section class="session-laps-deck" id="sessionLapsDeck">
+        <div class="lap-deck-topbar">
+            <div class="deck-title-group">
+                <span class="deck-title">SESSION LAPS TIMELINE</span>
+                <span class="deck-hint">Click lap to set as Baseline (<span style="color:var(--neon-cyan);">CYAN</span>). In H2H mode, click a second lap to set as Challenger (<span style="color:var(--neon-magenta);">MAGENTA</span>).</span>
+            </div>
+            <div class="deck-controls-right">
+                <div class="mini-selector-wrap">
+                    <label for="baselineLapSelect">BASELINE:</label>
+                    <select id="baselineLapSelect" class="mini-select" title="Select Baseline Lap"></select>
+                </div>
+                <div class="mini-selector-wrap" id="compareLapSelectWrapper" style="display:none;">
+                    <label for="compareLapSelect" style="color:var(--neon-magenta);">CHALLENGER:</label>
+                    <select id="compareLapSelect" class="mini-select" title="Select Challenger Lap"></select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Horizontal Interactive Lap Pills Strip -->
+        <div class="lap-strip-scroll" id="lapStripContainer">
+            <div class="lap-strip-track" id="lapPillList">
+                <div class="loading-laps-pill">Syncing session lap telemetry...</div>
+            </div>
+        </div>
+
+        <!-- Active Selected Laps Telemetry Summary Row -->
+        <div class="selected-laps-hud-row">
+            <!-- Baseline Lap HUD -->
+            <div class="active-lap-hud baseline-hud">
+                <div class="hud-role-badge">
+                    <span class="badge-dot cyan"></span>
+                    <span class="badge-txt">BASELINE REFERENCE</span>
+                    <span class="lap-tag-badge" id="baselineLapBadge">LAP --</span>
+                </div>
+                <div class="hud-metrics">
+                    <div class="hud-metric-item">
+                        <span class="m-lbl">LAP TIME</span>
+                        <span class="m-val" id="baselineLapTime">--:--.---</span>
+                    </div>
+                    <div class="hud-metric-item">
+                        <span class="m-lbl">TOTAL BRAKING</span>
+                        <span class="m-val cyan-txt" id="baselineBrakingDist">-- m</span>
+                    </div>
+                    <div class="hud-metric-item">
+                        <span class="m-lbl">BRAKE ZONES</span>
+                        <span class="m-val" id="baselineZonesCount">-- Zones</span>
+                    </div>
+                    <div class="hud-metric-item">
+                        <span class="m-lbl">AVG DECEL</span>
+                        <span class="m-val yellow-txt" id="baselineDecelG">-- G</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VS Divider Icon (Visible in H2H Mode) -->
+            <div class="hud-vs-divider" id="hudVsDivider" style="display:none;">
+                <span>VS</span>
+            </div>
+
+            <!-- Comparison Lap HUD (Visible in H2H Mode) -->
+            <div class="active-lap-hud challenger-hud" id="compareLapCard" style="display:none;">
+                <div class="hud-role-badge">
+                    <span class="badge-dot magenta"></span>
+                    <span class="badge-txt">CHALLENGER LAP</span>
+                    <span class="lap-tag-badge magenta-bg" id="compareLapBadge">LAP --</span>
+                </div>
+                <div class="hud-metrics">
+                    <div class="hud-metric-item">
+                        <span class="m-lbl">LAP TIME</span>
+                        <span class="m-val" id="compareLapTime">--:--.---</span>
+                    </div>
+                    <div class="hud-metric-item">
+                        <span class="m-lbl">TOTAL BRAKING</span>
+                        <span class="m-val magenta-txt" id="compareBrakingDist">-- m</span>
+                    </div>
+                    <div class="hud-metric-item">
+                        <span class="m-lbl">TIME DELTA</span>
+                        <span class="m-val green-txt" id="compareTimeDelta">&plusmn;0.000s</span>
+                    </div>
+                    <div class="hud-metric-item">
+                        <span class="m-lbl">BRAKE DELTA</span>
+                        <span class="m-val green-txt" id="compareDistDelta">&Delta; 0m</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════ HERO KPI METRICS RIBBON ══════════ -->
+    <section class="hero-kpis-ribbon">
+        <div class="hero-kpi-chip">
+            <div class="kpi-icon-cell cyan">⏱</div>
+            <div class="kpi-data-cell">
+                <span class="hero-kpi-lbl">BASELINE LAP TIME</span>
+                <div class="hero-kpi-val" id="kpiLapTime">--:--.---</div>
+                <span class="hero-kpi-sub delta-shorter" id="kpiLapDelta">SESSION BEST</span>
+            </div>
+        </div>
+
+        <div class="hero-kpi-chip accent-red">
+            <div class="kpi-icon-cell red">🛑</div>
+            <div class="kpi-data-cell">
+                <span class="hero-kpi-lbl">TOTAL BRAKING DISTANCE</span>
+                <div class="hero-kpi-val" id="kpiTotalBraking">-- m</div>
+                <span class="hero-kpi-sub" id="kpiBrakingDelta">Across -- apex events</span>
+            </div>
+        </div>
+
+        <div class="hero-kpi-chip accent-yellow">
+            <div class="kpi-icon-cell yellow">⚡</div>
+            <div class="kpi-data-cell">
+                <span class="hero-kpi-lbl">AVERAGE DECELERATION</span>
+                <div class="hero-kpi-val" id="kpiAvgDecel">-- G</div>
+                <span class="hero-kpi-sub" id="kpiPeakDecel">Peak --G</span>
+            </div>
+        </div>
+
+        <div class="hero-kpi-chip accent-green">
+            <div class="kpi-icon-cell green">🎯</div>
+            <div class="kpi-data-cell">
+                <span class="hero-kpi-lbl">BRAKING EFFICIENCY</span>
+                <div class="hero-kpi-val" id="kpiEfficiencyIndex">96%</div>
+                <span class="hero-kpi-sub delta-shorter">Threshold Envelope Score</span>
+            </div>
+        </div>
+
+        <div class="hero-kpi-chip accent-purple">
+            <div class="kpi-icon-cell purple">🏁</div>
+            <div class="kpi-data-cell">
+                <span class="hero-kpi-lbl">APEX BRAKING EVENTS</span>
+                <div class="hero-kpi-val" id="kpiTotalZones">--</div>
+                <span class="hero-kpi-sub" id="kpiSessionLapsCount">-- Session Laps Driven</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════ MAIN WORKSPACE LAYOUT ══════════ -->
+    <main class="brake-main-layout">
+        <!-- ── LEFT: INTERACTIVE CIRCUIT BRAKING RADAR & MAP ── -->
+        <section class="track-map-card">
+            <div class="panel-header-row">
+                <div class="panel-title">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                    <span>CIRCUIT BRAKING MAP &bull; CORNER APEX PINS</span>
+                </div>
+                <div class="map-toolbar">
+                    <button class="map-tool-btn" id="btnToggleDrs" title="Toggle DRS Zones Overlay">DRS</button>
+                    <button class="map-tool-btn" id="btnZoomIn" title="Zoom In (+)">+</button>
+                    <button class="map-tool-btn" id="btnZoomOut" title="Zoom Out (-)">-</button>
+                    <button class="map-tool-btn" id="btnResetMap" title="Reset View &amp; Fit Track">&#x26F6;</button>
+                </div>
+            </div>
+
+            <!-- Canvas Container with Interactive Pan / Zoom / Marker Click -->
+            <div class="map-canvas-container" id="mapCanvasContainer" title="Drag to Pan / Mouse Wheel to Zoom / Click pin to inspect">
+                <canvas id="circuitMapCanvas"></canvas>
+
+                <!-- Circuit Orientation & Specs Badge Overlay -->
+                <div class="map-specs-overlay" id="mapSpecsOverlay">
+                    <div class="specs-title" id="mapSpecTrackName">MELBOURNE GRAND PRIX CIRCUIT</div>
+                    <div class="specs-sub" id="mapSpecDetails">5,278m &bull; Clockwise &bull; 14 Turns</div>
+                </div>
+
+                <!-- Interactive Hover Tooltip HUD -->
+                <div class="map-hover-hud" id="mapHoverHud"></div>
+            </div>
+
+            <!-- Quick Corner Navigation Strip -->
+            <div class="corner-quick-bar" id="cornerQuickBar">
+                <span class="quick-bar-lbl">CORNERS:</span>
+                <div class="quick-pill-strip" id="cornerQuickPills">
+                    <!-- Auto-populated corner jump buttons (B1, B2, ...) -->
+                </div>
+            </div>
+
+            <!-- Legend Strip -->
+            <div class="map-legend-strip">
+                <div class="legend-item">
+                    <span class="legend-marker throttle"></span>
+                    <span>Track Full Throttle</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-marker braking"></span>
+                    <span>Heavy Braking Zone</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-marker baseline"></span>
+                    <span>Baseline Pin (B1, B2...)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-marker compare"></span>
+                    <span>Challenger Pin</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-marker drs"></span>
+                    <span>DRS Zone</span>
+                </div>
+                <div class="legend-hint">
+                    Click pin to focus
+                </div>
+            </div>
+        </section>
+
+        <!-- ── RIGHT: DYNAMIC COMPARISON TABLE ── -->
+        <section class="table-viewport-card">
+            <div class="panel-header-row">
+                <div class="panel-title">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+                    <span id="tableTitle">MULTI-LAP BRAKING DISTANCE MATRIX</span>
+                </div>
+                <div class="table-tools">
+                    <span class="table-hint">Hover row to spotlight on map &amp; telemetry trace</span>
+                </div>
+            </div>
+
+            <div class="table-scroll-wrap" id="tableScrollWrap">
+                <table class="braking-table" id="brakingTable">
+                    <thead id="brakingTableHead"></thead>
+                    <tbody id="brakingTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align:center; padding:40px; color:#64748b;">
+                                Loading session braking metrics...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- ══════════ BOTTOM TELEMETRY TRACE GRAPH DECK ══════════ -->
+    <section class="telemetry-trace-card">
+        <div class="panel-header-row">
+            <div class="panel-title">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 18.5l6-6 4 4L22 6.92 20.59 5.5l-7.09 7.09-4-4L2 17.09l1.5 1.41z"/></svg>
+                <span>DISTANCE-BASED TELEMETRY TRACE &bull; SPEED &amp; BRAKE PRESSURE</span>
+            </div>
+            <div class="chart-legend-row">
+                <span class="legend-trace-item"><span class="trace-swatch cyan"></span> Baseline Speed (km/h)</span>
+                <span class="legend-trace-item" id="legendCompareSpeed" style="display:none;"><span class="trace-swatch magenta"></span> Challenger Speed (km/h)</span>
+                <span class="legend-trace-item"><span class="trace-swatch red-fill"></span> Brake Pressure (%)</span>
+                <span class="legend-trace-item"><span class="trace-swatch orange-bar"></span> Braking Zones</span>
+                <span class="chart-scrub-info" id="chartScrubInfo">Hover chart to scrub track position</span>
+            </div>
+        </div>
+
+        <div class="chart-canvas-wrap" id="chartCanvasWrap">
+            <canvas id="telemetryChartCanvas"></canvas>
+            <!-- Cursor Overlay Values -->
+            <div class="chart-cursor-badge" id="chartCursorBadge" style="display:none;"></div>
+        </div>
+    </section>
+
+    <!-- Toast Notification -->
+    <div id="brakeToast" class="brake-toast"></div>
+
+    <!-- Controller Engine -->
+    <script src="js/braking-comparison.js?v=2.0"></script>
+</body>
+
+</html>

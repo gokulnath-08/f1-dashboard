@@ -112,7 +112,21 @@ function getTelemetryDrsZonesForTrack(tId, totalDist, telData = null, fallbackZo
     }
 
     // 2. Official catalog by distance & fraction
-    const catalog = (Array.isArray(fallbackZones) && fallbackZones.length > 0) ? fallbackZones : OFFICIAL_TRACK_DRS_ZONES[tId];
+    let catalog = (Array.isArray(fallbackZones) && fallbackZones.length > 0) ? fallbackZones : null;
+    if (!catalog && tId !== undefined && tId !== null && tId !== -1) {
+        try {
+            const mapP = path.join(trackMapsDir, `track_${tId}.json`);
+            if (fs.existsSync(mapP)) {
+                const fData = JSON.parse(fs.readFileSync(mapP, 'utf8'));
+                if (Array.isArray(fData.drsZones) && fData.drsZones.length > 0) {
+                    catalog = fData.drsZones;
+                }
+            }
+        } catch (e) { }
+    }
+    if (!catalog) {
+        catalog = OFFICIAL_TRACK_DRS_ZONES[tId];
+    }
     if (Array.isArray(catalog) && catalog.length > 0) {
         return catalog.map(z => {
             const sD = (z.startDistance !== undefined && Number.isFinite(z.startDistance))
@@ -210,9 +224,21 @@ function getTelemetryStraightModeZonesForTrack(tId, totalDist, telData = null, f
     }
 
     // 2. Official 2026 Straight Mode catalog by distance & fraction
-    const catalog = (Array.isArray(fallbackZones) && fallbackZones.length > 0)
-        ? fallbackZones
-        : OFFICIAL_TRACK_STRAIGHT_MODE_ZONES[tId];
+    let catalog = (Array.isArray(fallbackZones) && fallbackZones.length > 0) ? fallbackZones : null;
+    if (!catalog && tId !== undefined && tId !== null && tId !== -1) {
+        try {
+            const mapP = path.join(trackMapsDir, `track_${tId}.json`);
+            if (fs.existsSync(mapP)) {
+                const fData = JSON.parse(fs.readFileSync(mapP, 'utf8'));
+                if (Array.isArray(fData.straightModeZones) && fData.straightModeZones.length > 0) {
+                    catalog = fData.straightModeZones;
+                }
+            }
+        } catch (e) { }
+    }
+    if (!catalog) {
+        catalog = OFFICIAL_TRACK_STRAIGHT_MODE_ZONES[tId];
+    }
 
     if (Array.isArray(catalog) && catalog.length > 0) {
         return catalog.map((z, idx) => {
@@ -273,8 +299,19 @@ function isTrackFinalized(tId) {
  */
 function syncTrackLinesForTrack(tId, force = false, broadcastFn = null, gameYear = null) {
     if (tId === undefined || tId === null || tId === -1) return null;
-    if (!force && isTrackFinalized(tId)) {
-        console.log(`🔒 Track ${tId} is finalized. Auto-sync skipped (use force=true to override).`);
+    if (isTrackFinalized(tId)) {
+        console.log(`🔒 Track ${tId} is finalized (locked). Sync is not allowed.`);
+        if (typeof broadcastFn === 'function') {
+            broadcastFn(JSON.stringify({
+                type: 'toast',
+                message: `🔒 Track ${tId} is locked/finalized. Unlock before syncing.`
+            }));
+            broadcastFn(JSON.stringify({
+                type: 'trackFinalizedState',
+                trackId: tId,
+                finalized: true
+            }));
+        }
         return null;
     }
     const telPath = path.join(telemetryDir, `telemetry_${tId}.json`);
@@ -297,9 +334,11 @@ function syncTrackLinesForTrack(tId, force = false, broadcastFn = null, gameYear
         }
 
         // Load track map geometry if present
+        let existingMap = null;
         if (fs.existsSync(mapPath)) {
             try {
                 const mapData = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+                existingMap = mapData;
                 trackPoints = Array.isArray(mapData) ? mapData : (mapData.trackPoints || []);
             } catch (e) { }
         }
@@ -399,9 +438,24 @@ function syncTrackLinesForTrack(tId, force = false, broadcastFn = null, gameYear
 
         const effectiveYear = (gameYear !== null && gameYear !== undefined) ? parseInt(gameYear, 10) : (gameState.currentGameYear || 25);
 
+        const existingDrs = (existingMap && Array.isArray(existingMap.drsZones) && existingMap.drsZones.length > 0)
+            ? existingMap.drsZones
+            : (tId === gameState.currentTrackId && Array.isArray(state.drsZones) && state.drsZones.length > 0 ? state.drsZones : null);
+        const existingStraight = (existingMap && Array.isArray(existingMap.straightModeZones) && existingMap.straightModeZones.length > 0)
+            ? existingMap.straightModeZones
+            : (tId === gameState.currentTrackId && Array.isArray(state.straightModeZones) && state.straightModeZones.length > 0 ? state.straightModeZones : null);
+
         // Synchronize DRS zones (for F1 25) and Straight Mode zones (for F1 26) using exact telemetry interpolation
-        const syncedDrsZones = getTelemetryDrsZonesForTrack(tId, totalDist, telData);
-        const syncedStraightModeZones = getTelemetryStraightModeZonesForTrack(tId, totalDist, telData);
+        // If telemetry lacks active DRS events, strictly preserve existing synced DRS zones!
+        const hasTelDrs = Array.isArray(telData) && telData.some(p => p.drs === 1 || p.drsOpen === 1 || p.drsAvailable === 1);
+        const syncedDrsZones = (existingDrs && existingDrs.length > 0 && !hasTelDrs)
+            ? existingDrs
+            : getTelemetryDrsZonesForTrack(tId, totalDist, telData, existingDrs);
+
+        const hasTelStraight = Array.isArray(telData) && telData.some(p => p.straightMode === 1 || p.activeAeroMode === 1 || p.activeAeroAvailable === 1);
+        const syncedStraightModeZones = (existingStraight && existingStraight.length > 0 && !hasTelStraight)
+            ? existingStraight
+            : getTelemetryStraightModeZonesForTrack(tId, totalDist, telData, existingStraight);
 
         if (tId === gameState.currentTrackId) {
             if (newStart) state.startLine = newStart;
@@ -672,7 +726,16 @@ function lockOfficialSectorLinesFromTelemetry(carIndex, sector1Ms, sector2Ms, te
     }
 
     if (trackUpdated) {
+        if (isTrackFinalized(currentTrackId)) {
+            console.log(`🔒 Track ${currentTrackId} is finalized. Skipping telemetry sector overwrite.`);
+            return false;
+        }
         gameState.trackPointsDirty = true;
+        let preservedDrsZones = state.drsZones || [];
+        let preservedStraightModeZones = state.straightModeZones || [];
+        let preservedGameYear = state.gameYear || 25;
+        let isFinalized = isTrackFinalized(currentTrackId);
+
         if (currentTrackId !== -1) {
             const filePath = path.join(trackMapsDir, `track_${currentTrackId}.json`);
             let trackPoints = state.trackPoints || [];
@@ -680,13 +743,25 @@ function lockOfficialSectorLinesFromTelemetry(carIndex, sector1Ms, sector2Ms, te
                 try {
                     const existing = JSON.parse(fs.readFileSync(filePath, 'utf8'));
                     trackPoints = Array.isArray(existing) ? existing : (existing.trackPoints || trackPoints);
+                    if (Array.isArray(existing.drsZones) && existing.drsZones.length > 0) {
+                        preservedDrsZones = existing.drsZones;
+                    }
+                    if (Array.isArray(existing.straightModeZones) && existing.straightModeZones.length > 0) {
+                        preservedStraightModeZones = existing.straightModeZones;
+                    }
+                    if (existing.gameYear) preservedGameYear = existing.gameYear;
+                    if (existing.finalized !== undefined) isFinalized = !!existing.finalized;
                 } catch (e) { }
             }
             safeSaveTrackMap(filePath, {
                 trackPoints: trackPoints,
                 startLine: state.startLine,
                 sector1: state.sector1,
-                sector2: state.sector2
+                sector2: state.sector2,
+                drsZones: preservedDrsZones,
+                straightModeZones: preservedStraightModeZones,
+                gameYear: preservedGameYear,
+                finalized: isFinalized
             });
         }
 
@@ -696,7 +771,11 @@ function lockOfficialSectorLinesFromTelemetry(carIndex, sector1Ms, sector2Ms, te
                 trackId: currentTrackId,
                 startLine: state.startLine,
                 sector1: state.sector1,
-                sector2: state.sector2
+                sector2: state.sector2,
+                drsZones: preservedDrsZones,
+                straightModeZones: preservedStraightModeZones,
+                gameYear: preservedGameYear,
+                finalized: isFinalized
             });
             broadcastFn(msg);
         }

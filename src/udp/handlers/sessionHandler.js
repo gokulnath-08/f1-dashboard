@@ -3,8 +3,9 @@ const path = require('path');
 const { trackMapsDir } = require('../../config');
 const { weatherMap, scMap, trackMap } = require('../../config/constants');
 const gameState = require('../../state/gameState');
-const { touchUdpPacket, setPlayerIndex, getAccurateSessionName, resetSessionData } = require('../../state/stateHelpers');
-const { loadTrackDeltaReference, buildApproxPitLane } = require('../../services/trackService');
+const { touchUdpPacket, setPlayerIndex, getAccurateSessionName, isRaceOrSprintSession, resetSessionData } = require('../../state/stateHelpers');
+const { loadTrackDeltaReference, buildApproxPitLane, isTrackFinalized } = require('../../services/trackService');
+const { loadActiveSessionSnapshot, saveActiveSessionSnapshot } = require('../../services/storageService');
 const wsServer = require('../../websocket/wsServer');
 
 function handleSession(data) {
@@ -15,6 +16,8 @@ function handleSession(data) {
     const sessionTime = (data.m_header && data.m_header.m_sessionTime !== undefined) ? data.m_header.m_sessionTime : (data.m_sessionTime || 0);
     const sessionTypeRaw = data.m_sessionType;
     const tId = data.m_trackId;
+    const sessionLinkIdentifier = data.m_sessionLinkIdentifier !== undefined ? data.m_sessionLinkIdentifier : null;
+    const weekendLinkIdentifier = data.m_weekendLinkIdentifier !== undefined ? data.m_weekendLinkIdentifier : null;
 
     state.weatherForecast = data.m_weatherForecastSamples ? data.m_weatherForecastSamples.slice(0, data.m_numWeatherForecastSamples) : [];
     if (data.m_sector2LapDistanceStart) {
@@ -22,13 +25,41 @@ function handleSession(data) {
         state.session.sector3Distance = data.m_sector3LapDistanceStart;
     }
 
-    const isNewSession = gameState.currentSessionUID !== null && gameState.currentSessionUID !== newSessionUID;
-    const isSessionRestarted = gameState.currentSessionUID === newSessionUID && gameState.lastSessionTime > 10 && sessionTime < gameState.lastSessionTime - 5;
+    // Mid-Session Save / Resume Detection:
+    // F1 persists m_sessionLinkIdentifier across saves even when m_sessionUID changes upon reload
+    const isSameSessionLink = Boolean(sessionLinkIdentifier && gameState.currentSessionLinkIdentifier && gameState.currentSessionLinkIdentifier === sessionLinkIdentifier);
+
+    // If server cold-started during a mid-session save, attempt to restore snapshot
+    if (!gameState.currentSessionLinkIdentifier && sessionLinkIdentifier && sessionLinkIdentifier !== 0) {
+        loadActiveSessionSnapshot(sessionLinkIdentifier, tId, sessionTypeRaw);
+    }
+
     const isSessionTypeChanged = gameState.currentSessionType !== null && gameState.currentSessionType !== sessionTypeRaw;
     const isTrackChanged = gameState.currentTrackId !== -1 && tId !== undefined && tId !== -1 && gameState.currentTrackId !== tId;
+    const isSessionRestarted = !isSameSessionLink && gameState.currentSessionUID === newSessionUID && gameState.lastSessionTime > 10 && sessionTime < gameState.lastSessionTime - 5 && sessionTime < 15;
+    
+    // A session is truly new ONLY if it's not a mid-session resume and track/type/UID changed
+    let isNewSession = false;
+    if (isSameSessionLink) {
+        // Same persistent session resumed from save: DO NOT reset!
+        isNewSession = false;
+    } else if (sessionLinkIdentifier && gameState.currentSessionLinkIdentifier && gameState.currentSessionLinkIdentifier !== sessionLinkIdentifier) {
+        isNewSession = true;
+    } else if (gameState.currentSessionUID !== null && gameState.currentSessionUID !== newSessionUID && !isSameSessionLink) {
+        // Fallback check when sessionLinkIdentifier is not present (e.g. older formats)
+        // If sessionTime is high (> 30s) on first packet with new UID, it's likely a mid-session resume
+        if (sessionTime > 30 && gameState.currentTrackId === tId && gameState.currentSessionType === sessionTypeRaw) {
+            console.log('🏎️ [Session Resume Detected via Timing] Preserving session telemetry & lap histories!');
+            isNewSession = false;
+        } else {
+            isNewSession = true;
+        }
+    }
 
     gameState.currentSessionUID = newSessionUID;
     gameState.currentSessionType = sessionTypeRaw;
+    gameState.currentSessionLinkIdentifier = sessionLinkIdentifier;
+    gameState.currentWeekendLinkIdentifier = weekendLinkIdentifier;
     gameState.lastSessionTime = sessionTime;
 
     if (isNewSession || isSessionRestarted || isSessionTypeChanged || isTrackChanged) {
@@ -49,6 +80,8 @@ function handleSession(data) {
                     const raw = fs.readFileSync(filePath, 'utf8').trim();
                     if (raw && raw.length > 2) {
                         const parsedData = JSON.parse(raw);
+                        let parsedFinalized = false;
+                        let parsedGameYear = gameState.currentGameYear || 26;
                         if (Array.isArray(parsedData)) {
                             state.trackPoints = parsedData;
                             state.startLine = null;
@@ -62,10 +95,22 @@ function handleSession(data) {
                             state.startLine = parsedData.startLine || null;
                             state.sector1 = (parsedData.sector1 && typeof parsedData.sector1 === 'object') ? parsedData.sector1 : ((parsedData.sector1Line && typeof parsedData.sector1Line === 'object') ? parsedData.sector1Line : null);
                             state.sector2 = (parsedData.sector2 && typeof parsedData.sector2 === 'object') ? parsedData.sector2 : ((parsedData.sector2Line && typeof parsedData.sector2Line === 'object') ? parsedData.sector2Line : null);
-                            state.drsZones = parsedData.drsZones || [];
-                            state.straightModeZones = parsedData.straightModeZones || [];
+                            state.drsZones = Array.isArray(parsedData.drsZones) ? parsedData.drsZones : [];
+                            state.straightModeZones = Array.isArray(parsedData.straightModeZones) ? parsedData.straightModeZones : [];
+                            if (parsedData.finalized !== undefined) {
+                                parsedFinalized = !!parsedData.finalized;
+                                gameState.finalizedTracks[tId] = parsedFinalized;
+                            } else {
+                                parsedFinalized = isTrackFinalized(tId);
+                            }
+                            if (parsedData.gameYear) {
+                                parsedGameYear = parsedData.gameYear;
+                            } else if (state.drsZones.length > 0 && state.straightModeZones.length === 0) {
+                                parsedGameYear = 25;
+                            }
                             if (state.trackPoints.length > 0) gameState.isTrackMapped = true;
                         }
+                        state.gameYear = parsedGameYear;
                         state.pitLanePoints = buildApproxPitLane(state.trackPoints);
                         gameState.trackPointsDirty = true;
                         // Broadcast trackDataResponse to all clients so they immediately have the track map
@@ -80,7 +125,8 @@ function handleSession(data) {
                                 sector2: state.sector2,
                                 drsZones: state.drsZones || [],
                                 straightModeZones: state.straightModeZones || [],
-                                gameYear: gameState.currentGameYear || 26
+                                gameYear: parsedGameYear,
+                                finalized: parsedFinalized
                             }
                         });
                         wsServer.broadcast(tMsg);
@@ -134,9 +180,11 @@ function handleSession(data) {
     state.session.lapsTotal = lapsTotal;
 
     state.session.type = getAccurateSessionName(sessionTypeRaw, formulaRaw);
+    state.session.sessionTypeRaw = sessionTypeRaw;
 
-    const timeAttackIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 13, 17, 18, 19];
-    state.session.sessionCategory = timeAttackIds.includes(sessionTypeRaw) ? 'TimeAttack' : 'Race';
+    const isRaceOrSprint = isRaceOrSprintSession(sessionTypeRaw, state.session.type, gameState.currentGameYear, formulaRaw);
+    state.session.isRaceOrSprint = isRaceOrSprint;
+    state.session.sessionCategory = isRaceOrSprint ? 'Race' : 'TimeAttack';
 
     state.session.trackId = data.m_trackId !== undefined ? data.m_trackId : gameState.currentTrackId;
     state.session.trackName = trackMap[data.m_trackId] || `TRACK NOT FOUND`;
