@@ -4361,7 +4361,7 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
                 setStyleById("drs", "color", data.inputs.drs === "OPEN" ? "var(--fia-green)" : "var(--text-main)");
             }
 
-            const steerVal = data.inputs.steer || 0;
+            const steerVal = typeof data.inputs.steer === 'number' ? data.inputs.steer : (Number(data.inputs.steer) || 0);
             setText("steer-val", steerVal.toFixed(2));
             if (steerVal >= 0) {
                 setStyleById("steer-right", "width", `${Math.min(steerVal * 50, 50)}%`);
@@ -4369,6 +4369,43 @@ font-weight: bold; pointer-events: none; text-shadow: 0 0 4px #000;">${labelText
             } else {
                 setStyleById("steer-left", "width", `${Math.min(Math.abs(steerVal) * 50, 50)}%`);
                 setStyleById("steer-right", "width", "0%");
+            }
+
+            // Real-time steering wheel rotation (±180° full lock)
+            const steerDeg = steerVal * 180;
+            const steerImg = document.getElementById("steering-wheel-img");
+            if (steerImg) {
+                steerImg.style.transform = `rotate(${steerDeg.toFixed(1)}deg)`;
+            }
+
+            // Steering angle display & direction indicator
+            const steerDegText = `${steerDeg >= 0 ? '+' : ''}${steerDeg.toFixed(1)}°`;
+            setText("steer-deg-val", steerDegText);
+
+            const steerDirBadge = document.getElementById("steer-dir-badge");
+            if (steerDirBadge) {
+                if (steerDeg < -1.0) {
+                    steerDirBadge.textContent = "◀ LEFT";
+                    steerDirBadge.style.color = "var(--fia-cyan, #00f0ff)";
+                    steerDirBadge.style.background = "rgba(0, 240, 255, 0.15)";
+                    steerDirBadge.style.borderColor = "rgba(0, 240, 255, 0.4)";
+                } else if (steerDeg > 1.0) {
+                    steerDirBadge.textContent = "RIGHT ▶";
+                    steerDirBadge.style.color = "var(--f1-red, #ff1e00)";
+                    steerDirBadge.style.background = "rgba(255, 30, 0, 0.15)";
+                    steerDirBadge.style.borderColor = "rgba(255, 30, 0, 0.4)";
+                } else {
+                    steerDirBadge.textContent = "CENTER";
+                    steerDirBadge.style.color = "var(--fia-green, #00e676)";
+                    steerDirBadge.style.background = "rgba(0, 230, 118, 0.15)";
+                    steerDirBadge.style.borderColor = "rgba(0, 230, 118, 0.35)";
+                }
+            }
+
+            const dduSteer = document.getElementById("ddu-steer-angle");
+            if (dduSteer) {
+                dduSteer.textContent = steerDegText;
+                dduSteer.style.color = Math.abs(steerDeg) > 8 ? "var(--rbr-yellow, #ffd100)" : "var(--fia-green, #00e676)";
             }
 
             const isPaused = Boolean(

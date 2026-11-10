@@ -306,6 +306,15 @@ class F1DduEngine {
             }
         }
 
+        // 3.5. Steering Wheel Angle in Cockpit DDU
+        const steerVal = typeof data.inputs?.steer === 'number' ? data.inputs.steer : (Number(data.inputs?.steer) || 0);
+        const steerDeg = steerVal * 180;
+        const dduSteer = document.getElementById('ddu-steer-angle');
+        if (dduSteer) {
+            dduSteer.textContent = `${steerDeg >= 0 ? '+' : ''}${steerDeg.toFixed(1)}°`;
+            dduSteer.style.color = Math.abs(steerDeg) > 8 ? 'var(--rbr-yellow)' : 'var(--fia-green)';
+        }
+
         // 4. Live Delta (Ghost or Fastest Lap)
         const deltaSec = (data.lap?.liveDeltaToRecord !== undefined && data.lap.liveDeltaToRecord !== 0) 
             ? (data.lap.liveDeltaToRecord / 1000) 

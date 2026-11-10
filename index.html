@@ -800,6 +800,10 @@
                     </div>
 
                     <div style="display:flex; align-items:center; gap:8px;">
+                        <div class="rbr-kpi-pill" title="Steering Wheel Angle" style="display:flex; align-items:center; gap:4px; font-family:'Roboto Mono',monospace; font-size:0.72rem; font-weight:700; background:rgba(255,209,0,0.08); border:1px solid rgba(255,209,0,0.25);">
+                            <span style="color:var(--rbr-yellow);">🎯 STEER:</span>
+                            <span id="ddu-steer-angle" style="color:var(--fia-green);">0.0°</span>
+                        </div>
                         <button type="button" class="rbr-tool-btn" onclick="toggleDDUFullscreen()" title="Toggle Fullscreen Cockpit DDU">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
                                 <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
@@ -996,18 +1000,57 @@
                     <div class="fill-bar" id="clutch" style="background: var(--fia-yellow);"></div>
                 </div>
 
-                <div class="label">
-                    Steering Angle <span id="steer-val" style="float: right; color: var(--text-main);">0.00</span>
-                </div>
-                <div class="bar-bg" style="position: relative; display: flex; justify-content: center;">
-                    <div
-                        style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.4); z-index: 2; transform: translateX(-50%);">
+                <!-- Real-time Rotating F1 Steering Wheel Widget & Angle Display -->
+                <div class="steering-panel-widget">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span class="label" style="font-weight: 700; letter-spacing: 0.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="var(--rbr-yellow)">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.46.04-.92.1-1.36L8.5 12l.9 3.6 2.6-1.3 2.6 1.3.9-3.6 4.4-1.36c.06.44.1.9.1 1.36 0 4.41-3.59 8-8 8zm0-10c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+                            </svg>
+                            STEERING ANGLE
+                        </span>
+                        <div style="display: flex; align-items: baseline; gap: 6px;">
+                            <span id="steer-dir-badge" style="font-size: 0.62rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; background: rgba(0, 230, 118, 0.15); color: var(--fia-green); border: 1px solid rgba(0, 230, 118, 0.35); font-family: 'Roboto Mono', monospace;">CENTER</span>
+                            <span id="steer-deg-val" style="font-family: 'Roboto Mono', monospace; font-size: 1.15rem; font-weight: 900; color: var(--fia-yellow); text-shadow: 0 0 10px rgba(255, 209, 0, 0.4);">0.0°</span>
+                            <span style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Roboto Mono', monospace;">(<span id="steer-val">0.00</span>)</span>
+                        </div>
                     </div>
-                    <div class="fill-bar" id="steer-left"
-                        style="background: var(--fia-green); width: 0%; position: absolute; right: 50%; top: 0; bottom: 0; border-radius: 4px 0 0 4px;">
+
+                    <!-- Interactive Rotating Steering Wheel Stage with Graduation Dial -->
+                    <div class="steering-stage-container">
+                        <!-- Graduation Arc / Degree Marks -->
+                        <div class="steering-angle-arc">
+                            <span>-90°</span>
+                            <span>-45°</span>
+                            <span style="color: var(--fia-yellow); font-weight: 800;">▲ 0° CENTER</span>
+                            <span>+45°</span>
+                            <span>+90°</span>
+                        </div>
+
+                        <!-- Wheel Rotating Graphic Viewport -->
+                        <div class="steering-wheel-viewport">
+                            <!-- Subtle Compass Orientation Ring -->
+                            <div style="position: absolute; width: 140px; height: 140px; border-radius: 50%; border: 1px dashed rgba(255, 255, 255, 0.12); pointer-events: none;"></div>
+                            
+                            <!-- The Rotating Steering Wheel Image -->
+                            <img id="steering-wheel-img" src="images/steering-wheel.svg" alt="F1 Cockpit Steering Wheel" class="steering-wheel-graphic" />
+
+                            <!-- Center Optical Pivot Dot -->
+                            <div class="steering-center-marker"></div>
+                        </div>
                     </div>
-                    <div class="fill-bar" id="steer-right"
-                        style="background: var(--fia-green); width: 0%; position: absolute; left: 50%; top: 0; bottom: 0; border-radius: 0 4px 4px 0;">
+
+                    <!-- Dual Horizontal Balance Left/Right Bar -->
+                    <div class="bar-bg" style="position: relative; display: flex; justify-content: center; height: 7px; margin-top: 2px;">
+                        <div
+                            style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.7); z-index: 2; transform: translateX(-50%);">
+                        </div>
+                        <div class="fill-bar" id="steer-left"
+                            style="background: linear-gradient(90deg, #00f0ff, var(--fia-green)); width: 0%; position: absolute; right: 50%; top: 0; bottom: 0; border-radius: 4px 0 0 4px; transition: width 0.05s ease-out;">
+                        </div>
+                        <div class="fill-bar" id="steer-right"
+                            style="background: linear-gradient(90deg, var(--fia-green), var(--f1-red)); width: 0%; position: absolute; left: 50%; top: 0; bottom: 0; border-radius: 0 4px 4px 0; transition: width 0.05s ease-out;">
+                        </div>
                     </div>
                 </div>
 

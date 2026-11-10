@@ -1,0 +1,277 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" width="100%" height="100%">
+  <defs>
+    <!-- Carbon Fiber Micro-Pattern -->
+    <pattern id="carbonPattern" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#12161f"/>
+      <polygon points="0,0 3,0 0,3" fill="#1b212f"/>
+      <polygon points="3,3 6,3 3,6" fill="#1b212f"/>
+      <polygon points="3,0 6,3 6,0" fill="#0d1017"/>
+      <polygon points="0,3 3,6 0,6" fill="#0d1017"/>
+    </pattern>
+
+    <!-- Gradients -->
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#242c3d"/>
+      <stop offset="30%" stop-color="#151a24"/>
+      <stop offset="85%" stop-color="#0e121a"/>
+      <stop offset="100%" stop-color="#080a0f"/>
+    </linearGradient>
+
+    <linearGradient id="gripLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#101216"/>
+      <stop offset="35%" stop-color="#222733"/>
+      <stop offset="80%" stop-color="#181c24"/>
+      <stop offset="100%" stop-color="#0a0c10"/>
+    </linearGradient>
+
+    <linearGradient id="gripRight" x1="100%" y1="0%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#101216"/>
+      <stop offset="35%" stop-color="#222733"/>
+      <stop offset="80%" stop-color="#181c24"/>
+      <stop offset="100%" stop-color="#0a0c10"/>
+    </linearGradient>
+
+    <linearGradient id="paddleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3a4454"/>
+      <stop offset="50%" stop-color="#1f2530"/>
+      <stop offset="100%" stop-color="#0d1015"/>
+    </linearGradient>
+
+    <linearGradient id="goldCentering" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFF275"/>
+      <stop offset="50%" stop-color="#FFD100"/>
+      <stop offset="100%" stop-color="#E6A800"/>
+    </linearGradient>
+
+    <linearGradient id="lcdGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#020408"/>
+    </linearGradient>
+
+    <linearGradient id="rotaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#384357"/>
+      <stop offset="50%" stop-color="#1a202c"/>
+      <stop offset="100%" stop-color="#0d1017"/>
+    </linearGradient>
+
+    <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="wheelShadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#000000" flood-opacity="0.75"/>
+    </filter>
+  </defs>
+
+  <!-- Centered Container (Center of Rotation: x=150, y=100) -->
+  <g id="steering-wheel-root" filter="url(#wheelShadow)">
+
+    <!-- ══ REAR CARBON SHIFT PADDLES (Visible on Left & Right) ══ -->
+    <!-- Left Shift Paddle -->
+    <path d="M 28 62 C 16 70 12 88 12 105 C 12 122 16 138 28 146 L 40 142 L 36 68 Z"
+          fill="url(#paddleGrad)" stroke="#4a5568" stroke-width="1.2" stroke-linejoin="round"/>
+    <!-- Left Paddle Carbon Texture Lines -->
+    <line x1="18" y1="85" x2="26" y2="82" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="16" y1="102" x2="25" y2="102" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="18" y1="120" x2="26" y2="122" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- Right Shift Paddle -->
+    <path d="M 272 62 C 284 70 288 88 288 105 C 288 122 284 138 272 146 L 260 142 L 264 68 Z"
+          fill="url(#paddleGrad)" stroke="#4a5568" stroke-width="1.2" stroke-linejoin="round"/>
+    <!-- Right Paddle Carbon Texture Lines -->
+    <line x1="282" y1="85" x2="274" y2="82" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="284" y1="102" x2="275" y2="102" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="282" y1="120" x2="274" y2="122" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- ══ MAIN CARBON FIBRE WHEEL CHASSIS BODY ══ -->
+    <!-- Monocoque Central Skeleton -->
+    <path d="M 85 36 
+             C 105 32 125 30 150 30 
+             C 175 30 195 32 215 36 
+             C 230 40 240 50 245 66 
+             C 248 76 242 88 238 98 
+             C 243 112 248 126 244 140 
+             C 238 158 224 168 206 170 
+             C 188 172 170 173 150 173 
+             C 130 173 112 172 94 170 
+             C 76 168 62 158 56 140 
+             C 52 126 57 112 62 98 
+             C 58 88 52 76 55 66 
+             C 60 50 70 40 85 36 Z" 
+          fill="url(#bodyGrad)" stroke="#2d3748" stroke-width="2"/>
+
+    <!-- Carbon weave overlay on main body -->
+    <path d="M 85 36 
+             C 105 32 125 30 150 30 
+             C 175 30 195 32 215 36 
+             C 230 40 240 50 245 66 
+             C 248 76 242 88 238 98 
+             C 243 112 248 126 244 140 
+             C 238 158 224 168 206 170 
+             C 188 172 170 173 150 173 
+             C 130 173 112 172 94 170 
+             C 76 168 62 158 56 140 
+             C 52 126 57 112 62 98 
+             C 58 88 52 76 55 66 
+             C 60 50 70 40 85 36 Z" 
+          fill="url(#carbonPattern)" opacity="0.75"/>
+
+    <!-- Internal Cutouts for Thumb Clearance -->
+    <!-- Left Cutout -->
+    <path d="M 64 68 C 68 84 66 112 63 130 C 72 134 80 130 84 122 C 87 106 88 92 84 76 C 80 67 71 65 64 68 Z" 
+          fill="#060910" stroke="#1f2533" stroke-width="1.5"/>
+    <!-- Right Cutout -->
+    <path d="M 236 68 C 232 84 234 112 237 130 C 228 134 220 130 216 122 C 213 106 212 92 216 76 C 220 67 229 65 236 68 Z" 
+          fill="#060910" stroke="#1f2533" stroke-width="1.5"/>
+
+    <!-- ══ ERGONOMIC MOLDED SIDE HAND GRIPS ══ -->
+    <!-- Left Ergonomic Grip -->
+    <path d="M 58 48 
+             C 42 54 30 68 27 88 
+             C 25 102 26 116 29 130 
+             C 33 148 45 160 60 162 
+             C 64 162 67 156 66 150 
+             C 62 136 58 120 59 104 
+             C 60 88 64 74 66 58 
+             C 67 52 64 47 58 48 Z" 
+          fill="url(#gripLeft)" stroke="#3a4454" stroke-width="1.6"/>
+    <!-- Left Grip Perforated Grip Stipples / Texture Grooves -->
+    <path d="M 36 75 Q 44 77 52 75 M 34 90 Q 43 92 51 90 M 34 105 Q 43 107 51 105 M 36 120 Q 44 122 52 120 M 40 135 Q 47 137 54 135" 
+          stroke="rgba(0,0,0,0.6)" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+    <path d="M 36 76 Q 44 78 52 76 M 34 91 Q 43 93 51 91 M 34 106 Q 43 108 51 106 M 36 121 Q 44 123 52 121 M 40 136 Q 47 138 54 136" 
+          stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-linecap="round" fill="none"/>
+
+    <!-- Right Ergonomic Grip -->
+    <path d="M 242 48 
+             C 258 54 270 68 273 88 
+             C 275 102 274 116 271 130 
+             C 267 148 255 160 240 162 
+             C 236 162 233 156 234 150 
+             C 238 136 242 120 241 104 
+             C 240 88 236 74 234 58 
+             C 233 52 236 47 242 48 Z" 
+          fill="url(#gripRight)" stroke="#3a4454" stroke-width="1.6"/>
+    <!-- Right Grip Perforated Grip Stipples / Texture Grooves -->
+    <path d="M 264 75 Q 256 77 248 75 M 266 90 Q 257 92 249 90 M 266 105 Q 257 107 249 105 M 264 120 Q 256 122 248 120 M 260 135 Q 253 137 246 135" 
+          stroke="rgba(0,0,0,0.6)" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+    <path d="M 264 76 Q 256 78 248 76 M 266 91 Q 257 93 249 91 M 266 106 Q 257 108 249 106 M 264 121 Q 256 123 248 121 M 260 136 Q 253 138 246 136" 
+          stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-linecap="round" fill="none"/>
+
+    <!-- ══ RACING 12 O'CLOCK TOP CENTERING STRIPE ══ -->
+    <!-- Essential for angle alignment perception! -->
+    <rect x="145" y="27" width="10" height="15" rx="2" fill="url(#goldCentering)" stroke="#B38600" stroke-width="1"/>
+    <line x1="150" y1="27" x2="150" y2="42" stroke="#FFF" stroke-width="0.8" opacity="0.6"/>
+
+    <!-- ══ CENTER DISPLAY & TELEMETRY BEZEL ══ -->
+    <!-- Bezel Housing -->
+    <rect x="98" y="58" width="104" height="66" rx="6" fill="#0b0f17" stroke="#252d3d" stroke-width="1.8"/>
+    <!-- Screen Glass -->
+    <rect x="103" y="63" width="94" height="56" rx="4" fill="url(#lcdGrad)" stroke="#121824" stroke-width="1"/>
+    
+    <!-- Inner Screen Subtle Telemetry Graphics -->
+    <rect x="106" y="66" width="88" height="14" rx="2" fill="rgba(0,240,255,0.06)"/>
+    <!-- Gear display on wheel mini-screen -->
+    <text x="150" y="99" font-family="'Roboto Mono', monospace, sans-serif" font-weight="900" font-size="22" fill="#FFD100" text-anchor="middle" letter-spacing="1">F1</text>
+    <text x="150" y="113" font-family="'Titillium Web', sans-serif" font-weight="700" font-size="8" fill="#00F0FF" text-anchor="middle" letter-spacing="2">TELEMETRY</text>
+
+    <!-- ══ 15-LED REV SHIFT LIGHT STRIP ══ -->
+    <g id="wheel-rev-lights">
+      <!-- 5 Green LEDs -->
+      <circle cx="112" cy="50" r="2.2" fill="#00E676"/>
+      <circle cx="119" cy="49" r="2.2" fill="#00E676"/>
+      <circle cx="126" cy="48.5" r="2.2" fill="#00E676"/>
+      <circle cx="133" cy="48" r="2.2" fill="#00E676"/>
+      <circle cx="140" cy="47.8" r="2.2" fill="#00E676"/>
+      <!-- 5 Red LEDs -->
+      <circle cx="147" cy="47.6" r="2.2" fill="#FF1E00"/>
+      <circle cx="153" cy="47.6" r="2.2" fill="#FF1E00"/>
+      <circle cx="160" cy="47.8" r="2.2" fill="#FF1E00"/>
+      <circle cx="167" cy="48" r="2.2" fill="#FF1E00"/>
+      <circle cx="174" cy="48.5" r="2.2" fill="#FF1E00"/>
+      <!-- 5 Blue LEDs -->
+      <circle cx="181" cy="49" r="2.2" fill="#0066FF"/>
+      <circle cx="188" cy="50" r="2.2" fill="#0066FF"/>
+    </g>
+
+    <!-- ══ TITANIUM HEX BOLTS ══ -->
+    <circle cx="94" cy="52" r="2" fill="#718096" stroke="#1a202c" stroke-width="0.8"/>
+    <circle cx="206" cy="52" r="2" fill="#718096" stroke="#1a202c" stroke-width="0.8"/>
+    <circle cx="94" cy="138" r="2" fill="#718096" stroke="#1a202c" stroke-width="0.8"/>
+    <circle cx="206" cy="138" r="2" fill="#718096" stroke="#1a202c" stroke-width="0.8"/>
+    <circle cx="150" cy="164" r="2.2" fill="#718096" stroke="#1a202c" stroke-width="0.8"/>
+
+    <!-- ══ THUMB ROTARY WHEELS (Upper Inner Shoulders) ══ -->
+    <!-- Left Thumb Roller -->
+    <rect x="80" y="72" width="7" height="18" rx="2" fill="url(#rotaryGrad)" stroke="#4a5568" stroke-width="1"/>
+    <line x1="80" y1="76" x2="87" y2="76" stroke="#718096" stroke-width="1"/>
+    <line x1="80" y1="81" x2="87" y2="81" stroke="#718096" stroke-width="1"/>
+    <line x1="80" y1="86" x2="87" y2="86" stroke="#718096" stroke-width="1"/>
+
+    <!-- Right Thumb Roller -->
+    <rect x="213" y="72" width="7" height="18" rx="2" fill="url(#rotaryGrad)" stroke="#4a5568" stroke-width="1"/>
+    <line x1="213" y1="76" x2="220" y2="76" stroke="#718096" stroke-width="1"/>
+    <line x1="213" y1="81" x2="220" y2="81" stroke="#718096" stroke-width="1"/>
+    <line x1="213" y1="86" x2="220" y2="86" stroke="#718096" stroke-width="1"/>
+
+    <!-- ══ LOWER ROTARY SWITCHES ══ -->
+    <!-- Rotary 1: Left (Strat / Engine Mode) -->
+    <circle cx="122" cy="144" r="11" fill="url(#rotaryGrad)" stroke="#4a5568" stroke-width="1.2"/>
+    <circle cx="122" cy="144" r="8" fill="#121620" stroke="#2d3748" stroke-width="0.8"/>
+    <line x1="122" y1="137" x2="122" y2="142" stroke="#FFD100" stroke-width="2" stroke-linecap="round"/>
+    <text x="122" y="160" font-family="'Roboto Mono', monospace" font-size="5" fill="#94A3B8" font-weight="700" text-anchor="middle">STRAT</text>
+
+    <!-- Rotary 2: Right (Diff / Brake Migration) -->
+    <circle cx="178" cy="144" r="11" fill="url(#rotaryGrad)" stroke="#4a5568" stroke-width="1.2"/>
+    <circle cx="178" cy="144" r="8" fill="#121620" stroke="#2d3748" stroke-width="0.8"/>
+    <line x1="178" y1="137" x2="178" y2="142" stroke="#00F0FF" stroke-width="2" stroke-linecap="round"/>
+    <text x="178" y="160" font-family="'Roboto Mono', monospace" font-size="5" fill="#94A3B8" font-weight="700" text-anchor="middle">DIFF</text>
+
+    <!-- ══ MULTI-COLOR RACING PUSH BUTTONS WITH GUARDS ══ -->
+    <!-- Button 1: Left Top - DRS (Cyan) -->
+    <g transform="translate(74, 52)">
+      <circle cx="0" cy="0" r="6.5" fill="#0d111a" stroke="#263142" stroke-width="1.2"/>
+      <circle cx="0" cy="0" r="4.6" fill="#00F0FF" stroke="#0099B8" stroke-width="0.6"/>
+      <text x="0" y="2.2" font-family="'Roboto Mono', monospace" font-size="4" font-weight="900" fill="#000" text-anchor="middle">DRS</text>
+    </g>
+
+    <!-- Button 2: Right Top - RADIO (Yellow) -->
+    <g transform="translate(226, 52)">
+      <circle cx="0" cy="0" r="6.5" fill="#0d111a" stroke="#263142" stroke-width="1.2"/>
+      <circle cx="0" cy="0" r="4.6" fill="#FFD100" stroke="#B38600" stroke-width="0.6"/>
+      <text x="0" y="2.2" font-family="'Roboto Mono', monospace" font-size="4" font-weight="900" fill="#000" text-anchor="middle">RAD</text>
+    </g>
+
+    <!-- Button 3: Left Mid - NEUTRAL (White) -->
+    <g transform="translate(74, 98)">
+      <circle cx="0" cy="0" r="6.5" fill="#0d111a" stroke="#263142" stroke-width="1.2"/>
+      <circle cx="0" cy="0" r="4.6" fill="#FFFFFF" stroke="#94A3B8" stroke-width="0.6"/>
+      <text x="0" y="2.2" font-family="'Roboto Mono', monospace" font-size="4.5" font-weight="900" fill="#000" text-anchor="middle">N</text>
+    </g>
+
+    <!-- Button 4: Right Mid - OVERTAKE (Red) -->
+    <g transform="translate(226, 98)">
+      <circle cx="0" cy="0" r="6.5" fill="#0d111a" stroke="#263142" stroke-width="1.2"/>
+      <circle cx="0" cy="0" r="4.6" fill="#FF1E00" stroke="#B31400" stroke-width="0.6"/>
+      <text x="0" y="2.2" font-family="'Roboto Mono', monospace" font-size="4" font-weight="900" fill="#FFF" text-anchor="middle">OT</text>
+    </g>
+
+    <!-- Button 5: Left Low - PIT CONFIRM (Green) -->
+    <g transform="translate(74, 122)">
+      <circle cx="0" cy="0" r="6.5" fill="#0d111a" stroke="#263142" stroke-width="1.2"/>
+      <circle cx="0" cy="0" r="4.6" fill="#00E676" stroke="#00994C" stroke-width="0.6"/>
+      <text x="0" y="2.2" font-family="'Roboto Mono', monospace" font-size="4" font-weight="900" fill="#000" text-anchor="middle">PC</text>
+    </g>
+
+    <!-- Button 6: Right Low - PIT LIMITER (Orange) -->
+    <g transform="translate(226, 122)">
+      <circle cx="0" cy="0" r="6.5" fill="#0d111a" stroke="#263142" stroke-width="1.2"/>
+      <circle cx="0" cy="0" r="4.6" fill="#FF7700" stroke="#B34400" stroke-width="0.6"/>
+      <text x="0" y="2.2" font-family="'Roboto Mono', monospace" font-size="4" font-weight="900" fill="#000" text-anchor="middle">PL</text>
+    </g>
+
+    <!-- Exact Center Pivot Dot (150, 100) -->
+    <circle cx="150" cy="100" r="1.5" fill="rgba(255,209,0,0.4)"/>
+  </g>
+</svg>
+

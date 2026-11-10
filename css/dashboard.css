@@ -3125,3 +3125,74 @@
             transform: translateX(-50%) translateY(0);
             opacity: 1;
         }
+
+        /* ══════════ REAL-TIME STEERING WHEEL TELEMETRY WIDGET ══════════ */
+        .steering-panel-widget {
+            background: rgba(7, 14, 28, 0.7);
+            border: 1px solid rgba(255, 209, 0, 0.22);
+            border-radius: var(--card-radius, 10px);
+            padding: 12px;
+            margin-top: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(6px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .steering-stage-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 0 12px 0;
+            width: 100%;
+        }
+
+        .steering-angle-arc {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 250px;
+            font-size: 0.62rem;
+            color: var(--text-dim, #64748b);
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            margin-bottom: 6px;
+            user-select: none;
+        }
+
+        .steering-wheel-viewport {
+            position: relative;
+            width: 220px;
+            height: 146px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .steering-wheel-graphic {
+            width: 210px;
+            height: 140px;
+            object-fit: contain;
+            transform-origin: 50% 50%;
+            will-change: transform;
+            transition: transform 0.04s cubic-bezier(0, 0, 0.2, 1);
+            filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.85));
+            display: block;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .steering-center-marker {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--fia-yellow, #ffd100);
+            box-shadow: 0 0 8px var(--fia-yellow, #ffd100);
+            pointer-events: none;
+            opacity: 0.75;
+            z-index: 3;
+        }
